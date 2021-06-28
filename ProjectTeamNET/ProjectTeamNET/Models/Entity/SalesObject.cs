@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_sales_object
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_sales_object", Schema = "public")]
     public class SalesObject

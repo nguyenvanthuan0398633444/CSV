@@ -13,6 +13,6 @@ namespace ProjectTeamNET.Service.Interface
         Task<Category> Get(int id);
         Task<int> Create(Category model);
         Task<int> Edit(Category model);
-        Task<int> Delete(Category obj);
+        void Delete(Category obj);
     }
 }

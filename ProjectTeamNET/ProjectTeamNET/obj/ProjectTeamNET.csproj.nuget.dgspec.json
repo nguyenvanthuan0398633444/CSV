@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\thuannv\\Desktop\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj": {}
+    "C:\\Users\\thuannv\\Desktop\\projectteamnet\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj": {}
   },
   "projects": {
-    "C:\\Users\\thuannv\\Desktop\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj": {
+    "C:\\Users\\thuannv\\Desktop\\projectteamnet\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\thuannv\\Desktop\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj",
+        "projectUniqueName": "C:\\Users\\thuannv\\Desktop\\projectteamnet\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj",
         "projectName": "ProjectTeamNET",
-        "projectPath": "C:\\Users\\thuannv\\Desktop\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj",
+        "projectPath": "C:\\Users\\thuannv\\Desktop\\projectteamnet\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET.csproj",
         "packagesPath": "C:\\Users\\thuannv\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\thuannv\\Desktop\\ProjectTeamNET\\ProjectTeamNET\\ProjectTeamNET\\obj\\",
+        "outputPath": "C:\\Users\\thuannv\\Desktop\\projectteamnet\\ProjectTeamNET\\ProjectTeamNET\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -76,6 +76,14 @@
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
               "version": "[5.0.2, )"
+            },
+            "System.DirectoryServices": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "System.DirectoryServices.AccountManagement": {
+              "target": "Package",
+              "version": "[5.0.0, )"
             }
           },
           "imports": [

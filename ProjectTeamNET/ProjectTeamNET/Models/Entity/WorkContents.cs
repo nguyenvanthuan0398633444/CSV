@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_work_contents
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_work_contents", Schema = "public")]
     public class WorkContents
@@ -14,7 +14,7 @@ namespace m_work_contents
         [Column("work_contents_class")]
         public string Work_contents_class { get; set; }
 
-        [Key]
+
         [Required]
         [StringLength(2)]
         [Display(Name = "��Ɠ��e�R�[�h")]

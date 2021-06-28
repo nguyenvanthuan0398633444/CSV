@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_work_contents_class
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_work_contents_class", Schema = "public")]
     public class WorkContentsClass

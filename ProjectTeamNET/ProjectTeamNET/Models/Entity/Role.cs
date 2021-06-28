@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_role
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_role", Schema = "public")]
     public class Role
@@ -19,7 +19,7 @@ namespace m_role
         [Column("role_name")]
         public string Role_name { get; set; }
 
-        [Key]
+    
         [Required]
         [StringLength(30)]
         [Display(Name = "���URL")]

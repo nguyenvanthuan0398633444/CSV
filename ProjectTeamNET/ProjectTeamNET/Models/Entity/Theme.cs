@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_theme
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_theme", Schema = "public")]
     public class Theme

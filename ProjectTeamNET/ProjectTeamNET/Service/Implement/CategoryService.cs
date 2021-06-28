@@ -1,8 +1,10 @@
 ﻿using ProjectTeamNET.Models.Entity;
+using ProjectTeamNET.Models.Response;
 using ProjectTeamNET.Repository.Interface;
 using ProjectTeamNET.Service.Interface;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ProjectTeamNET.Service.Implement
@@ -15,14 +17,14 @@ namespace ProjectTeamNET.Service.Implement
             this.categoryRepository = categoryRepository;
         }
 
-        public async Task<int> Create(Category model)
+        public Task<int> Create(Category model)
         {
-            return await categoryRepository.Create(model);
+            throw new NotImplementedException();
         }
 
-        public async Task<int> Delete(Category category)
+        public void Delete(Category category)
         {
-            return await categoryRepository.Delete(category);
+            categoryRepository.Delete(category);
         }
 
         public Task<int> Edit(Category model)

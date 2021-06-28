@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_processing_month
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_processing_month", Schema = "public")]
     public class ProcessingMonth

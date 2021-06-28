@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_user
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_user", Schema = "public")]
     public class User

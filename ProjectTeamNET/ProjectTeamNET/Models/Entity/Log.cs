@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace t_log
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("t_log", Schema = "public")]
     public class Log
@@ -13,21 +13,18 @@ namespace t_log
         [Column("date_time")]
         public DateTime Date_time { get; set; }
 
-        [Key]
         [Required]
         [StringLength(9)]
         [Display(Name = "���[�U�[NO")]
         [Column("user_no")]
         public string User_no { get; set; }
 
-        [Key]
         [Required]
         [StringLength(20)]
         [Display(Name = "���j���[ID")]
         [Column("screen_id")]
         public string Screen_id { get; set; }
 
-        [Key]
         [Required]
         [StringLength(8)]
         [Display(Name = "�A�N�V�����^�C�v")]

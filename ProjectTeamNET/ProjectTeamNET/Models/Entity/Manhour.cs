@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace t_manhour
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("t_manhour", Schema = "public")]
     public class Manhour
@@ -10,20 +10,20 @@ namespace t_manhour
         [Key]
         [Required]
         [Display(Name = "�N")]
-        [Column("year")]
+        [Column("year",Order = 0)]
         public Int16 Year { get; set; }
 
-        [Key]
+      
         [Required]
         [Display(Name = "��")]
-        [Column("month")]
+        [Column("month",Order =1)]
         public Int16 Month { get; set; }
 
-        [Key]
+      
         [Required]
         [StringLength(9)]
         [Display(Name = "���[�U�[NO")]
-        [Column("user_no")]
+        [Column("user_no",Order =2)]
         public string User_no { get; set; }
 
         [StringLength(10)]
@@ -36,32 +36,28 @@ namespace t_manhour
         [Column("site_code")]
         public string Site_code { get; set; }
 
-        [Key]
         [Required]
         [StringLength(12)]
         [Display(Name = "�e�[�}NO")]
-        [Column("theme_no")]
+        [Column("theme_no",Order =3)]
         public string Theme_no { get; set; }
 
-        [Key]
         [Required]
         [StringLength(2)]
         [Display(Name = "��Ɠ��e�敪")]
-        [Column("work_contents_class")]
+        [Column("work_contents_class",Order =4)]
         public string Work_contents_class { get; set; }
 
-        [Key]
         [Required]
         [StringLength(2)]
         [Display(Name = "��Ɠ��e�R�[�h")]
-        [Column("work_contents_code")]
+        [Column("work_contents_code",Order =5)]
         public string Work_contents_code { get; set; }
 
-        [Key]
         [Required]
         [StringLength(2)]
         [Display(Name = "��Ɠ��e�ڍ�")]
-        [Column("work_contents_detail")]
+        [Column("work_contents_detail",Order =6)]
         public string Work_contents_detail { get; set; }
 
         [Display(Name = "�s���~�߃t���O")]
@@ -70,35 +66,35 @@ namespace t_manhour
 
         [Display(Name = "���v")]
         [Column("total")]
-        public Double Total { get; set; }
+        public double Total { get; set; }
 
         [Display(Name = "1��")]
         [Column("day1")]
-        public Double  Day1 { get; set; }
+        public double Day1 { get; set; }
 
         [Display(Name = "2��")]
         [Column("day2")]
-        public Double Day2 { get; set; }
+        public double Day2 { get; set; }
 
         [Display(Name = "3��")]
         [Column("day3")]
-        public Double Day3 { get; set; }
+        public double Day3 { get; set; }
 
         [Display(Name = "4��")]
         [Column("day4")]
-        public Double Day4 { get; set; }
+        public double Day4 { get; set; }
 
         [Display(Name = "5��")]
         [Column("day5")]
-        public Double Day5 { get; set; }
+        public double Day5 { get; set; }
 
         [Display(Name = "6��")]
         [Column("day6")]
-        public Double Day6 { get; set; }
+        public double Day6 { get; set; }
 
         [Display(Name = "7��")]
         [Column("day7")]
-        public Double Day7 { get; set; }
+        public double Day7 { get; set; }
 
         [Display(Name = "8��")]
         [Column("day8")]
@@ -200,6 +196,7 @@ namespace t_manhour
         [Display(Name = "�m����t")]
         [Column("fix_date")]
         public string Fix_date { get; set; }
+     
 
     }
 }

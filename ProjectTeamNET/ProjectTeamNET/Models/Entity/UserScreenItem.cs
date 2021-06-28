@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_user_screen_item
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_user_screen_item", Schema = "public")]
     public class UserScreenItem

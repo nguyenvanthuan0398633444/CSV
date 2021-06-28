@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using ProjectTeamNET.Models;
 using ProjectTeamNET.Models.Entity;
@@ -13,7 +15,6 @@ using ProjectTeamNET.Repository.Interface;
 using ProjectTeamNET.Service;
 using ProjectTeamNET.Service.Implement;
 using ProjectTeamNET.Service.Interface;
-using ProjectTeamNET.Service.ManCheckHour;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,15 +34,24 @@ namespace ProjectTeamNET
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSession();
             services.AddMvc();
             services.AddControllersWithViews();
             services.AddEntityFrameworkNpgsql().AddDbContext<ProjectDbContext>(opt =>
                            opt.UseNpgsql(Configuration.GetConnectionString("DbConnection")));
             //services.AddTransient(typeof(DbContextOptions<ProjectDbContext>));
+            //services.AddTransient<DbContext, ProjectDbContext>();
+            //services.AddTransient<ProjectDbContext>();
             services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
             services.AddScoped<ICategoryService, CategoryService>();
-            services.AddScoped<IManhourReportService, ManhourReportService>();
-            services.AddScoped<IManCheckHourService, ManCheckHourServiceImpl>();
+            services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<IManhourInputService, ManhourInputService>();
+            services.AddScoped<IMenuService, MenuService>();
+            services.AddScoped<ILoginService, LoginService>();
+            services.AddScoped<IManhourInputService, ManhourInputService>();         
+            services.AddScoped<IManhourUpdateService, ManhourUpdateService>();
+
+
 
         }
 
@@ -60,16 +70,16 @@ namespace ProjectTeamNET
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            app.UseAuthentication();
             app.UseRouting();
-
+            app.UseSession();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=ManhourReport}/{action=Index}/{id?}");
+                    pattern: "{controller=Login}/{action=Index}/{id?}");
             });
         }
     }

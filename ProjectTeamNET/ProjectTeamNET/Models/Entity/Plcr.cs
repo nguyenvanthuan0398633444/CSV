@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace m_plcr
+namespace ProjectTeamNET.Models.Entity
 {
     [Table("m_plcr", Schema = "public")]
     public class Plcr
