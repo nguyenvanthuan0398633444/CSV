@@ -81,15 +81,15 @@ namespace ProjectTeamNET.Controllers
             }
             return Json(data);
         }
-        [HttpPost]
-        public async Task<JsonResult> Save([FromBody] List<Manhour> saveData)
+        [HttpPost("/ManhourUpdate/Save")]
+        public Task<JsonResult> Save([FromBody] ManhourUpdateSave saveData)
         {
-            var result = false;
-            if (result != true)
+            if(saveData != null)
             {
-                return Json("Can't Save!");
+                manhourUpdateService.Save(saveData);
+                return Task.FromResult(Json("Save Successfuly!"));
             }
-            return Json("Save Successfuly!");
+            return Task.FromResult(Json("Save Error"));
 
         }
     }

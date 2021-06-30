@@ -20,7 +20,7 @@ namespace ProjectTeamNET.Service.Interface
         Task<List<int>> GetHoliday(ManhourUpdateSearch keySearch);
         Task<ManHourUpdateSearchModel> Search(ManhourUpdateSearch keySearch, string userId);
         Task<SelectThemeModel> SearchThemes(SearchThemeParam param, string user_no);
-
+        Task<bool> Save(ManhourUpdateSave saveData);
 
     }
 }

@@ -2,7 +2,7 @@
 @{
     ViewData["PageName"] = " 工数管理システム";
     ViewBag.Title = "工数入力";
-    string dayGet = "Day"+DateTime.Parse(Model.DateSelect).Day;
+    string dayGet = "Day" + DateTime.Parse(Model.DateSelect).Day;
 }
 
 <div class="row">
@@ -14,7 +14,7 @@
 
         @await Html.PartialAsync("_HeaderInput", Model)
         <!-- Table-->
-        <input type="hidden" id="pageHistory" value="@Model.pageHistory"/>
+        <input type="hidden" id="pageHistory" value="@Model.pageHistory" />
         <div class="table-responsive">
             <table class="table table-striped table-sm">
                 <thead class="thead-light" id="thead">
@@ -26,6 +26,12 @@
             </table>
         </div>
     </main>
-
 </div>
 @await Html.PartialAsync("_ManhourInputModal.cshtml", Model)
+@section Scripts
+{
+    <script src="@Url.Content("~/js/manhourinput.js")"></script>
+}
+
+
+

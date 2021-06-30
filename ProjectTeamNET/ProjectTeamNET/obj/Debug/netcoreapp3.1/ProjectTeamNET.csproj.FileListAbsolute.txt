@@ -384,8 +384,6 @@ C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\ProjectTeamNET.TagHelpers.input.cache
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\ProjectTeamNET.TagHelpers.output.cache
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\ProjectTeamNET.RazorCoreGenerate.cache
-C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\Category\Create.cshtml.g.cs
-C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\Category\Index.cshtml.g.cs
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\Home\Index.cshtml.g.cs
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\Home\Privacy.cshtml.g.cs
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\Shared\Error.cshtml.g.cs
@@ -438,4 +436,7 @@ C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\bin\Debug\
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Security.Principal.Windows.dll
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Security.Principal.Windows.dll
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp3.0\System.Windows.Extensions.dll
+C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\ManhourReport\AddTheme.cshtml.g.cs
+C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\ManhourReport\ShowReport.cshtml.g.cs
+C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\Shared\ManhourReport_Layout.cshtml.g.cs
 C:\Users\thuannv\Desktop\projectteamnet\ProjectTeamNET\ProjectTeamNET\obj\Debug\netcoreapp3.1\Razor\Views\Shared\_LayoutUpdate.cshtml.g.cs

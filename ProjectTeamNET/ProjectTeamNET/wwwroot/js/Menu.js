@@ -7,8 +7,6 @@ brands.funcCheckRow = function () {
 }
 
 
-
-
 $(document).ready(function () {
 
     brands.funcCheckRow();

@@ -1,4 +1,10 @@
 ﻿
+var deletedThemeArr = [];
+let holiday = [];
+//format date return string date 2021/06/18
+formatDate = function (date) {
+    return date.toISOString().slice(0, 10).replace(/-/g, "/");
+}
 
 // get user
 $("#groups").change(function users() {
@@ -61,85 +67,85 @@ function search() {
                                 <td>${data.theme_no}</td>
                                 <td>${data.theme_name1}</td>
                                 <td>${data.work_contents_code}</td>
-                                <td id="total">${data.total}</td>
+                                <td class="sum">${data.total}</td>
                                 <input type="hidden" class="Year"   name="Year" value="${data.year}" />
                                 <input type="hidden" class="Month"  name="Month" value="${data.month}" />
                                 <input type="hidden" class="User_No" name="User_No" value="${data.user_no}" />
                                 <input type="hidden" class="Group_Code" name="Group_Code" value="${data.group_code}" />
                                 <input type="hidden" class="Site_Code" name="Site_Code" value="${data.site_code}" />
                                 <input type="hidden" class="Theme_No" name="Theme_No" value="${data.theme_no}" />
-                                <input type="hidden" class="WC_Class" name="WorkContentClass" value="${data.work_contents_class}" />
-                                <input type="hidden" class="WC_Code" name="WorkContentCode" value="${data.work_contents_code}" />
-                                <input type="hidden" class="WC_Detail" name="WorkContentDetail" value="${data.work_contents_detail}" />
+                                <input type="hidden" class="WorkContentClass" name="WorkContentClass" value="${data.work_contents_class}" />
+                                <input type="hidden" class="WorkContentCode" name="WorkContentCode" value="${data.work_contents_code}" />
+                                <input type="hidden" class="WorkContentDetail" name="WorkContentDetail" value="${data.work_contents_detail}" />
                                 <input type="hidden" class="pin_flg" name="Pin_flg" value="${data.pin_flg}" />
-                                <input type="hidden" class="total" name="Total" value="${data.total}" />         
-                                <td>
+                                <input type="hidden" class="Total" name="Total" value="${data.total}" />         
+                                <td class = "1">
                                     <input type="text" value="${NTS(data.day1)}" class="form-control table-input day1"></td>
-                                <td>
+                                <td class = "2">
                                     <input type="text" value="${NTS(data.day2)}" class="form-control table-input day2"></td>
-                                <td>
+                                <td class = "3">
                                     <input type="text" value="${NTS(data.day3)}" class="form-control table-input day3"></td>
-                                <td>
+                                <td class = "4">
                                     <input type="text"  value="${NTS(data.day4)}" class="form-control table-input day4"></td>
-                                <td>
+                                <td class = "5">
                                     <input type="text" value="${NTS(data.day5)}" class="form-control table-input day5"></td>
-                                <td>
+                                <td class = "6">
                                     <input type="text"  value="${NTS(data.day6)}" class="form-control table-input day6"></td>
-                                <td>
+                                <td class = "7">
                                     <input type="text" value="${NTS(data.day7)}" class="form-control table-input day7"></td>
-                                <td>
+                                <td class = "8">
                                     <input type="text" value="${NTS(data.day8)}" class="form-control table-input day8"></td>
-                                <td>
+                                <td class = "9">
                                     <input type="text"  value="${NTS(data.day9)}" class="form-control table-input day9"></td>
-                                <td>
+                                <td class = "10">
                                     <input type="text" value="${NTS(data.day10)}" class="form-control table-input day10"></td>
-                                <td>
+                                <td class = "11">
                                     <input type="text"  value="${NTS(data.day11)}" class="form-control table-input day11"></td>
-                                <td>
+                                <td class = "12">
                                     <input type="text"  value="${NTS(data.day12)}" class="form-control table-input day12"></td>
-                                <td>
+                                <td class = "13">
                                     <input type="text"  value="${NTS(data.day13)}" class="form-control table-input day13"></td>
-                                <td>
+                                <td class = "14">
                                     <input type="text"  value="${NTS(data.day14)}" class="form-control table-input day14"></td>
-                                <td>
+                                <td class = "15">
                                     <input type="text"  value="${NTS(data.day15)}" class="form-control table-input day15"></td>
-                                <td>
+                                <td class = "16">
                                     <input type="text"  value="${NTS(data.day16)}.0" class="form-control table-input day16"></td>
-                                <td>
+                                <td class = "17">
                                     <input type="text"  value="${NTS(data.day17)}" class="form-control table-input day17"></td>
-                                <td>
+                                <td class = "18">
                                     <input type="text" value="${NTS(data.day18)}" class="form-control table-input day18"></td>
-                                <td>
+                                <td class = "19">
                                     <input type="text" value="${NTS(data.day19)}" class="form-control table-input day19"></td>
-                                <td>
+                                <td class = "20">
                                     <input type="text" value="${NTS(data.day20)}" class="form-control table-input day20"></td>
-                                <td>
+                                <td class = "21">
                                     <input type="text" value="${NTS(data.day21)}" class="form-control table-input day21"></td>
-                                <td>
+                                <td class = "22">
                                     <input type="text" value="${NTS(data.day22)}" class="form-control table-input day22"></td>
-                                <td>
+                                <td class = "23">
                                     <input type="text" value="${NTS(data.day23)}" class="form-control table-input day23"></td>
-                                <td>
+                                <td class = "24">
                                     <input type="text" value="${NTS(data.day24)}" class="form-control table-input day24"></td>
-                                <td>
+                                <td class = "25">
                                     <input type="text" value="${NTS(data.day25)}" class="form-control table-input day25"></td>
-                                <td>
+                                <td class = "26">
                                     <input type="text" value="${NTS(data.day26)}" class="form-control table-input day26"></td>
-                                <td>
+                                <td class = "27">
                                     <input type="text" value="${NTS(data.day27)}" class="form-control table-input day27"></td>
-                                <td>
+                                <td class = "28">
                                     <input type="text" value="${NTS(data.day28)}" class="form-control table-input day28"></td>
-                                <td>
+                                <td class = "29">
                                     <input type="text" value="${NTS(data.day29)}" class="form-control table-input day29"></td>
-                                <td>
+                                <td class = "30">
                                     <input type="text" value="${NTS(data.day30)}" class="form-control table-input day30"></td>
-                                <td>
+                                <td class = "31">
                                     <input type="text" value="${NTS(data.day31)}" class="form-control table-input day31">
                                 </td>
                                 <td>
                                     <div class="text-center"><i class="fas fa-exchange-alt" ></i></div></td>
-                                <td>
-                                    <div class="text-center"><i class="far fa-trash-alt"></i></div></td>
+                                <td >
+                                    <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
                               </tr>`;
             });
             $('#tbody').append(tbody);
@@ -184,24 +190,80 @@ function search() {
                                 <td></td>
                                 <td></td>
                                 <td>合計</td>
-                                <td></td>`
+                                <td></td>                               
+                    `
          
-            
-            for (var item of tmp) {
-                tfoot += ` <td>${item}</td>`
+            let day = 0;        
+            for (var item of tmp) {              
+                if ( item == 8 || holiday.find(element => element == day) != undefined) {
+                    tfoot += `<td class="${day++}">
+                                ${item.toFixed(1)} <i data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                          </td>`
+                }
+                else {
+                    if (item == 0) {
+                        tfoot += `<td class="${day++}">
+                                   ${item.toFixed(1)} <i class="fas fa-exclamation-circle text-danger" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                              </td>`
+                    } else {
+                        tfoot += `<td class="${day++}">
+                                  ${item.toFixed(1)}<i class="fas fa-exclamation-circle text-warning" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                              </td>`
+                    }
+
+                }
+                
             }
-            tfoot +=` </tr>                          
+            tfoot +=` </tr> 
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td>残工数</td>
+                            <td></td>
+                            <td></td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td> 8.0</td>
+                            <td></td>
+                            <td></td>
+                            </tr>
                         `
             $('#tfoot').append(tfoot);
-            console.log(result.data.holiday);
-            result.data.holiday.forEach(data => {               
-               $(`#tbody td:nth-child(${data + 16})`).css("background-color", "#f5c6cb");
-                $(`#tfoot td:nth-child(${data + 5})`).css("background-color", "#f5c6cb");
+            result.data.holiday.forEach(data => {
+                $(`.${data}`).css("background-color", "#f5c6cb");
+                holiday.push(data)
             })
             var start = new Date();
             // colo today
-            $(`#tbody td:nth-child(${start.getDate() + 16})`).css("background-color", "#bee5eb");
-            $(`#tfoot td:nth-child(${start.getDate() + 5})`).css("background-color", "#bee5eb");
+            $(`.${start.getDate()}`).css("background-color", "#bee5eb");            
         }
     });
 }
@@ -238,8 +300,7 @@ $("#fileCSVimport").on('change', function () {
         },
         success: function (result) {
             let tbody = '';
-            result.data.forEach(data => {               
-               
+            result.data.forEach(data => {                            
                 tbody += `<tr>
                                 <td><div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
                                 <td>${data.theme_no}</td>
@@ -291,8 +352,7 @@ $("#fileCSVimport").on('change', function () {
 //save information into DB
 $("#btSave").on("click",
     function () {
-
-        //let dayGet = 'day' + new Date(getDateTitle()).getDate();
+        let dayGet = 'day' + new Date().getDate();
         let listData = new Array();
 
         //for each tr in table add to obj then add to list data need saved
@@ -305,29 +365,28 @@ $("#btSave").on("click",
             obj.Group_code = $(this).find(".Group_Code").val();
             obj.Site_code = $(this).find(".Site_Code").val();
             obj.Theme_no = $(this).find(".Theme_No").val();
-            obj.Work_contents_class = $(this).find(".WC_Class").val();
-            obj.Work_contents_code = $(this).find(".WC_Code").val();
-            obj.Work_contents_detail = $(this).find(".WC_Detail").val();
-            obj.pin_flg = false;
-            obj.total = parseFloat($(this).find(".total").val());
-            //obj.fix_date = formatDate(new Date()).split('/').join([]);
+            obj.Work_contents_class = $(this).find(".WorkContentClass").val();
+            obj.Work_contents_code = $(this).find(".WorkContentCode").val();
+            obj.Work_contents_detail = $(this).find(".WorkContentDetail").val();
+            obj.Pin_flg = false;
+            obj.Total = parseFloat($(this).find(".Total").val());
+            obj.fix_date = formatDate(new Date()).split('/').join([]);
 
             //get date value for obj
             for (let i = 1; i < 32; i++) {
                 obj[`day${i}`] = parseFloat($(this).find(`.day${i}`).val());
             }
-
-            //if ($(this).find(".InputHour input").val()) {
-            //    obj[dayGet] = parseFloat($(this).find(".InputHour input").val());
-            //}
-
             // Add to list data
             listData.push(obj);
         });
-        console.log(listData);
+        var data = {};
+        data.save = listData;
+        data.delete = deletedThemeArr;
+        console.log(data.save);
+        deletedThemeArr = [];
         $.ajax({
             url: "/ManhourUpdate/Save",
-            data: JSON.stringify(listData),
+            data: JSON.stringify(data),
             type: "POST",
             contentType: "application/json",
             dataType: "json",
@@ -338,6 +397,7 @@ $("#btSave").on("click",
         });
 
     });
+
 $("#searchTheme").on("click",
     function () {
         console.log("thuan");
@@ -409,10 +469,8 @@ $("#choiceTheme").on("click",
 /* Handle select theme evet*/
 $("#addTheme").on("click",
     function () {
-        let workcontent = $('#workContentCode :selected').text()
-        let workContentCode = $('#workContentCode :selected').val();
-        let workContentDetail = $(detailCode).val();
-
+        let workContentCode = $('#wordContents').val();
+        let workContentDetail = $('#workContentDetail').val();
         if (!themeNo || !themeName || !workContentClass) {
             alert("please choice theme!");
             return;
@@ -427,95 +485,128 @@ $("#addTheme").on("click",
         }
 
         var rowAdd = '';
-        let dateTitle = new Date(getDateTitle());
+        let dateTitle = new Date();
+        let year = dateTitle.getFullYear();
+        let month = dateTitle.getMonth() + 1;
         rowAdd += `<tr>
                         <td>
                             <div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
-                        <td>${themeName}</td>
+                        <td>${themeNo}</td>
                         <td>${themeName}</td>
                         <td>${workContentCode}</td>
-                        <td id="total">${data.total}</td>
-                        <input type="hidden" class="Year"   name="Year" value="${dateTitle.getFullYear()}" />
-                        <input type="hidden" class="Month"  name="Month" value="${dateTitle.getMonth()}" />
-                        <input type="hidden" class="User_No" name="User_No" value="${data.user_no}" />
-                        <input type="hidden" class="Group_Code" name="Group_Code" value="${data.group_code}" />
-                        <input type="hidden" class="Site_Code" name="Site_Code" value="${data.site_code}" />
-                        <input type="hidden" class="Theme_No" name="Theme_No" value="${data.theme_no}" />
-                        <input type="hidden" class="WC_Class" name="WorkContentClass" value="${data.work_contents_class}" />
-                        <input type="hidden" class="WC_Code" name="WorkContentCode" value="${data.work_contents_code}" />
-                        <input type="hidden" class="WC_Detail" name="WorkContentDetail" value="${data.work_contents_detail}" />
-                        <input type="hidden" class="pin_flg" name="Pin_flg" value="${data.pin_flg}" />
-                        <input type="hidden" class="total" name="Total" value="${data.total}" />         
-                        <td>
+                        <td class="sum">0.0</td>
+                        <input type="hidden" class="Year"   name="Year" value="${year}" />
+                        <input type="hidden" class="Month"  name="Month" value="${month}" />
+                        <input type="hidden" class="User_No" name="User_No" value="${$('#users').val()}" />
+                        <input type="hidden" class="Group_Code" name="Group_Code" value="${$('#groups').val()}" />
+                        <input type="hidden" class="Site_Code" name="Site_Code" value="HP" />
+                        <input type="hidden" class="Theme_No" name="Theme_No" value="${themeNo}" />
+                        <input type="hidden" class="WorkContentClass" name="WorkContentClass" value="${workContentClass}" />
+                        <input type="hidden" class="WorkContentCode" name="WorkContentCode" value="${workContentCode}" />
+                        <input type="hidden" class="WorkContentDetail" name="WorkContentDetail" value="${workContentDetail}" />
+                        <input type="hidden" class="pin_flg" name="Pin_flg" value="" />
+                        <input type="hidden" class="Total" name="Total" value="0.0" />                                   
+                        <td class = "1">
                             <input type="text" value="0.0" class="form-control table-input day1"></td>
-                        <td>
+                        <td class = "2">
                             <input type="text" value="0.0" class="form-control table-input day2"></td>
-                        <td>
+                        <td class = "3">
                             <input type="text" value="0.0" class="form-control table-input day3"></td>
-                        <td>
+                        <td class = "4">
                             <input type="text"  value="0.0" class="form-control table-input day4"></td>
-                        <td>
+                        <td class = "5">
                             <input type="text" value="0.0" class="form-control table-input day5"></td>
-                        <td>
+                        <td class = "6">
                             <input type="text"  value="0.0" class="form-control table-input day6"></td>
-                        <td>
+                        <td class = "7">
                             <input type="text" value="0.0" class="form-control table-input day7"></td>
-                        <td>
+                        <td class = "8">
                             <input type="text" value="0.0" class="form-control table-input day8"></td>
-                        <td>
+                        <td class = "9">
                             <input type="text"  value="0.0" class="form-control table-input day9"></td>
-                        <td>
+                        <td class = "10">
                             <input type="text" value="0.0" class="form-control table-input day10"></td>
-                        <td>
+                        <td class = "11">
                             <input type="text"  value="0.0" class="form-control table-input day11"></td>
-                        <td>                           0.0
+                        <td class = "12">                          
                             <input type="text"  value="0.0" class="form-control table-input day12"></td>
-                        <td>                           0.0
+                        <td class = "13">                         
                             <input type="text"  value="0.0" class="form-control table-input day13"></td>
-                        <td>                           0.0
+                        <td class = "14">                        
                             <input type="text"  value="0.0" class="form-control table-input day14"></td>
-                        <td>                           0.0
+                        <td class = "15">                        
                             <input type="text"  value="0.0" class="form-control table-input day15"></td>
-                        <td>                           0.0
+                        <td class = "16">                        
                             <input type="text"  value="0.0" class="form-control table-input day16"></td>
-                        <td>
+                        <td class = "17">
                             <input type="text"  value="0.0" class="form-control table-input day17"></td>
-                        <td>
+                        <td class = "18">
                             <input type="text" value="0.0" class="form-control table-input day18"></td>
-                        <td>                          0.0
+                        <td class = "19">                         
                             <input type="text" value="0.0" class="form-control table-input day19"></td>
-                        <td>                          0.0
+                        <td class = "20">                        
                             <input type="text" value="0.0" class="form-control table-input day20"></td>
-                        <td>                          0.0
+                        <td class = "21">                         
                             <input type="text" value="0.0" class="form-control table-input day21"></td>
-                        <td>                          0.0
+                        <td class = "22">                         
                             <input type="text" value="0.0" class="form-control table-input day22"></td>
-                        <td>                          0.0
+                        <td class = "23">                         
                             <input type="text" value="0.0" class="form-control table-input day23"></td>
-                        <td>                          0.0
+                        <td class = "24">                         
                             <input type="text" value="0.0" class="form-control table-input day24"></td>
-                        <td>                          0.0
+                        <td class = "25">                         
                             <input type="text" value="0.0" class="form-control table-input day25"></td>
-                        <td>                          0.0
+                        <td class = "26">                         
                             <input type="text" value="0.0" class="form-control table-input day26"></td>
-                        <td>                          0.0
+                        <td class = "27">                         
                             <input type="text" value="0.0" class="form-control table-input day27"></td>
-                        <td>                          0.0
+                        <td class = "28">                        
                             <input type="text" value="0.0" class="form-control table-input day28"></td>
-                        <td>                          0.0
+                        <td class = "29">                         
                             <input type="text" value="0.0" class="form-control table-input day29"></td>
-                        <td>                          0.0
+                        <td class = "30">                       
                             <input type="text" value="0.0" class="form-control table-input day30"></td>
-                        <td>                          0.0
+                        <td class = "31">                          
                             <input type="text" value="0.0" class="form-control table-input day31">
                         </td>
                         <td>
                             <div class="text-center"><i class="fas fa-exchange-alt" ></i></div></td>
-                        <td>
-                            <div class="text-center"><i class="far fa-trash-alt"></i></div></td>
+                        <td >
+                            <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
                         </tr>`;
         $('#tbody').append(rowAdd);
-
+       holiday.forEach(data => {
+            $(`.${data}`).css("background-color", "#f5c6cb");
+        })
+        var start = new Date();
+        // colo today
+        $(`.${start.getDate()}`).css("background-color", "#bee5eb");       
         //set theme information to null
         themeNo = null; themeName = null; workContentClass = null;
     });
+
+$("#tbody").on("click", ".delete-Theme", function () {
+    var obj = {};
+    if (confirm('Bạn có muốn xóa dòng đang chọn không?')) {
+        
+        obj.Year = parseInt($(this).closest('tr').find('input[name="Year"]').val());
+        obj.Month = parseInt($(this).closest('tr').find('input[name="Month"]').val());
+        obj.User_no = $(this).closest('tr').find('input[name="User_No"]').val();
+        obj.Theme_no = $(this).closest('tr').find('input[name="Theme_No"]').val();
+        obj.Work_contents_class = $(this).closest('tr').find('input[name="WorkContentClass"]').val();
+        obj.Work_contents_code = $(this).closest('tr').find('input[name="WorkContentCode"]').val() ;
+        obj.Work_contents_detail = $(this).closest('tr').find('input[name="WorkContentDetail"]').val();
+       
+        deletedThemeArr.push(obj);
+        $(this).closest('tr').remove();
+     
+        // change all value when delete row
+        //for (let i = 0; i <= 31; i++) {
+        //    let addressCol = "col" + i;
+        //    let sumValueCol = 0;
+        //    let sumValueMonth = 0;
+        //    changeValueByColumn(addressCol, sumValueCol, sumValueMonth);
+        //}
+         
+    }
+});

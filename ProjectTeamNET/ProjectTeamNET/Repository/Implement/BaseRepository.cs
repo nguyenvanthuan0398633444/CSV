@@ -14,9 +14,8 @@ namespace ProjectTeamNET.Repository.Implement
 {
     public class BaseRepository<T> : IBaseRepository<T> where T : class
     {
-        private DbSet<T> dbset;
-        private readonly ProjectDbContext context;
-
+        public DbSet<T> dbset;
+        public ProjectDbContext context;
         public BaseRepository(ProjectDbContext context)
         {
             dbset = context.Set<T>();
@@ -29,19 +28,16 @@ namespace ProjectTeamNET.Repository.Implement
             return result;
         }
 
-
-        public void Delete(T obj)
+        public async Task<int> Delete(object id)
         {
-            dbset.Remove(obj);
-        }
-        public async Task<int> Create(T obj)
-        {
+            var result = -1;
             using (IDbContextTransaction transaction = context.Database.BeginTransaction())
             {
                 try
                 {
-                    dbset.Add(obj);
-                    context.SaveChanges();
+                    var tmp = await Get(id);
+                    dbset.Remove(tmp);
+                    result = await context.SaveChangesAsync();
 
                     transaction.Commit();
                 }
@@ -50,7 +46,48 @@ namespace ProjectTeamNET.Repository.Implement
                     transaction.Rollback();
                 }
             }
-            return context.SaveChanges();
+            return result;
+        }
+
+        public  int Create(T obj)
+        {
+            int result = -1;
+
+            using (IDbContextTransaction transaction = context.Database.BeginTransaction())
+            {
+                try
+                {
+                    dbset.Add(obj);
+                    result =  context.SaveChanges();
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                }
+            }
+            return result;
+        }
+        public async Task<int> Update(T obj)
+        {
+            var result = -1;
+            using (IDbContextTransaction transaction = context.Database.BeginTransaction())
+            {
+                try
+                {
+                    dbset.Update(obj);
+                    result = await context.SaveChangesAsync();
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                }
+            }
+
+            return result;
         }
 
         public async Task<List<T>> Gets()
@@ -59,6 +96,16 @@ namespace ProjectTeamNET.Repository.Implement
             return result;
         }
 
+        public List<object> Search(object obj)
+        {
+            var result = context.Database.GetDbConnection().Query<object>("", obj).ToList();
+            return result;
+        }
+        public async Task<List<M>> Select<M>(string sql)
+        {
+            var query = await context.Database.GetDbConnection().QueryAsync<M>(sql);
+            return query.ToList();
+        }
         public async Task<List<M>> Search<M>(string sql, object param)
         {
             var query = await context.Database.GetDbConnection().QueryAsync<M>(sql, param);
@@ -70,10 +117,10 @@ namespace ProjectTeamNET.Repository.Implement
             return query.FirstOrDefault();
         }
 
-        public async Task<List<T1>> Select<T1>(string sql)
+
+        public void Delete(T obj)
         {
-            var query = await context.Database.GetDbConnection().QueryAsync<T1>(sql);
-            return query.ToList();
+            dbset.Remove(obj);
         }
         public async Task<List<T1>> Select<T1>(string sql, object param)
         {
@@ -87,22 +134,30 @@ namespace ProjectTeamNET.Repository.Implement
             {
                 result = await context.Database.GetDbConnection().ExecuteAsync(sql, param);
             }
-            catch
+            catch(Exception e)
             {
+                _ = e.Message;
                 result = 0;
             }
             return result;
-        }
-        public void Update<M>(string sql, object param)
+        }      
+        public int Update<M>(string sql, object param)
         {
-            context.Database.GetDbConnection().QueryAsync<M>(sql, param);
+            try
+            {
+                context.Database.GetDbConnection().QueryAsync<M>(sql, param);
+            }
+            catch(Exception e)
+            {
+                _ = e.Message;
+                return 0;
+            }
+            return 1;
         }
         public void Insert<M>(string sql, object param)
         {
             context.Database.GetDbConnection().QueryAsync<M>(sql, param);
         }
-
-
     }
 
 }

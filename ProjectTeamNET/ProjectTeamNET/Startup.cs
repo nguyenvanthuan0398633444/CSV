@@ -15,6 +15,7 @@ using ProjectTeamNET.Repository.Interface;
 using ProjectTeamNET.Service;
 using ProjectTeamNET.Service.Implement;
 using ProjectTeamNET.Service.Interface;
+using ProjectTeamNET.Service.ManCheckHour;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,12 +41,10 @@ namespace ProjectTeamNET
             services.AddEntityFrameworkNpgsql().AddDbContext<ProjectDbContext>(opt =>
                            opt.UseNpgsql(Configuration.GetConnectionString("DbConnection")));
             //services.AddTransient(typeof(DbContextOptions<ProjectDbContext>));
-            //services.AddTransient<DbContext, ProjectDbContext>();
-            //services.AddTransient<ProjectDbContext>();
             services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
-            services.AddScoped<ICategoryService, CategoryService>();
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IManhourInputService, ManhourInputService>();
+            services.AddScoped<IManhourReportService, ManhourReportService>();
             services.AddScoped<IMenuService, MenuService>();
             services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IManhourInputService, ManhourInputService>();         

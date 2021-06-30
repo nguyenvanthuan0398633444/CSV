@@ -1,5 +1,4 @@
-﻿@model ProjectTeamNET.ViewModels.ManhourReportViewModel
-
+﻿
 <head>
     <!-- BootstrapのCSS読み込み -->
     <!-- bootstrap-datepickerのCSS読み込み -->
@@ -22,7 +21,7 @@
         $('#datepicker2').datepicker({ format: "yyyy/mm/dd", language: "ja", autoclose: true, orientation: 'bottom left' });
     })
 </script>
-@*<nav class="navbar navbar-expand-sm navbar-dark bg-primary sticky-top flex-md-nowrap p-0 shadow">
+<nav class="navbar navbar-expand-sm navbar-dark bg-primary sticky-top flex-md-nowrap p-0 shadow">
     <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#"><i class="fa fa-home"></i> 工数管理システム</a>
     <div class="collapse navbar-collapse" id="navmenu1">
         <div class="navbar-nav">
@@ -39,7 +38,7 @@
         </li>
     </ul>
 </nav>
-<div class="row">*@
+<div class="row">
 
     <main role="main" class="container-fluid px-4">
 
@@ -134,7 +133,7 @@
             <label class="col-form-label col-md-2 text-right">所属</label>
             <div class="col-md-10">
                 <div class="row align-items-center" id="addFirst">
-                    <div class="col-md-4 input-group pl-0">
+                    <div class="col-md-4 input-group pl-0" style="margin-bottom: auto;">
                         <select class="form-control form-control-sm" id="GroupId">
                             @foreach (var item in Model.GroupName)
                             {
@@ -143,10 +142,14 @@
                         </select>
                         <div class="col-md-1"></div>
                     </div>
-                    <div class="col-md-3 input-group pl-0" id="addUser1">
+                    <div class="col-md-3 input-group pl-0">
+                        <div id="addUserinGroup"></div>
                         <div class="input-group pl-0">
-                            <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUsertmp()"><i class="fas fa-plus"></i> ユーザ追加</button>
+                            <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUserFirstGroup()"><i class="fas fa-plus"></i> ユーザ追加</button>
                         </div>
+                    </div>
+                    <div class="col-md-4 pl-0" id="firstUser28002000000" style="margin-top:-15px">
+                        <div id="trashUser"></div>
                     </div>
                 </div>
             </div>
@@ -221,8 +224,8 @@
                         </select>
                     </div>
                     <div class="col-auto">
-                        <div class="mb-2"><button onclick="up1()">↑</button></div>
-                        <div class="mb-2"><button onclick="down1()">↓</button></div>
+                        <div class="mb-2"><button onclick="selectUp()">↑</button></div>
+                        <div class="mb-2"><button onclick="selectDown()">↓</button></div>
                     </div>
                 </div>
             </div>

@@ -12,6 +12,7 @@ namespace ProjectTeamNET.Models.Response
         public string DateSelect { get; set; }
         public List<string> ListDateOfWeek { get; set; }
         public string ScreenOutput { get; set; }
+        public List<int> Horlidays { get; set; }
 
     }
 }

@@ -194,7 +194,6 @@ namespace ProjectTeamNET
         {
 
             var betweenMonth = ((toDate.Year - fromDate.Year) * 12) + toDate.Month - fromDate.Month;
-
             if (betweenMonth >= 0)
             {
                 return betweenMonth;

@@ -11,6 +11,6 @@ namespace ProjectTeamNET.Service.Interface
         Task<T> Get(int id);
         Task<int> Create(T model);
         Task<int> Edit(T model);
-        void Delete(T obj);
+        Task<int> Delete(string id);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using ProjectTeamNET.Models;
 using ProjectTeamNET.Models.Entity;
+using ProjectTeamNET.Models.Request;
 using ProjectTeamNET.Models.Response;
 using System;
 using System.Collections.Generic;
@@ -18,13 +19,13 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        Task<ManhourInputModel> GetManhourData(string data);
+        Task<ManhourInputModel> GetManhourData(InputParamModel pModel);
         /// <summary>
         /// Init data form db
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        Task<InitDataModel> Init(string data);
+        Task<InitDataModel> Init(InputParamModel pModel);
         Task<List<Group>> GetGroups();
         Task<List<WorkContents>> GetWorkContents();
 
@@ -33,7 +34,7 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        Task<List<ManhourInput>> GetManhours(string paramSt);
+        Task<List<ManhourInput>> GetManhours(InputParamModel pModel);
 
         /// <summary>
         /// Get Screen item input history
@@ -48,13 +49,13 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        Task<List<ManhourInput>> GetPinTheme(string data);
+        Task<List<ManhourInput>> GetPinTheme(InputParamModel pModel);
         /// <summary>
         /// 
         /// </summary>
         /// <param name="user_no"></param>
         /// <returns></returns>
-        Task<SelectThemeModel> GetHistoryThemes(string user_no);
+        Task<SearchThemeParam> GetHistoryThemes(string user_no);
         /// <summary>
         /// Search Theme by param
         /// </summary>
@@ -67,7 +68,7 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="saveDatas"></param>
         /// <returns></returns>
-        Task<bool> Save(List<Manhour> saveDatas);
+        Task<bool> Save(SaveData saveDatas);
         /// <summary>
         /// Get list date of week 
         /// </summary>
@@ -86,7 +87,17 @@ namespace ProjectTeamNET.Service.Interface
         /// <param name="manhours"></param>
         /// <returns></returns>
         Task<int> DeleteManhours(List<Manhour> manhours);
-
-        //Task<int> CreateManhours(List<Manhour> manhours);
+        int Create(List<Manhour> manhours);
+        /// <summary>
+        /// Save page cliked history
+        /// </summary>
+        /// <param name="pModel"></param>
+        void SavePageHistory(InputParamModel pModel);
+        /// <summary>
+        /// Get horliday in month of year by group code
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        Task<List<int>> GetHorliday(HorlidayParam param);
     }
 }

@@ -4,6 +4,7 @@ using ProjectTeamNET.Models.Entity;
 using System.Threading.Tasks;
 using ProjectTeamNET.Models.Response;
 using System.Collections.Generic;
+using ProjectTeamNET.Models.Request;
 
 namespace ProjectTeamNET.Controllers
 {
@@ -13,8 +14,8 @@ namespace ProjectTeamNET.Controllers
     public class ManhourInputController : Controller
     {
     
-        string userDefault = "CANHVN";
-        string paramSt = "2021/06/23" + ";" + "CANHVN";
+        string userDefault = "BAOTQ";
+        string dateDefault = "2021/06/23"; 
 
         private readonly IManhourInputService _service;
         public ManhourInputController(IManhourInputService service)
@@ -25,14 +26,20 @@ namespace ProjectTeamNET.Controllers
         [HttpGet]
         public async Task<IActionResult> Init(string dateSt)
         {
+            InputParamModel pModel = new InputParamModel();
+            pModel.userNo = userDefault;
             if (dateSt != null)
             {
-                paramSt = dateSt + ";" + userDefault;
+                pModel.dateStr = dateSt;
+            }
+            else
+            {
+                pModel.dateStr = dateDefault;
             }
 
-            InitDataModel data = await _service.Init(paramSt);
+            InitDataModel data = await _service.Init(pModel);
 
-            return View("Index",data);
+            return View("Index", data);
         }
         /// <summary>
         /// return Day view
@@ -42,12 +49,18 @@ namespace ProjectTeamNET.Controllers
         [HttpGet]
         public async Task<IActionResult> Day(string dateSt)
         {
+            InputParamModel pModel = new InputParamModel();
+            pModel.userNo = userDefault;
             if (dateSt != null)
             {
-                paramSt = dateSt + ";" + userDefault;
+                pModel.dateStr = dateSt;
+            }
+            else
+            {
+                pModel.dateStr = dateDefault;
             }
 
-            InitDataModel data = await _service.Init(paramSt);
+            InitDataModel data = await _service.Init(pModel);
 
             return View("Index", data);
         }
@@ -60,12 +73,18 @@ namespace ProjectTeamNET.Controllers
         public async Task<IActionResult> Week(string dateSt)
         {
 
+            InputParamModel pModel = new InputParamModel();
+            pModel.userNo = userDefault;
             if (dateSt != null)
             {
-                paramSt = dateSt + ";" + userDefault;
+                pModel.dateStr = dateSt;
+            }
+            else
+            {
+                pModel.dateStr = dateDefault;
             }
 
-            InitDataModel data = await _service.Init(paramSt);
+            InitDataModel data = await _service.Init(pModel);
 
             return View("Index", data);
 
@@ -78,13 +97,19 @@ namespace ProjectTeamNET.Controllers
         [HttpGet]
         public async Task<IActionResult> Month(string dateSt)
         {
+            InputParamModel pModel = new InputParamModel();
+            pModel.userNo = userDefault;
             if (dateSt != null)
             {
-                paramSt = dateSt + ";" + userDefault;
+                pModel.dateStr = dateSt;
             }
+            else
+            {
+                pModel.dateStr = dateDefault;
+            }
+            
+            InitDataModel data = await _service.Init(pModel);
 
-            InitDataModel data = await _service.Init(paramSt);
-                
             return View("Index", data);
         }
 
@@ -93,10 +118,29 @@ namespace ProjectTeamNET.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<JsonResult> LoadDatas(string dateSt)
+        public async Task<JsonResult> LoadDatas(string dateStr)
         {
-            ManhourInputModel data = await _service.GetManhourData(dateSt + ";" + userDefault );
+            InputParamModel pModel = new InputParamModel();
+            pModel.userNo = userDefault;
+            if (dateStr != null)
+            {
+                pModel.dateStr = dateStr;
+            }
+            ManhourInputModel data = await _service.GetManhourData(pModel);
             return Json(data);
+        }
+        /// <summary>
+        /// save page history
+        /// </summary>
+        /// <param name="pageName"></param>
+        [HttpGet]
+        public OkObjectResult SavePageHistory(string pageName)
+        {
+            InputParamModel pModel = new InputParamModel();
+            pModel.userNo = userDefault;
+            pModel.pageName = pageName;
+            _service.SavePageHistory(pModel);
+            return Ok("Saved");
         }
 
         /// <summary>
@@ -107,7 +151,7 @@ namespace ProjectTeamNET.Controllers
         [HttpPost]
         public async Task<JsonResult> GetHistoryThemes()
         {
-            SelectThemeModel data = await _service.GetHistoryThemes(userDefault);
+            SearchThemeParam data = await _service.GetHistoryThemes(userDefault);
             return Json(data);
         }
 
@@ -133,14 +177,14 @@ namespace ProjectTeamNET.Controllers
         /// <param name="listData"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<JsonResult> Save([FromBody]List<Manhour> saveData)
+        public async Task<JsonResult> Save([FromBody]SaveData Data)
         {
-            var result = await _service.Save(saveData);
-            if (result != true)
-            {
-                return Json("Can't Save!");
+            var result = await _service.Save(Data);
+            if (result == false)
+            {   
+                return Json(string.Format(Resources.Messages.INF_001, "エラー"));
             }
-            return Json("Save Successfuly!");
+            return Json(string.Format(Resources.Messages.INF_001,"更新"));
 
         }
 
