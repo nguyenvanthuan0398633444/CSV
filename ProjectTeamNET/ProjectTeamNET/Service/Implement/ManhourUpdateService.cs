@@ -26,12 +26,10 @@ namespace ProjectTeamNET.Service.Implement
         private readonly IBaseRepository<Theme> themeRepository;
         private readonly IBaseRepository<UserScreenItem> screenRepository;
         private readonly ProjectDbContext context;
-        private readonly IWebHostEnvironment hosting;
         private readonly IBaseRepository<UserScreenItem> userScreenItemRepository;
-        const string header = "年,月,ユーザNo,ユーザ名,テーマＮｏ,テーマ名,内容コード,内容名,内容詳細コード,合計," +
+        const string HEADER = "年,月,ユーザNo,ユーザ名,テーマＮｏ,テーマ名,内容コード,内容名,内容詳細コード,合計," +
                         "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31";
-        public ManhourUpdateService(IBaseRepository<Manhour> manhourUpdateReponsitory, 
-                                    ProjectDbContext context, IWebHostEnvironment hosting,
+        public ManhourUpdateService(ProjectDbContext context, IWebHostEnvironment hosting,
                                     IBaseRepository<UserScreenItem> userScreenItemRepository,
                                     IBaseRepository<WorkContents> workContentRepository,
                                     IBaseRepository<Manhour> manhourRepository,
@@ -41,7 +39,7 @@ namespace ProjectTeamNET.Service.Implement
                                     IBaseRepository<UserScreenItem> screenRepository)
         {
             this.context = context;
-            this.hosting = hosting;
+
             this.userScreenItemRepository = userScreenItemRepository;
             this.workContentRepository = workContentRepository;
             this.manhourRepository = manhourRepository;
@@ -58,6 +56,7 @@ namespace ProjectTeamNET.Service.Implement
             {
                 DateTime today = DateTime.Now;
                 model.today = today.ToString("yyyy/MM/dd").Substring(0, 7);
+              
                 // get group_code no history
                 string groupId = context.Users.FirstOrDefault(e => e.User_no == userId).Group_code;
                 // get History
@@ -191,62 +190,100 @@ namespace ProjectTeamNET.Service.Implement
             List<ManhourUpdateViewModel> result = await GetDataSearch(key);
             string name = "DL Manhour " + user + " " + today.ToString("yyyyMMddHHmmss") + ".csv";
             StringBuilder buider = new StringBuilder();
-            buider.AppendLine(header);
+            buider.AppendLine(HEADER);
             foreach (var item in result)
             {
                 buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no}, {item.User_name}, {item.Theme_no}, {item.Theme_name1}, " +
-                                  $"{item.Work_contents_code},{item.Work_contents_detail}, " +
-                                  $"{item.Total.ToString("0.0")},{item.Day1.ToString("0.0")}, {item.Day2.ToString("0.0")}, " +
-                                  $"{item.Day2.ToString("0.0")}, {item.Day3.ToString("0.0")},{item.Day4.ToString("0.0")}, " +
-                                  $"{item.Day5.ToString("0.0")}, {item.Day6.ToString("0.0")}, {item.Day7.ToString("0.0")}, " +
-                                  $"{item.Day8.ToString("0.0")}, {item.Day9.ToString("0.0")}, {item.Day10.ToString("0.0")}, " +
-                                  $"{item.Day11.ToString("0.0")}, {item.Day12.ToString("0.0")}, {item.Day13.ToString("0.0")}," +
-                                  $"{item.Day14.ToString("0.0")}, {item.Day15.ToString("0.0")}, {item.Day16.ToString("0.0")}, " +
-                                  $"{item.Day17.ToString("0.0")}, {item.Day18.ToString("0.0")}, {item.Day19.ToString("0.0")}," +
-                                  $"{item.Day20.ToString("0.0")}, {item.Day21.ToString("0.0")}, {item.Day22.ToString("0.0")}," +
-                                  $"{item.Day23.ToString("0.0")},{item.Day24.ToString("0.0")}, {item.Day25.ToString("0.0")}," +
-                                  $"{item.Day26.ToString("0.0")}, {item.Day27.ToString("0.0")}, {item.Day28.ToString("0.0")}," +
-                                  $"{item.Day29.ToString("0.0")}, {item.Day30.ToString("0.0")}, {item.Day31.ToString("0.0")}");
+                                  $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail}, " +
+                                  $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, " +
+                                  $"{item.Day2:0.0}, {item.Day3:0.0},{item.Day4:0.0}, " +
+                                  $"{item.Day5:0.0}, {item.Day6:0.0}, {item.Day7:0.0}, " +
+                                  $"{item.Day8:0.0}, {item.Day9:0.0}, {item.Day10:0.0}, " +
+                                  $"{item.Day11:0.0}, {item.Day12:0.0}, {item.Day13:0.0}," +
+                                  $"{item.Day14:0.0}, {item.Day15:0.0}, {item.Day16:0.0}, " +
+                                  $"{item.Day17:0.0}, {item.Day18:0.0}, {item.Day19:0.0}," +
+                                  $"{item.Day20:0.0}, {item.Day21:0.0}, {item.Day22:0.0}," +
+                                  $"{item.Day23:0.0},{item.Day24:0.0}, {item.Day25:0.0}," +
+                                  $"{item.Day26:0.0}, {item.Day27:0.0}, {item.Day28:0.0}," +
+                                  $"{item.Day29:0.0}, {item.Day30:0.0}, {item.Day31:0.0}");
             }
             exportModel.builder = buider;
             exportModel.nameFile = name;
             return exportModel;
         }
-        public List<ManhourUpdateViewModel> ImportCSV(IFormFile files)
+        public async Task<List<Manhour>> ImportCSV(IFormFile files)
         {
-            List<Manhour> manhourTrue = new List<Manhour>();
-            List<ManhourUpdateViewModel> dataExport = new List<ManhourUpdateViewModel>();
-            string uniqueFileName = null;
-            string fname = files.FileName;
-            string uploadFld = Path.Combine(this.hosting.WebRootPath, "csv");
-            uniqueFileName = Guid.NewGuid().ToString() + "_" + fname;
-            string filePath = Path.Combine(uploadFld, uniqueFileName);
-            List<string> lines = new List<string>();
-            using (FileStream fileStream = System.IO.File.Create(filePath))
+            List<Manhour> dataExport = new List<Manhour>();
+            if (files.FileName.EndsWith(".csv"))
             {
-                files.CopyTo(fileStream);
-                fileStream.Flush();
-            }
-
-            if (CheckFileCSV(filePath))
-            {
-                lines = CommonFunction.ReadCSVFile(filePath);
-                if (CheckHeaderFileCSV(header, lines[0]))
+                using (var sreader = new StreamReader(files.OpenReadStream()))
                 {
-                    dataExport = GetDataImportCSV(lines);
-                    //List<Manhour> manhour = context.Manhours.OrderBy(e =>e.Year).ToList();                   
-                    //foreach (var item in dataExport)
-                    //{ 
-                    //    foreach(var check in manhour)
-                    //    {
-                    //        if(item.Year == check.Year && item.Month == check.Month && item.User_no == check.User_no && item.Group_code == check.Group_code && item.Theme_no == check.Theme_no && item.Work_contents_code == check.Work_contents_code)
-                    //        {
-                    //            manhourTrue.Add(item);
-                    //        }
-                    //    }
-                    //}
+                    string[] headers = sreader.ReadLine().Split(',');     //Title
+                    while (!sreader.EndOfStream)                          //get all the content in rows 
+                    {
+                        string[] dataCSV = sreader.ReadLine().Split(',');                     
+                        string WorkContentsClass = await GetWordConteClass(dataCSV[4]);
+                      
+                        Manhour CsvData = new Manhour();
+                        CsvData.Year = Int16.Parse(dataCSV[0]);
+                        CsvData.Month = Int16.Parse(dataCSV[1]);
+                        CsvData.User_no = dataCSV[2].Trim();                        
+                        CsvData.Theme_no = dataCSV[4].Trim();                        
+                        CsvData.Work_contents_code = dataCSV[6].Trim();
+
+                        CsvData.Work_contents_class = WorkContentsClass.Trim();
+                        CsvData.Work_contents_detail = dataCSV[8].Trim();
+                        CsvData.Total = Double.Parse(dataCSV[9]);
+                        CsvData.Day1 = Double.Parse(dataCSV[10]);
+                        CsvData.Day2 = Double.Parse(dataCSV[11]);
+                        CsvData.Day3 = Double.Parse(dataCSV[12]);
+                        CsvData.Day4 = Double.Parse(dataCSV[13]);
+                        CsvData.Day5 = Double.Parse(dataCSV[14]);
+                        CsvData.Day6 = Double.Parse(dataCSV[15]);
+                        CsvData.Day7 = Double.Parse(dataCSV[16]);
+                        CsvData.Day8 = Double.Parse(dataCSV[17]);
+                        CsvData.Day9 = Double.Parse(dataCSV[18]);
+                        CsvData.Day10 = Double.Parse(dataCSV[19]);
+                        CsvData.Day11 = Double.Parse(dataCSV[20]);
+                        CsvData.Day12 = Double.Parse(dataCSV[21]);
+                        CsvData.Day13 = Double.Parse(dataCSV[22]);
+                        CsvData.Day14 = Double.Parse(dataCSV[23]);
+                        CsvData.Day15 = Double.Parse(dataCSV[24]);
+                        CsvData.Day16 = Double.Parse(dataCSV[25]);
+                        CsvData.Day17 = Double.Parse(dataCSV[26]);
+                        CsvData.Day18 = Double.Parse(dataCSV[27]);
+                        CsvData.Day19 = Double.Parse(dataCSV[28]);
+                        CsvData.Day20 = Double.Parse(dataCSV[29]);
+                        CsvData.Day21 = Double.Parse(dataCSV[30]);
+                        CsvData.Day22 = Double.Parse(dataCSV[31]);
+                        CsvData.Day23 = Double.Parse(dataCSV[32]);
+                        CsvData.Day24 = Double.Parse(dataCSV[33]);
+                        CsvData.Day25 = Double.Parse(dataCSV[34]);
+                        CsvData.Day26 = Double.Parse(dataCSV[35]);
+                        CsvData.Day27 = Double.Parse(dataCSV[36]);
+                        CsvData.Day28 = Double.Parse(dataCSV[37]);
+                        CsvData.Day29 = Double.Parse(dataCSV[38]);
+                        CsvData.Day30 = Double.Parse(dataCSV[39]);
+                        CsvData.Day31 = Double.Parse(dataCSV[40]);
+                        User user = await GetUserImport(CsvData.User_no);
+                        CsvData.Group_code = user.Group_code.Trim();
+                        CsvData.Site_code = user.Site_code.Trim() ;
+                        CsvData.Fix_date =  DateTime.Now.ToString("yyyyMMdd");                     
+                        CsvData.Pin_flg = false;
+                        
+                        bool check = CheckExist(CsvData) ;
+                        if (check)
+                        {
+                            await UpdateManhours(CsvData);
+                        }
+                        else
+                        {
+                            manhourRepository.Create(CsvData);
+                        }
+
+                    }
                 }
-            }
+            }         
             return dataExport;
         }
         public async Task<bool> Save(ManhourUpdateSave saveData)
@@ -258,7 +295,7 @@ namespace ProjectTeamNET.Service.Implement
             {
                 foreach (Manhour mh in saveData.save)
                 {
-
+                   
                     bool check = CheckExist(mh);
                     if (check)
                     {
@@ -496,7 +533,7 @@ namespace ProjectTeamNET.Service.Implement
                 CsvData.Theme_no = dataCSV[4];
                 CsvData.Theme_name1 = dataCSV[5];
                 CsvData.Work_contents_code = dataCSV[6];
-                CsvData.Work_contents_code = dataCSV[7];
+                CsvData.Work_contents_code_name = dataCSV[7];
                 CsvData.Work_contents_detail = dataCSV[8];
                 CsvData.Total = Double.Parse(dataCSV[9]);
                 CsvData.Day1 = Double.Parse(dataCSV[10]);
@@ -532,6 +569,7 @@ namespace ProjectTeamNET.Service.Implement
                 CsvData.Day31 = Double.Parse(dataCSV[40]);
                 dataExport.Add(CsvData);
             }
+
             return dataExport;
         }
 
@@ -590,12 +628,12 @@ namespace ProjectTeamNET.Service.Implement
           
             return result;
         }
-        public async Task<int> DeleteManhours(List<ManhourUpdateDelete> manhours)
+        public async Task<int> DeleteManhours(List<ManhourUpdateKey> manhours)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "DeleteManhour");
 
-            foreach (ManhourUpdateDelete mh in manhours)
+            foreach (ManhourUpdateKey mh in manhours)
             {
                 //Set keys param for where of delete query
                 var keys = new
@@ -612,20 +650,45 @@ namespace ProjectTeamNET.Service.Implement
             }
             return result;
         }
-        public bool CheckExist(Manhour manhour)
+        public bool CheckImport(ManhourUpdateViewModel manhour)
         {
-            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "CheckExist");
+
+            List<string> list = new List<string>();
             var keys = new
             {
                 Year = manhour.Year,
                 Month = manhour.Month,
-                User_no = manhour.User_no,
-                Theme_no = manhour.Theme_no,
-                Work_contents_class = manhour.Work_contents_class,
-                Work_contents_code = manhour.Work_contents_code,
-                Work_contents_detail = manhour.Work_contents_detail
+                User_no = manhour.User_no.Trim(),
+                Theme_no = manhour.Theme_no.Trim(),
+                Work_contents_code = manhour.Work_contents_code.Trim(),
+                Work_contents_detail = manhour.Work_contents_detail.Trim()
 
             };
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "CheckImport");
+            int result = manhourRepository.Select<ManhourUpdate>(query, keys).Result.Count;
+            if (result != 0)
+            {
+                return true;
+            }
+            return false;
+        }
+       
+        public bool CheckExist(Manhour manhour)
+        {
+          
+            List<string> list = new List<string>();
+            var keys = new
+            {
+                Year = manhour.Year,
+                Month = manhour.Month,
+                User_no = manhour.User_no.Trim(),
+                Theme_no = manhour.Theme_no.Trim(),
+                Work_contents_class = manhour.Work_contents_class.Trim(),
+                Work_contents_code = manhour.Work_contents_code.Trim(),
+                Work_contents_detail = manhour.Work_contents_detail.Trim()
+
+            };
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "CheckExist");
             int result = manhourRepository.Select<ManhourUpdate>(query, keys).Result.Count;
             if (result != 0)
             {
@@ -716,6 +779,26 @@ namespace ProjectTeamNET.Service.Implement
             var query = QueryLoader.GetQuery("ManhourInput", "SelectWorkContent");
             List<WorkContents> result = await groupRepository.Select<WorkContents>(query);
             return result;
+        }
+        public async Task<string> GetWordConteClass(string themeNo)
+        {
+            var key = new
+            {
+                themeNo = themeNo.Trim()
+            };
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectWordContenClass");
+            List<string> result = await manhourRepository.Select<string>(query, key);
+            return result[0];
+        }
+        public async Task<User> GetUserImport(string userNo)
+        {
+            var key = new
+            {
+                userNo = userNo.Trim()
+            };
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectUser");
+            List<User> result = await manhourRepository.Select<User>(query, key);
+            return result[0];
         }
     }
 

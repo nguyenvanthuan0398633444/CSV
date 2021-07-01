@@ -32,7 +32,7 @@
                             new { @class = "form-control form-control-sm selectUser" })
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-sm btn-outline-secondary mr-4" onclick="search()"><i class="fas fa-search"></i> 検索</button>
+                        <button id="manhourSesrch" class="btn btn-sm btn-outline-secondary mr-4" onclick="search()"><i class="fas fa-search"></i> 検索</button>
                     </div>
                 </div>
                 <div class="btn-toolbar mb-2 mb-md-0">
@@ -48,12 +48,12 @@
                 <div class="col-md-4 input-group">
                     <input type="text" id="theme" class="form-control form-control-sm" placeholder="テーマ選択..." aria-label="..." aria-describedby="button-addon2" readonly >
                     <div class="input-group-append">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#modal1"><i class="fas fa-search"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadSelectTheme()"><i class="fas fa-search"></i></button>
                     </div>
                 </div>
                 <div class="col-md-2 input-group pr-2">
                     @Html.DropDownListFor(Model => Model.wordContents,
-                                              new SelectList(Model.wordContents, "Value", "Text"),
+                                              new SelectList(Model.wordContents, "Value", "Text"), "内容選択...",
                                               new { @class = "form-control form-control-sm selectGroup" })                   
                 </div>
                 <div class="col-md-2 input-group">

@@ -62,8 +62,9 @@ namespace ProjectTeamNET.Repository.Implement
 
                     transaction.Commit();
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    _ = e.Message;
                     transaction.Rollback();
                 }
             }
@@ -124,8 +125,17 @@ namespace ProjectTeamNET.Repository.Implement
         }
         public async Task<List<T1>> Select<T1>(string sql, object param)
         {
-            var query = await context.Database.GetDbConnection().QueryAsync<T1>(sql, param);
-            return query.ToList();
+            List<T1> rs = new List<T1>();
+            try
+            {
+                rs =(List<T1>) await context.Database.GetDbConnection().QueryAsync<T1>(sql, param);
+            }
+            catch (Exception e)
+            {
+                _ = e.Message;
+            }
+          
+            return rs;
         }
         public async Task<int> Update(string sql, object param)
         {

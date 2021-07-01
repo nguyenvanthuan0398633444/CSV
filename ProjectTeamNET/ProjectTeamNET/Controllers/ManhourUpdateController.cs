@@ -64,9 +64,9 @@ namespace ProjectTeamNET.Controllers
         }
 
         [HttpPost("/ManhourUpdate/ImportCSV")]
-        public IActionResult ImportCSV(IFormFile file)
+        public async Task<IActionResult> ImportCSV(IFormFile file)
         {
-            List<ManhourUpdateViewModel> result = manhourUpdateService.ImportCSV(file);
+            List<Manhour> result = await manhourUpdateService.ImportCSV(file);
             return Json(new { data = result });
 
         }

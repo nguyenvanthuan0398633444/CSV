@@ -15,7 +15,7 @@ namespace ProjectTeamNET.Service.Interface
         Task<List<UserScreenItem>> GetHistorySearch(string funtioncClass);
         Task<ManhourUpdate> GetGroupAndUser(string userId);
         Task<ExportModel> ExportCSV(string user, string group);
-        List<ManhourUpdateViewModel> ImportCSV(IFormFile files);
+        Task<List<Manhour>> ImportCSV(IFormFile files);
         ManhourUpdateUserSelectList GetUser(string groupId);   
         Task<List<int>> GetHoliday(ManhourUpdateSearch keySearch);
         Task<ManHourUpdateSearchModel> Search(ManhourUpdateSearch keySearch, string userId);

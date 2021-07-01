@@ -9,7 +9,7 @@ namespace ProjectTeamNET.Models.Request
     public class ManhourUpdateSave
     {
         public List<Manhour> save { get; set; }
-        public List<ManhourUpdateDelete> delete { get; set; }
+        public List<ManhourUpdateKey> delete { get; set; }
 
     }
 }

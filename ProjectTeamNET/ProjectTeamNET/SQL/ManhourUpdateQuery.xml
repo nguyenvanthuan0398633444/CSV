@@ -6,13 +6,16 @@
 						select
 								t1.*
 								, t2.user_name
-								, t3.theme_name1							
+								, t3.theme_name1	
+                ,t4.work_contents_code_name
 						from
 								t_manhour AS t1 
 								inner join m_user As t2 
 										on t2.user_no = t1.user_no 
 								inner join m_theme AS t3 
-										on t3.theme_no = t1.theme_no 								
+										on t3.theme_no = t1.theme_no 	
+                inner join m_work_contents as t4
+										on t4.work_contents_code = t1.work_contents_code and t4.work_contents_class = t1.work_contents_class
 					where
 						1 = 1 
 						<addif key="Year" > 
@@ -202,8 +205,54 @@
 		ORDER BY		work_contents_code
 
 	</query>
-  <query id="select">
-    select * from m_user
-    where group_code = '8002000000'
+   <query id="CheckImport">
+    select  *
+    from
+    t_manhour
+    where
+    <addif key="Year" >
+      year = :Year
+    </addif>
+    <addif key="Month" >
+      and month = :Month
+    </addif>
+    <addif key="User_no" >
+      and user_no = :User_no
+    </addif>
+    <addif key="Theme_no" >
+      and theme_no = :Theme_no
+    </addif>   
+    <addif key="Work_contents_code" >
+      and work_contents_code = :Work_contents_code
+    </addif>
+    <addif key="Work_contents_detail" >
+      and work_contents_detail = :Work_contents_detail
+    </addif>	
+  </query>
+  
+  <query id="SelectWorkContent">
+
+		SELECT DISTINCT work_contents_code, work_contents_code_name  
+		FROM			m_work_contents
+		ORDER BY		work_contents_code
+
+	</query>
+  
+  <query id="SelectUser">
+    select * 
+    from m_user
+    where
+    <addif key="userNo" >
+       user_no = :userNo
+    </addif>
+  </query>
+  
+<query id="SelectWordContenClass">
+     select work_contents_class 
+      from m_theme
+      where
+      <addif key="themeNo" >
+        theme_no = :themeNo
+      </addif>   
   </query>
 </root>

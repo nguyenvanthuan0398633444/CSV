@@ -1,6 +1,8 @@
 ﻿
+
 var deletedThemeArr = [];
 let holiday = [];
+let today = new Date();
 //format date return string date 2021/06/18
 formatDate = function (date) {
     return date.toISOString().slice(0, 10).replace(/-/g, "/");
@@ -45,6 +47,7 @@ function search() {
         success: function (result) {
             let tbody = "";
             let tfoot = "";
+            holiday = result.data.holiday;
             const header = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
             // add
             let thead = `
@@ -194,21 +197,22 @@ function search() {
                     `
          
             let day = 0;        
-            for (var item of tmp) {              
-                if ( item == 8 || holiday.find(element => element == day) != undefined) {
+            for (var item in tmp) {
+                console.log("thun" + today.getDate());
+                if (tmp[item] == 8 || holiday.find(element => element == day) != undefined || item == 0 || item > today.getDate()) {
                     tfoot += `<td class="${day++}">
-                                ${item.toFixed(1)} <i data-toggle="tooltip" title="合計工数が8h未満です"></i> 
-                          </td>`
+                            ${tmp[item].toFixed(1)} <i data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                        </td>`
                 }
                 else {
-                    if (item == 0) {
+                    if (tmp[item] == 0) {
                         tfoot += `<td class="${day++}">
-                                   ${item.toFixed(1)} <i class="fas fa-exclamation-circle text-danger" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
-                              </td>`
+                                ${tmp[item].toFixed(1)} <i class="fas fa-exclamation-circle text-danger" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                            </td>`
                     } else {
                         tfoot += `<td class="${day++}">
-                                  ${item.toFixed(1)}<i class="fas fa-exclamation-circle text-warning" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
-                              </td>`
+                                ${tmp[item].toFixed(1)}<i class="fas fa-exclamation-circle text-warning" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                            </td>`
                     }
 
                 }
@@ -220,50 +224,22 @@ function search() {
                             <td></td>
                             <td>残工数</td>
                             <td></td>
-                            <td></td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td> 8.0</td>
-                            <td></td>
-                            <td></td>
-                            </tr>
-                        `
+                            <td></td>`
+            for (var i = 1; i < tmp.length; i++) {
+                if (8 - (tmp[i]) <= 0 || i > today.getDate() || holiday.find(element => element == i) != undefined) {
+                    tfoot += `<td class="${i}"></td>`
+                } else {
+                    tfoot += `<td class="${i}">${(8 - tmp[i]).toFixed(1)}</td> `
+                }           
+            }
+                                               
             $('#tfoot').append(tfoot);
             result.data.holiday.forEach(data => {
-                $(`.${data}`).css("background-color", "#f5c6cb");
-                holiday.push(data)
+                $(`.${data}`).css("background-color", "#f5c6cb");           
             })
-            var start = new Date();
+            
             // colo today
-            $(`.${start.getDate()}`).css("background-color", "#bee5eb");            
+            $(`.${today.getDate()}`).css("background-color", "#bee5eb");            
         }
     });
 }
@@ -299,50 +275,7 @@ $("#fileCSVimport").on('change', function () {
                 $('input:hidden[name="__RequestVerificationToken"]').val());
         },
         success: function (result) {
-            let tbody = '';
-            result.data.forEach(data => {                            
-                tbody += `<tr>
-                                <td><div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
-                                <td>${data.theme_no}</td>
-                                <td>${data.theme_name1}</td>
-                                <td>${data.work_contents_code}</td>
-                                <td>${data.total}</td>
-                                <td><input type="text" value="${NTS(data.day1)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day2)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day3)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day4)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day5)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day6)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day7)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day8)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day9)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day10)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day11)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day12)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day13)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day14)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day15)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day16)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day17)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day18)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day19)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day20)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day21)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day22)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day23)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day24)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day25)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day26)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day27)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day28)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day29)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day30)}" class="form-control table-input"></td>
-                                <td><input type="text" value="${NTS(data.day31)}" class="form-control table-input"></td>
-                                <td><div class="text-center"><i class="fas fa-exchange-alt"></i></div></td>
-                                <td><div class="text-center"><i class="far fa-trash-alt"></i></div></td>
-                              </tr>`
-            });
-            $('.table-striped').html(tbody);
+            $('#manhourSesrch').click();
         },
         error: function () {
             alert("Error occurs");
@@ -610,3 +543,34 @@ $("#tbody").on("click", ".delete-Theme", function () {
          
     }
 });
+function loadSelectTheme() {
+    $('#slThemeBody').html('');
+    $.ajax({
+        url: `/ManhourInput/GetHistoryThemes`,
+        method: "POST",
+        success: function (result) {
+
+            if (result == null) {
+                return;
+            }
+
+            //set history value 
+            $('#themeNo').val(result.themeNo != null ? result.themeNo : '');
+            $('#themeName').val(result.themeName != null ? result.themeName : '')
+            $('#groupThemes').val(result.accountingGroupCode != null ? result.accountingGroupCode : '');
+            $('#salesObject').val(result.salesObjectCode != null ? result.salesObjectCode : '');
+
+            //checked by sold flag to 
+            if (result.soldFlg == "未売上") {
+                $("#inlineRadio1").attr("checked", true);
+            }
+            if (result.soldFlg == "売上済") {
+                $("#inlineRadio2").attr("checked", true);
+            }
+            if (result.soldFlg == "全て") {
+                $("#inlineRadio3").attr("checked", true);
+            }
+        }
+    });
+    $('#modal1').modal('show');
+}

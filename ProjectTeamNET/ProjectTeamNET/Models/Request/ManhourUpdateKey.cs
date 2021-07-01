@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ProjectTeamNET.Models.Request
 {
-    public class ManhourUpdateDelete
+    public class ManhourUpdateKey
     {
         public Int16 Year { get; set; }
         public Int16 Month { get; set; }
