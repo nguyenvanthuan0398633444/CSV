@@ -1,83 +1,10 @@
 ﻿var check = false;
-var countUser = 1;
+var countUser = 0;
 var GroupName = "";
 var up = ['user', 'theme', 'workcontent', 'detailworkcontent', 'affiliation'];
 var down = ['monthlytotal', 'dailytotal', 'overalltotal'];
-
-function deleteUserScreenName() {
-    var tmp = $('#userScreenName').val();
-    $.ajax({
-        url: `/ManhourReport/DeleteScreenUser/` + tmp,
-        method: 'Delete',
-        success: function (response) {
-            $('#userScreenName').empty();
-            $('#userScreenName').append(`<option>保存名...</option>`);
-            $.each(response, function (i, v) {
-                $('#userScreenName').append(`<option>${v.Save_name}</option>`);
-            });
-        }
-    });
-}
-
-//add User follow GroupCode of first Group (Group init)
-function addUserFirstGroup() {
-    var GroupCode = $("#GroupId").val();
-    $.ajax({
-        url: `/ManhourReport/GetsUserName/${GroupCode}`,
-        method: 'Get',
-        success: function (response) {
-            var options = '';
-            $.each(response, function (i, v) {
-                options += (`<option>${v.userCode}[${v.user_Name}]</option>`);
-            }
-            );
-            $('#addUser').append(`<div style="margin-bottom: 15px; height: 30px" id="setfirst${countUser}"><select class="form-control form-control-sm">
-                                        ${options}
-                                        </select></div>
-                                        `);
-
-            $('#trashUser').append(`<div style="margin-bottom: 15px; height: 30px" id="setfirst${countUser}del"><i class="far fa-trash-alt" onclick="delUserFirstGroup(setfirst${countUser})"></i></div>
-                                        `);
-        }
-    })
-}
-
-//add 1 User follow GroupCode
-function addUser(id) {
-    var GroupCode = $(`#GroupId${id}`).val();
-    $.ajax({
-        url: `/ManhourReport/GetsUserName/${GroupCode}`,
-        method: 'Get',
-        success: function (response) {
-            var options = '';
-
-            $.each(response, function (i, v) {
-                options += (`<option>${v.userCode}[${v.user_Name}]</option>`);
-            });
-            $(`#addUserinGroup${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}"><select class="form-control form-control-sm">
-                                        ${options}
-                                        </select></div>
-                                    `);
-            $(`#trashUser${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}del"><i class="far fa-trash-alt" onclick="delUser(addUser${countUser})"></i></div>
-                                        `);
-        }
-    });
-    countUser++;
-}
-
 var countGroup = 1;
-
-//Delete 1 User
-function delUser(GroupCode) {
-    console.log(GroupCode)
-    $(`#${GroupCode.id}`).remove();
-    $(`#${GroupCode.id}del`).remove();
-}
-function delUserFirstGroup(GroupCode) {
-    $(`#${GroupCode.id}`).remove();
-    $(`#${GroupCode.id}del`).remove();
-}
-
+var count = 1;
 $.ajax({
     url: `/ManhourReport/GetsGroupName`,
     method: 'Get',
@@ -88,9 +15,73 @@ $.ajax({
     }
 });
 
-function addGroup() {
-    $('#AddGroup').append(`
+//init get screenUserItem by userScreenName last action
+if ($('#userScreenName > option').length > 1) {
+    var idUserScr = [];
+    var userScrSelect = $('#userScreenName > option')[1].value;
+    var userScr = userScrSelect.substring(0, userScrSelect.length - 14);
+    $.each($('#userScreenName > option'), function (index, value) {
+        if(index != 0)
+            idUserScr.push(parseInt(value.value.substring(value.value.length - 14, value.value.length)))
+    });
+    $('#userScreenName').val(userScr + Math.max(...idUserScr));
+    changeCall();
+}
 
+function deleteUserScreenName() {
+    var saveName = $('#userScreenName').val();
+    var r = confirm('削除します。よろしいですか？');
+    if (r == true) {
+        $.ajax({
+            url: `/ManhourReport/DeleteScreenUser/` + saveName,
+            method: 'Delete',
+            success: function (response) {
+                toastr.success(response)
+                GetScreen();
+                $('#SaveName').val("");
+                reset();
+            }
+        });
+    }
+}
+
+//add 1 User follow GroupCode
+function addUser(id) {
+    var GroupCode = $(`#GroupId${id}`).val();
+    console.log(`#GroupId${id}`)
+    $.ajax({
+        url: `/ManhourReport/GetsUserName/${GroupCode}`,
+        method: 'Get',
+        success: function (response) {
+            var options = '';
+            countUser++;
+
+            $.each(response, function (i, v) {
+                options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
+            });
+            $(`#addUserinGroup${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}"><select class="form-control form-control-sm" id="selectUser${countUser}">
+                                        ${options}
+                                        </select></div>
+                                    `);
+            $(`#trashUser${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}del"><i class="far fa-trash-alt" onclick="delUser(addUser${countUser})"></i></div>
+                                        `);
+        }
+    });
+}
+
+//Delete 1 User
+function delUser(GroupCode) {
+    $(`#${GroupCode.id}`).remove();
+    $(`#${GroupCode.id}del`).remove();
+}
+function delUserFirstGroup(GroupCode) {
+    $(`#${GroupCode.id}`).remove();
+    $(`#${GroupCode.id}del`).remove();
+}
+
+function addGroup() {
+    countGroup++;
+    $('#AddGroup').append(`
         <div class="form-group row" id="Group${countGroup}">
             <label class="col-form-label col-md-2 text-right"></label>
             <div class="col-md-10">
@@ -102,7 +93,7 @@ function addGroup() {
                         <div class="col-md-1"><i class="far fa-trash-alt" onclick="deleteGroup('Group${countGroup}')"></i></div>
                     </div>
                     <div class="col-md-3 input-group pl-0">
-                        <div id="addUserinGroup${countGroup}"></div>
+                        <div class="countUser" id="addUserinGroup${countGroup}" style="width: 100%"></div>
                         <div class="input-group pl-0">
                             <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUser(${countGroup})"><i class="fas fa-plus"></i> ユーザ追加</button>
                         </div>
@@ -113,21 +104,19 @@ function addGroup() {
                 </div>
             </div>
         </div>`);
-
-    countGroup++;
 }
 
 function deleteGroup(id) {
     $(`#${id}`).remove();
 }
 
-var count = 1;
 async function addTheme() {
     var theme = "";
     await $.ajax({
         url: `/ManhourReport/GetsThemeName`,
         method: 'Get',
         success: function (response) {
+            count++;
             $.each(response, function (i, v) {
                 theme += `<option value="${v.themeCode}">${v.theme_Name}</option>`
             });
@@ -135,7 +124,7 @@ async function addTheme() {
             $.ajax({
                 url: `/ManhourReport/AddTheme/${count}`,
                 method: 'Get',
-                success: function (response) { console.log(count); console.log(response); $('#AddTheme').append(response); }
+                success: function (response) { $('#AddTheme').append(response); }
             });
 
             $('#AddModal').append(`
@@ -159,7 +148,6 @@ async function addTheme() {
                             </div>
                         </div>
                 `);
-            count++;
         }
     });
 
@@ -198,7 +186,7 @@ function WorkContent() {
     })
 };
 
-//from unselected to selected
+//add value option from unselected to selected
 function AddSelect() {
     if ($('#NotSelect option:selected').length == 1) {
         var value = $('#NotSelect').val()[0]
@@ -235,7 +223,7 @@ function AddSelect() {
     }
 }
 
-//from unselected to selected
+//add value option from unselected to selected
 function RemoveSelect() {
     if ($('#Select option:selected').length==1) {
         var value = $('#Select').val()[0]
@@ -258,6 +246,7 @@ function RemoveSelect() {
     }
     
 }
+
 function selectUp() {
     var select = $('#Select option');
     if (up.includes($("#Select")[0].value)) {
@@ -282,7 +271,7 @@ function selectUp() {
         var text = $("#Select option")[select.length - 1].text;
         options += `<option value='${value}'>${text}</option>`
         $('#Select').empty();
-        $('#Select').append(tmp);
+        $('#Select').append(options);
     }
    
 }
@@ -328,10 +317,10 @@ function selectDown() {
     }
 }
 
-// 
+// change condition 絞り込み条件 and レイアウト設定 has save in database by 呼出
 async function changeCall() {
-    var countUserGroup = 0;
     var surrogatekey = $('#userScreenName').val();
+    countUser = 0;
     var numberGroup = 0;
     var group_code = [];
     var number_user_group_code = [];
@@ -398,42 +387,38 @@ async function changeCall() {
                 });
             }
         });
-    count = 1;
-    $('#addUser').empty()
-    $('#trashUser').empty()
-    $('#AddGroup').empty()
-    $('#AddTheme').empty()
-
-    $('#fromDate').val(fromDate)
-    $('#toDate').val(toDate)
-    $('#SaveName').val(saveName)
+    count = 1;countGroup++;
+    $('#addUserinGroup1').empty();
+    $('#trashUser1').empty();
+    $('#AddGroup').empty();
+    $('#AddTheme').empty();
+                                 
+    $('#fromDate').val(fromDate) ;
+    $('#toDate').val(toDate);
+    $('#SaveName').val(saveName);
     $('#GroupId').val(group_code[0]);
     
-    var countfirstGroupUser = 1;
+    countGroup = 1;
     //get users first group
     for (let i = 0; i < number_user_group_code[0]; i++) {
-        await GetsUserFirstGroup(group_code[0], UserNames[countUserGroup], countfirstGroupUser);
-        countUserGroup++;
-        countfirstGroupUser++;
+        countUser++;
+        await GetsUser(countGroup, group_code[0], UserNames[countUser-1], countUser);
     }
-
-    countGroup = 1;
     // Get value nhiều User của từng group đã có trong db(ngoai` first group)
+    $(`#GroupId1`).val(group_code[0]);
     if (numberGroup > 1) {
         for (let i = 1; i < numberGroup; i++) {
             addGroup();
-            $(`#GroupId${i}`).val(group_code[i]);
+            $(`#GroupId${i+1}`).val(group_code[i]);
             for (let j = 0; j < number_user_group_code[i]; j++) {
-                await GetsUser(countGroup - 1, group_code[i], UserNames[countUserGroup], countUser);
-                countUserGroup++;
                 countUser++;
+                await GetsUser(countGroup, group_code[i], UserNames[countUser-1], countUser);
             }
-                countGroup++;
         }
-
     }
     for (let i = 0; i < numberTheme; i++) {
-        await addTheme();
+        if(i>0)
+            await addTheme();
         await save(i + 1, Themes[i].substring(0,10))
         $(`#theme_${i + 1}`).val(Themes[i]);
         $(`#addWorkContent_${i + 1}`).val(workContentCode[i])
@@ -469,29 +454,6 @@ async function changeCall() {
     }
 }
 
-
-// get user by groupcode (init Group)
-async function GetsUserFirstGroup(group_code, UserNo, countfirstGroupUser) {
-    await $.ajax({
-        url: `/ManhourReport/GetsUserName/${group_code}`,
-        method: 'Get',
-        success: function (response) {
-            var options = '';
-
-            $.each(response, function (i, v) {
-                options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
-            });
-            $(`#addUserinGroup`).append(`<div style="margin-bottom: 15px; height: 30px" id="setfirst${countfirstGroupUser}"><select class="form-control form-control-sm">
-                                        ${options}
-                                        </select></div>
-                                    `);
-            $(`#trashUser`).append(`<div style="margin-bottom: 15px; height: 30px" id="setfirst${countfirstGroupUser}del"><i class="far fa-trash-alt" onclick="delUserFirstGroup(setfirst${countfirstGroupUser})"></i></div>
-                                        `);
-        }
-    });
-    $(`#setfirst${countfirstGroupUser} > select`).val(UserNo);
-}
-
 // get user by groupcode
 async function GetsUser(groupCount, group_code, UserNo, count_user) {
     await $.ajax({
@@ -502,7 +464,7 @@ async function GetsUser(groupCount, group_code, UserNo, count_user) {
             $.each(response, function (i, v) {
                 options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
             });
-            $(`#addUserinGroup${groupCount}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${count_user}"><select class="form-control form-control-sm">
+            $(`#addUserinGroup${groupCount}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${count_user}"><select id="selectUser${countUser}" class="form-control form-control-sm">
                                         ${options}
                                         </select></div>
                                     `);
@@ -513,78 +475,18 @@ async function GetsUser(groupCount, group_code, UserNo, count_user) {
     $(`#addUser${count_user} > select`).val(UserNo);
 }
 
-// lấy user bằng groupcode
-async function addUsertmp1(id, GroupCode, countUser) {
-    await $.ajax({
-        url: `/ManhourReport/GetsUserName/${GroupCode}`,
-        method: 'Get',
-        success: function (response) {
-            var tmp = '';
-            var tmp1 = '';
-            $.each(response, function (i, v) {
-                tmp += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
-            }
-            );
-            $(`#addUser2${id}`).remove();
-            $(`#addFirst${id}`).append(`<div class="col-md-3 input-group pl-0" id="firstUser${countUser1}">
-                                                            <select class="form-control form-control-sm" id="setfirstUser${countUser}${GroupCode}">
-                                                                    ${tmp}
-                                                            </select>
-                                                        </div><div class="col-md-4 input-group pl-0" id="firstUser2${countUser1}">
-                                                            <i class="far fa-trash-alt" onclick="deletefirstUser(${countUser1})"></i>
-                                                        </div>
-                                                            `);
-
-            $(`#btn_addUser${id}`).removeAttr('hidden');
-        }
-    })
-    countUser1++;
-}
-// lấy 1 user bằng groupcode
-//async function addUser1(id, GroupCode, countUser) {
-//    await $.ajax({
-//        url: `/ManhourReport/GetsUserName/${GroupCode}`,
-//        method: 'Get',
-//        success: function (response) {
-//            var tmp = '';
-//            $.each(response, function (i, v) {
-//                tmp += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
-//            }
-//            );
-//            $(`#addUser1${id}`).append(`<div class="form-group row" id="${countUser1}">
-//                                                                <label class="col-form-label col-md-2 text-right"></label>
-//                                                                <div class="col-md-10">
-//                                                                    <div class="row align-items-center">
-//                                                                        <div class="col-md-4 input-group pl-0">
-//                                                                        </div>
-//                                                                        <div class="col-md-3 input-group pl-0">
-//                                                                            <select class="form-control form-control-sm" id="setUser${countUser}${GroupCode}">
-//                                                                                 ${tmp}
-//                                                                            </select>
-//                                                                        </div><div class="col-md-4 input-group pl-0">
-//                                                                            <i class="far fa-trash-alt" onclick="deleteUser(${countUser1})"></i>
-//                                                                        </div>
-//                                                                    </div>
-//                                                                </div>
-//                                                            </div>
-//                                                            `);
-//        }
-//    })
-//    countUser1++;
-//}
-
 // get list workcontents của 1 theme đã cho db
 async function save(id, workcontent) {
     await $.ajax({
         url: `/ManhourReport/WorkContents/${workcontent}`,
         method: 'Get',
         success: function (response) {
-            var tmp1 = '';
+            var options = '';
             $(`#addWorkContent_${id}`).empty();
             $.each(response, function (i, v) {
-                tmp1 += `<option value="${v.workCode}">${v.work_Content}</option>`
+                options += `<option value="${v.workCode}">${v.work_Content}</option>`
             });
-            $(`#addWorkContent_${id}`).append(tmp1);
+            $(`#addWorkContent_${id}`).append(options);
         }
     })
 }
@@ -597,77 +499,7 @@ function AddSelect1() {
 }
 
 function checkform() {
-    var Obj = {} || data1;
-    Obj.save = $("#SaveName").val();
-    Obj.fromDate = $("#fromDate").val();
-    Obj.toDate = $("#toDate").val();
-    Obj.isTotal = $(`input[name=isTotal]:checked`).val();
-    Obj.typeDelimiter = $(`input[name=typeDelimiter]:checked`).val();
-    Obj.isSingleQuote = $(`input[name=isSingleQuote]:checked`).val();
-    Obj.numberSelectedHeader = $('#Select option').length;
-    Obj.selectedHeaderItems = "";
-    for (let i = 0; i < $('#Select option').length; i++) {
-        if (i == 0)
-            Obj.selectedHeaderItems += $('#Select option')[i].value;
-        else
-            Obj.selectedHeaderItems += "," + $('#Select option')[i].value;
-    }
-    Obj.numberTheme = $('#AddTheme > div').length;
-    Obj.themeNos = "";
-    for (let i = 0; i < $('#AddTheme > div').length; i++) {
-        if (i == 0)
-            Obj.themeNos += $(`#theme_${i + 1}`)[0].value;
-        else
-            Obj.themeNos += "," + $(`#theme_${i + 1}`)[0].value;
-    }
-    Obj.workContentCodes = "";
-    for (let i = 0; i < $('#AddTheme > div').length; i++) {
-        if (i == 0)
-            Obj.workContentCodes += $(`#addWorkContent_${i + 1}`)[0].value;
-        else
-            Obj.workContentCodes += "," + $(`#addWorkContent_${i + 1}`)[0].value;
-    }
-    Obj.workContentDetails = "";
-    for (let i = 0; i < $('#AddTheme > div').length; i++) {
-        if (i == 0)
-            Obj.workContentDetails += $(`#addWorkDetail_${i + 1}`)[0].value;
-        else
-            Obj.workContentDetails += "," + $(`#addWorkDetail_${i + 1}`)[0].value;
-    }
-    Obj.numberGroup = countGroup;
-    Obj.Groups = "";
-    Obj.Users = "";
-    Obj.numberUser = "";
-    var countUser3 = 0;
-    for (let i = 0; i < $('select').length; i++) {
-        if ($('select')[i].id.includes("roup") && Obj.Groups == "")
-            Obj.Groups += $('select')[i].value;
-        else if ($('select')[i].id.includes("roup") && Obj.Groups != "")
-            Obj.Groups += "," + $('select')[i].value;
-
-        if ($('select')[i].id.includes("setfirst")) {
-            if (countUser3 != 0) {
-                if (Obj.numberUser == "") {
-                    Obj.numberUser += countUser3;
-                }
-                else {
-                    Obj.numberUser += "," + countUser3;
-                }
-                countUser3 = 0;
-            }
-            countUser3++;
-            if (Obj.Users == "")
-                Obj.Users += $('select')[i].value
-            else
-                Obj.Users += "," + $('select')[i].value
-        }
-        else if ($('select')[i].id.includes("setUser")) {
-            countUser3++;
-            Obj.Users += "," + $('select')[i].value;
-        }
-    }
-    Obj.numberUser += "," + countUser3;
-
+    var Obj = setObj();
     //check validate or save localStorage
     $.ajax({
         url: '/ManhourReport/CheckReport',
@@ -677,7 +509,6 @@ function checkform() {
             $('#savename').empty();
             $('#toDate1').empty();
             $('#fromDate1').empty();
-            console.log(response)
             if (Object.keys(response).length < 1) {
                 $.ajax({
                     url: '/ManhourReport/CreateData',
@@ -685,52 +516,62 @@ function checkform() {
                     data: Obj,
                     success: function (response) {
                         var Object = [];
-                        $.each(response, function (i, v) {
-                            var objtmp = {};
-                            objtmp.groupCode = v.groupCode;
-                            objtmp.groupName = v.groupName;
-                            objtmp.userCode = v.userCode;
-                            objtmp.userName = v.userName;
-                            objtmp.themeCode = v.themeCode;
-                            objtmp.themeName = v.themeName;
-                            objtmp.workContentCode = v.workContentCode;
-                            objtmp.workContentCodeName = v.workContentCodeName;
-                            objtmp.workContentDetail = v.workContentDetail;
-                            objtmp.monthly = v.monthly;
-                            objtmp.daily = v.daily;
-                            objtmp.fromDate = v.fromDate;
-                            objtmp.toDate = v.toDate;
-                            objtmp.column = Obj.selectedHeaderItems;
-                            objtmp.total = $("input[name='isTotal']:checked").val();
-                            Object.push(objtmp)
-                        });
-                        sessionStorage.setItem('drawObject', JSON.stringify(Object));
-                        window.open('/ManhourReport/ShowReport', '_blank');
+                        if (response.messenge == "") {
+                            $.each(response.data, function (i, v) {
+                                var objtmp = {};
+                                objtmp.groupCode = v.groupCode;
+                                objtmp.groupName = v.groupName;
+                                objtmp.userCode = v.userCode;
+                                objtmp.userName = v.userName;
+                                objtmp.themeCode = v.themeCode;
+                                objtmp.themeName = v.themeName;
+                                objtmp.workContentCode = v.workContentCode;
+                                objtmp.workContentCodeName = v.workContentCodeName;
+                                objtmp.workContentDetail = v.workContentDetail;
+                                objtmp.monthly = v.monthly;
+                                objtmp.daily = v.daily;
+                                objtmp.fromDate = v.fromDate;
+                                objtmp.toDate = v.toDate;
+                                objtmp.overalltotal = v.overalltotal;
+                                objtmp.column = Obj.selectedHeaderItems;
+                                objtmp.total = $("input[name='isTotal']:checked").val();
+                                Object.push(objtmp)
+                            });
+                            sessionStorage.setItem('drawObject', JSON.stringify(Object));
+                            window.open('/ManhourReport/ShowReport', '_blank');
+                        }
+                        else {
+                            toastr.warning(response.messenge);
+                        }
                     }
                 });
             }
             else {
-                if (response.savename != "") {
-                    $('#savename').append(`<span style="color:red">${response.savename}</span>`)
-                }
                 if (response.toDate != "") {
-                    $('#toDate1').append(`<span style="color:red">${response.toDate}</span>`)
+                    toastr.warning(response.toDate)
                 }
                 if (response.fromDate != "") {
-                    $('#fromDate1').append(`<span style="color:red">${response.fromDate}</span>`)
+                    toastr.warning(response.fromDate)
                 }
-                if (response.Date != "") {
-                    $('#fromDate1').append(`<span style="color:red">${response.Date}</span>`)
+                if (response.date != "") {
+                    toastr.warning(response.date)
                 }
-                if (response.DateCalculate != "") {
-                    alert(response.DateCalculate);
+                if (response.dateCalculate != "") {
+                    toastr.warning(response.dateCalculate);
+                }
+                if (response.theme != "") {
+                    toastr.warning(response.theme)
+                }
+                if (response.user != "") {
+                    toastr.warning(response.user);
                 }
             }
         }
     })
 }
 
-function outputCSV() {
+//Get 絞り込み条件 AND レイアウト設定
+function setObj() {
     var Obj = {} || data1;
     Obj.save = $("#SaveName").val();
     Obj.fromDate = $("#fromDate").val();
@@ -746,23 +587,23 @@ function outputCSV() {
         else
             Obj.selectedHeaderItems += "," + $('#Select option')[i].value;
     }
-    Obj.numberTheme = $('#AddTheme > div').length;
+    Obj.numberTheme = $('#AddTheme > div').length + 1;
     Obj.themeNos = "";
-    for (let i = 0; i < $('#AddTheme > div').length; i++) {
+    for (let i = 0; i < $('#AddTheme > div').length + 1; i++) {
         if (i == 0)
             Obj.themeNos += $(`#theme_${i + 1}`)[0].value;
         else
-            Obj.themeNos += "," + $(`#theme${i + 1}`)[0].value;
+            Obj.themeNos += "," + $(`#theme_${i + 1}`)[0].value;
     }
     Obj.workContentCodes = "";
-    for (let i = 0; i < $('#AddTheme > div').length; i++) {
+    for (let i = 0; i < $('#AddTheme > div').length + 1; i++) {
         if (i == 0)
             Obj.workContentCodes += $(`#addWorkContent_${i + 1}`)[0].value;
         else
             Obj.workContentCodes += "," + $(`#addWorkContent_${i + 1}`)[0].value;
     }
     Obj.workContentDetails = "";
-    for (let i = 0; i < $('#AddTheme > div').length; i++) {
+    for (let i = 0; i < $('#AddTheme > div').length + 1; i++) {
         if (i == 0)
             Obj.workContentDetails += $(`#addWorkDetail_${i + 1}`)[0].value;
         else
@@ -772,36 +613,23 @@ function outputCSV() {
     Obj.Groups = "";
     Obj.Users = "";
     Obj.numberUser = "";
-    var countUser3 = 0;
+    var countGetUser = 0;
     for (let i = 0; i < $('select').length; i++) {
-        if ($('select')[i].id.includes("roup") && Obj.Groups == "")
-            Obj.Groups += $('select')[i].value;
-        else if ($('select')[i].id.includes("roup") && Obj.Groups != "")
+        if ($('select')[i].id.includes("GroupId"))
             Obj.Groups += "," + $('select')[i].value;
 
-        if ($('select')[i].id.includes("setfirst")) {
-            if (countUser3 != 0) {
-                if (Obj.numberUser == "") {
-                    Obj.numberUser += countUser3;
-                }
-                else {
-                    Obj.numberUser += "," + countUser3;
-                }
-                countUser3 = 0;
-            }
-            countUser3++;
-            if (Obj.Users == "")
-                Obj.Users += $('select')[i].value
-            else
-                Obj.Users += "," + $('select')[i].value
-        }
-        else if ($('select')[i].id.includes("setUser")) {
-            countUser3++;
+        else if ($('select')[i].id.includes("selectUser")) {
             Obj.Users += "," + $('select')[i].value;
         }
     }
-    Obj.numberUser += "," + countUser3;
+    for (let i = 0; i < $('.countUser').length; i++) {
+        Obj.numberUser += "," + (($('.countUser')[i].innerHTML).match(/<select/g) || []).length;
+    }
+    return Obj;
+}
 
+function outputCSV() {
+    var Obj = setObj();
     $.ajax({
         url: '/ManhourReport/CheckReport',
         method: 'POST',
@@ -816,32 +644,134 @@ function outputCSV() {
                     method: 'POST',
                     data: Obj,
                     success: function (response) {
-                        console.log(response)
-                        const data = encodeURI('data:text/csv;charset=utf-8,' + response.data);
-                        const link = document.createElement('a');
-                        link.setAttribute('href', data);
-                        link.setAttribute('download', response.fileName);
-                        link.click();
+                        if (response.messenge == "") {
+                            const data = encodeURI('data:text/csv;charset=utf-8,' + response.data);
+                            const link = document.createElement('a');
+                            link.setAttribute('href', data);
+                            link.setAttribute('download', response.fileName);
+                            link.click();
+                        }
+                        else
+                            toastr.warning(response.messenge)
                     }
                 });
             }
             else {
-                if (response.savename != "") {
-                    $('#savename').append(`<span style="color:red">${response.savename}</span>`)
-                }
                 if (response.toDate != "") {
-                    $('#toDate1').append(`<span style="color:red">${response.toDate}</span>`)
+                    toastr.warning(response.toDate)
                 }
                 if (response.fromDate != "") {
-                    $('#fromDate1').append(`<span style="color:red">${response.fromDate}</span>`)
+                    toastr.warning(response.fromDate)
                 }
-                if (response.Date != "") {
-                    $('#fromDate1').append(`<span style="color:red">${response.Date}</span>`)
+                if (response.date != "") {
+                    toastr.warning(response.date)
                 }
-                if (response.DateCalculate != "") {
-                    alert(response.DateCalculate);
+                if (response.dateCalculate != "") {
+                    toastr.warning(response.dateCalculate);
+                }
+                if (response.theme != "") {
+                    toastr.warning(response.theme)
+                }
+                if (response.user != "") {
+                    toastr.warning(response.user);
                 }
             }
         }
     })
+}
+
+// set default
+function reset() {
+    $('#fromDate').val(null);
+    $('#toDate').val(null);
+    $('#addUserinGroup1').empty();
+    $('#trashUser1').empty();
+    $('#AddGroup').empty();
+    $('#AddTheme').empty();
+    $('#addWorkDetail_1').val(null);
+    $('#addWorkContent_1').empty();
+    $('#theme_1').val(null);
+    $('#Select').empty();
+    $('#NotSelect').empty();
+    $('#NotSelect').append(`<option value="user">ユーザ</option>
+                            <option value="theme">テーマ</option>
+                            <option value="workcontent">作業内容</option>
+                            <option value="detailworkcontent">作業内容詳細</option>
+                            <option value="monthlytotal">月別合計</option>
+                            <option value="dailytotal">日別合計</option>
+                            `);
+    $('#Select').append(`<option value="affiliation">所属</option>
+                            <option value="overalltotal">全体合計</option>
+                            `);
+}
+
+function saveUserScreenName() {
+    var Obj = setObj();
+    $.ajax({
+        url: '/ManhourReport/CheckSave',
+        method: 'POST',
+        data: Obj,
+        success: function (response) {
+            if (Object.keys(response).length < 1) {
+                $.ajax({
+                    url: '/ManhourReport/SaveScreen',
+                    method: 'POST',
+                    data: Obj,
+                    success: function (response) {
+                        if (response != "error") {
+                            toastr.success(response);
+                            GetScreen();
+                        }
+                    }
+                });
+            }
+            else {
+                if (response.toDate != "") {
+                    toastr.warning(response.toDate)
+                }
+                if (response.fromDate != "") {
+                    toastr.warning(response.fromDate)
+                }
+                if (response.date != "") {
+                    toastr.warning(response.date)
+                }
+                if (response.dateCalculate != "") {
+                    toastr.warning(response.dateCalculate);
+                }
+                if (response.theme != "") {
+                    toastr.warning(response.theme)
+                }
+                if (response.user != "") {
+                    toastr.warning(response.user);
+                }
+                if (response.savename != "") {
+                    toastr.warning(response.savename)
+                }
+            }
+        }
+    });
+}
+
+$('#datepicker1').datepicker({ autoclose: true, language: 'ja' }).on('changeDate', function (ev) {
+    var date = new Date(ev.date.valueOf());
+    $('#fromDate').val(`${date.getFullYear()}/${date.getMonth() >= 9 ? date.getMonth() + 1 : "0" + (date.getMonth()+1)}/${date.getDate() >= 10 ? date.getDate() + 1 : "0" + date.getDate()}`);
+  });
+$('#datepicker2').datepicker({ format: "yyyy/mm/dd", language: "ja", autoclose: true, orientation: 'bottom left' }).on('changeDate', function (ev) {
+    var date = new Date(ev.date.valueOf());
+    $('#toDate').val(`${date.getFullYear()}/${date.getMonth() >= 9 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1)}/${date.getDate() >= 10 ? date.getDate() + 1 : "0" + date.getDate()}`);
+});
+
+function GetScreen() {
+    $.ajax({
+        url: '/ManhourReport/GetsScreen',
+        method: 'Get',
+        success: function (response) {
+            $('#userScreenName').empty();
+            var options = "";
+            $.each(response, function (i, v) {
+                options += `<option value="${v.value}">${v.text}</option>`
+            });
+            $('#userScreenName').append(options);
+        }
+    });
 }

@@ -14,34 +14,33 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace ProjectTeamNET.Service.Implement
 {
     public class ManhourUpdateService : IManhourUpdateService
     {
-        private readonly IBaseRepository<WorkContents> workContentRepository;
+
         private readonly IBaseRepository<Manhour> manhourRepository;
         private readonly IBaseRepository<Group> groupRepository;
         private readonly IBaseRepository<SalesObject> saleRepository;
         private readonly IBaseRepository<Theme> themeRepository;
         private readonly IBaseRepository<UserScreenItem> screenRepository;
-        private readonly ProjectDbContext context;
+        
+        private readonly DbSet<User> dbUsers;
         private readonly IBaseRepository<UserScreenItem> userScreenItemRepository;
         const string HEADER = "年,月,ユーザNo,ユーザ名,テーマＮｏ,テーマ名,内容コード,内容名,内容詳細コード,合計," +
                         "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31";
-        public ManhourUpdateService(ProjectDbContext context, IWebHostEnvironment hosting,
-                                    IBaseRepository<UserScreenItem> userScreenItemRepository,
-                                    IBaseRepository<WorkContents> workContentRepository,
+        public ManhourUpdateService(ProjectDbContext context,
+                                    IBaseRepository<UserScreenItem> userScreenItemRepository,                                    
                                     IBaseRepository<Manhour> manhourRepository,
                                     IBaseRepository<Group> groupRepository,
                                     IBaseRepository<SalesObject> saleRepository,
                                     IBaseRepository<Theme> themeRepository,
                                     IBaseRepository<UserScreenItem> screenRepository)
         {
-            this.context = context;
-
-            this.userScreenItemRepository = userScreenItemRepository;
-            this.workContentRepository = workContentRepository;
+            this.dbUsers = context.Set<User>();
+            this.userScreenItemRepository = userScreenItemRepository;            
             this.manhourRepository = manhourRepository;
             this.groupRepository = groupRepository;
             this.saleRepository = saleRepository;
@@ -55,21 +54,57 @@ namespace ProjectTeamNET.Service.Implement
             if (role != "0")
             {
                 DateTime today = DateTime.Now;
-                model.today = today.ToString("yyyy/MM/dd").Substring(0, 7);
-              
+                model.today = today.ToString("yyyy/MM/dd").Substring(0, 7);              
                 // get group_code no history
-                string groupId = context.Users.FirstOrDefault(e => e.User_no == userId).Group_code;
+                string groupId = dbUsers.FirstOrDefault(e => e.User_no == userId).Group_code;
                 // get History
                 List<UserScreenItem> historySearch = await GetHistorySearch(userId);
                 List<Group> groups = await groupRepository.Gets();
                 List<SalesObject> salesObjects = await saleRepository.Gets();
                 List<WorkContents> workContents = await GetWorkContents();
-
+                // SelectListItem
                 List<SelectListItem> groupSelectList = new List<SelectListItem>();
                 List<SelectListItem> userSelectList = new List<SelectListItem>();
                 List<SelectListItem> saleObjSelectlist = new List<SelectListItem>();
                 List<SelectListItem> groupSelectListTheme = new List<SelectListItem>();
                 List<SelectListItem> wordContentSelectList = new List<SelectListItem>();
+                if(role == "2")
+                {
+                    foreach (var item in groups)
+                    { 
+                        if(item.Group_code == groupId)
+                        {
+                            groupSelectList.Add(new SelectListItem()
+                            {
+                                Value = item.Group_code,
+                                Text = item.Group_code + "[" + item.Group_name + "]"
+                            });
+                            groupSelectListTheme.Add(new SelectListItem()
+                            {
+                                Value = item.Accounting_group_code,
+                                Text = item.Accounting_group_code + "[" + item.Accounting_group_name + "]"
+                            });
+                        }
+                       
+                    }                   
+                }
+                else
+                {
+                    foreach (var item in groups)
+                    {
+                        groupSelectList.Add(new SelectListItem()
+                        {
+                            Value = item.Group_code,
+                            Text = item.Group_code + "[" + item.Group_name + "]"
+                        });
+                        groupSelectListTheme.Add(new SelectListItem()
+                        {
+                            Value = item.Accounting_group_code,
+                            Text = item.Accounting_group_code + "[" + item.Accounting_group_name + "]"
+                        });
+                    }
+
+                }
                 foreach (var item in workContents)
                 {
                     wordContentSelectList.Add(new SelectListItem()
@@ -87,19 +122,7 @@ namespace ProjectTeamNET.Service.Implement
                     });
 
                 }
-                foreach (var item in groups)
-                {
-                    groupSelectList.Add(new SelectListItem()
-                    {
-                        Value = item.Group_code,
-                        Text = item.Group_code + "[" + item.Group_name + "]"
-                    });
-                    groupSelectListTheme.Add(new SelectListItem()
-                    {
-                        Value = item.Accounting_group_code,
-                        Text = item.Accounting_group_code + "[" + item.Accounting_group_name + "]"
-                    });
-                }
+               
                 model.wordContents = wordContentSelectList;
                 model.groupThemes = groupSelectListTheme;
                 model.salesObject = saleObjSelectlist;
@@ -122,7 +145,7 @@ namespace ProjectTeamNET.Service.Implement
                             userNo = item.Screen_input;
                         }
                     }
-                    List<User> users = context.Users.Where(e => e.Group_code == groupCode).ToList();
+                    List<User> users = dbUsers.Where(e => e.Group_code == groupCode).ToList();
 
                     foreach (var item in users)
                     {
@@ -136,7 +159,7 @@ namespace ProjectTeamNET.Service.Implement
                 // if not have history
                 else
                 {
-                    List<User> users = context.Users.Where(e => e.Group_code == userId).ToList();
+                    List<User> users = dbUsers.Where(e => e.Group_code == groupId).ToList();
                     foreach (var item in users)
                     {
                         userSelectList.Add(new SelectListItem() { Value = item.User_no, Text = item.User_no + "[" + item.User_name + "]" });
@@ -164,7 +187,6 @@ namespace ProjectTeamNET.Service.Implement
                     {
                         UpdeteHistory("USER_NO", keySearch.User, userId);
                     }
-
                 }
             }
             else
@@ -195,16 +217,11 @@ namespace ProjectTeamNET.Service.Implement
             {
                 buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no}, {item.User_name}, {item.Theme_no}, {item.Theme_name1}, " +
                                   $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail}, " +
-                                  $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, " +
-                                  $"{item.Day2:0.0}, {item.Day3:0.0},{item.Day4:0.0}, " +
-                                  $"{item.Day5:0.0}, {item.Day6:0.0}, {item.Day7:0.0}, " +
-                                  $"{item.Day8:0.0}, {item.Day9:0.0}, {item.Day10:0.0}, " +
-                                  $"{item.Day11:0.0}, {item.Day12:0.0}, {item.Day13:0.0}," +
-                                  $"{item.Day14:0.0}, {item.Day15:0.0}, {item.Day16:0.0}, " +
-                                  $"{item.Day17:0.0}, {item.Day18:0.0}, {item.Day19:0.0}," +
-                                  $"{item.Day20:0.0}, {item.Day21:0.0}, {item.Day22:0.0}," +
-                                  $"{item.Day23:0.0},{item.Day24:0.0}, {item.Day25:0.0}," +
-                                  $"{item.Day26:0.0}, {item.Day27:0.0}, {item.Day28:0.0}," +
+                                  $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, " + $"{item.Day2:0.0}, {item.Day3:0.0},{item.Day4:0.0}, " +
+                                  $"{item.Day5:0.0}, {item.Day6:0.0}, {item.Day7:0.0}, " + $"{item.Day8:0.0}, {item.Day9:0.0}, {item.Day10:0.0}, " +
+                                  $"{item.Day11:0.0}, {item.Day12:0.0}, {item.Day13:0.0}," + $"{item.Day14:0.0}, {item.Day15:0.0}, {item.Day16:0.0}, " +
+                                  $"{item.Day17:0.0}, {item.Day18:0.0}, {item.Day19:0.0}," + $"{item.Day20:0.0}, {item.Day21:0.0}, {item.Day22:0.0}," +
+                                  $"{item.Day23:0.0},{item.Day24:0.0}, {item.Day25:0.0}," + $"{item.Day26:0.0}, {item.Day27:0.0}, {item.Day28:0.0}," +
                                   $"{item.Day29:0.0}, {item.Day30:0.0}, {item.Day31:0.0}");
             }
             exportModel.builder = buider;
@@ -223,54 +240,35 @@ namespace ProjectTeamNET.Service.Implement
                     {
                         string[] dataCSV = sreader.ReadLine().Split(',');                     
                         string WorkContentsClass = await GetWordConteClass(dataCSV[4]);
-                      
+                        if(WorkContentsClass == null)
+                        {
+                            continue;
+                        }
                         Manhour CsvData = new Manhour();
                         CsvData.Year = Int16.Parse(dataCSV[0]);
                         CsvData.Month = Int16.Parse(dataCSV[1]);
                         CsvData.User_no = dataCSV[2].Trim();                        
                         CsvData.Theme_no = dataCSV[4].Trim();                        
                         CsvData.Work_contents_code = dataCSV[6].Trim();
-
                         CsvData.Work_contents_class = WorkContentsClass.Trim();
                         CsvData.Work_contents_detail = dataCSV[8].Trim();
-                        CsvData.Total = Double.Parse(dataCSV[9]);
-                        CsvData.Day1 = Double.Parse(dataCSV[10]);
-                        CsvData.Day2 = Double.Parse(dataCSV[11]);
-                        CsvData.Day3 = Double.Parse(dataCSV[12]);
-                        CsvData.Day4 = Double.Parse(dataCSV[13]);
-                        CsvData.Day5 = Double.Parse(dataCSV[14]);
-                        CsvData.Day6 = Double.Parse(dataCSV[15]);
-                        CsvData.Day7 = Double.Parse(dataCSV[16]);
-                        CsvData.Day8 = Double.Parse(dataCSV[17]);
-                        CsvData.Day9 = Double.Parse(dataCSV[18]);
-                        CsvData.Day10 = Double.Parse(dataCSV[19]);
-                        CsvData.Day11 = Double.Parse(dataCSV[20]);
-                        CsvData.Day12 = Double.Parse(dataCSV[21]);
-                        CsvData.Day13 = Double.Parse(dataCSV[22]);
-                        CsvData.Day14 = Double.Parse(dataCSV[23]);
-                        CsvData.Day15 = Double.Parse(dataCSV[24]);
-                        CsvData.Day16 = Double.Parse(dataCSV[25]);
-                        CsvData.Day17 = Double.Parse(dataCSV[26]);
-                        CsvData.Day18 = Double.Parse(dataCSV[27]);
-                        CsvData.Day19 = Double.Parse(dataCSV[28]);
-                        CsvData.Day20 = Double.Parse(dataCSV[29]);
-                        CsvData.Day21 = Double.Parse(dataCSV[30]);
-                        CsvData.Day22 = Double.Parse(dataCSV[31]);
-                        CsvData.Day23 = Double.Parse(dataCSV[32]);
-                        CsvData.Day24 = Double.Parse(dataCSV[33]);
-                        CsvData.Day25 = Double.Parse(dataCSV[34]);
-                        CsvData.Day26 = Double.Parse(dataCSV[35]);
-                        CsvData.Day27 = Double.Parse(dataCSV[36]);
-                        CsvData.Day28 = Double.Parse(dataCSV[37]);
-                        CsvData.Day29 = Double.Parse(dataCSV[38]);
-                        CsvData.Day30 = Double.Parse(dataCSV[39]);
-                        CsvData.Day31 = Double.Parse(dataCSV[40]);
-                        User user = await GetUserImport(CsvData.User_no);
+                        if (CheckNumber(dataCSV[9]))
+                        {
+                            CsvData.Total = Double.Parse(dataCSV[9]);
+                        }
+                        for (var i = 1; i <= 31; i++)
+                        {
+                            int j = i + 9;
+                            if (CheckNumber(dataCSV[j]))
+                            {
+                                CsvData.GetType().GetProperty("Day"+i).SetValue(CsvData, Double.Parse(dataCSV[j]));
+                            }
+                        }                       
+                        User user = await GetUser(CsvData.User_no);
                         CsvData.Group_code = user.Group_code.Trim();
                         CsvData.Site_code = user.Site_code.Trim() ;
                         CsvData.Fix_date =  DateTime.Now.ToString("yyyyMMdd");                     
-                        CsvData.Pin_flg = false;
-                        
+                        CsvData.Pin_flg = false;                        
                         bool check = CheckExist(CsvData) ;
                         if (check)
                         {
@@ -280,48 +278,36 @@ namespace ProjectTeamNET.Service.Implement
                         {
                             manhourRepository.Create(CsvData);
                         }
-
                     }
                 }
             }         
             return dataExport;
         }
+        public bool CheckNumber(string day)
+        {
+            double price ;
+            bool isDouble = Double.TryParse(day, out price);
+            return isDouble;
+        }
         public async Task<bool> Save(ManhourUpdateSave saveData)
         {
             var result = 0;
-            List<Manhour> manhourUpdates = new List<Manhour>();
-            List<Manhour> manhoursCreate = new List<Manhour>();
             if (saveData.save.Count != 0)
             {
                 foreach (Manhour mh in saveData.save)
-                {
-                   
+                {                  
                     bool check = CheckExist(mh);
                     if (check)
                     {
-                        manhourUpdates.Add(mh);
+                        await UpdateManhours(mh);                       
                     }
                     else
                     {
-                        manhoursCreate.Add(mh);
+                        manhourRepository.Create(mh);
                     }
 
                 }
-            }
-            if(manhourUpdates.Count > 0)
-            {
-                foreach (Manhour mh in manhourUpdates)
-                {
-                    await UpdateManhours(mh);
-                }
-            }
-            if(manhoursCreate.Count > 0)
-            {
-                foreach (Manhour mh in manhoursCreate)
-                {
-                    manhourRepository.Create(mh);
-                }
-            }
+            }         
             //Delete list record rest from DB
             if (saveData.delete.Count != 0)
             {
@@ -405,7 +391,7 @@ namespace ProjectTeamNET.Service.Implement
             List<ManhourUpdateViewModel> resultSearch = await manhourRepository.Search<ManhourUpdateViewModel>(query, param);
             // sum day1 => day 31
             foreach(var item in resultSearch){
-                item.Total = item.Day1 + item.Day2 + item.Day3 + item.Day4 + item.Day5 + item.Day6 + item.Day7 + item.Day8 + item.Day9 + item.Day10
+                item.Total =  item.Day1 + item.Day2 + item.Day3 + item.Day4 + item.Day5 + item.Day6 + item.Day7 + item.Day8 + item.Day9 + item.Day10
                             + item.Day11 + item.Day12 + item.Day13 + item.Day14 + item.Day15 + item.Day16 + item.Day17 + item.Day18 + item.Day19 + item.Day20
                             + item.Day21 + item.Day22 + item.Day23 + item.Day24 + item.Day25 + item.Day26 + item.Day27 + item.Day28 + item.Day29 + item.Day30 + item.Day31;
             }
@@ -417,12 +403,10 @@ namespace ProjectTeamNET.Service.Implement
             {
                 screenItem = screenItem,
                 screenInput = screenInput,
-                userNo = userNo,
-                
+                userNo = userNo,               
             };
             var query = QueryLoader.GetQuery("ManhourUpdateQuery", "UpdateUserScreenItems");
-            manhourRepository.Update<UserScreenItem>(query, param);
-           
+            manhourRepository.Update<UserScreenItem>(query, param);          
         }
         public void InsertHistory(ManhourUpdateSearch keySearch, string userId)
         {
@@ -455,9 +439,7 @@ namespace ProjectTeamNET.Service.Implement
                 userScreenItemRepository.Create(historyGroup);
             }
            
-        }
-        
-
+        }      
         //Get History search
         public async Task<List<UserScreenItem>> GetHistorySearch(string userId)
         {
@@ -469,10 +451,10 @@ namespace ProjectTeamNET.Service.Implement
         }
 
         // get user in group
-        public ManhourUpdateUserSelectList GetUser(string groupId)
+        public ManhourUpdateUserSelectList GetUserInGroup(string groupId)
         {
             ManhourUpdateUserSelectList resultUser = new ManhourUpdateUserSelectList();
-            List<User> listUsers = (List<User>)context.Users.Where(e => e.Group_code == groupId).ToList();         
+            List<User> listUsers = (List<User>)dbUsers.Where(e => e.Group_code == groupId).ToList();         
             List<SelectListItem> userSelectList = new List<SelectListItem>();
             foreach (var item in listUsers)
             {
@@ -480,10 +462,7 @@ namespace ProjectTeamNET.Service.Implement
             }
             resultUser.listUser = userSelectList;
             return resultUser ;
-        }     
-
-        
-
+        }            
         // check file exists and file = csv 
         public bool CheckFileCSV(string fileName)
         {
@@ -498,7 +477,6 @@ namespace ProjectTeamNET.Service.Implement
             }
             return true;
         }
-
         // check header file csv duplicate header data
         public bool CheckHeaderFileCSV(string header, string headerCSV)
         {
@@ -516,65 +494,7 @@ namespace ProjectTeamNET.Service.Implement
                 }
             }
             return true;
-        }
-
-        public List<ManhourUpdateViewModel> GetDataImportCSV(List<string> listDataCsv)
-        {
-            List<ManhourUpdateViewModel> dataExport = new List<ManhourUpdateViewModel>();
-            ManhourUpdateViewModel CsvData = null;
-            for (int i = 1; i < listDataCsv.Count; i++)
-            {
-                string[] dataCSV = listDataCsv[i].Split(",");
-                CsvData = new ManhourUpdateViewModel();
-                CsvData.Year = Int16.Parse(dataCSV[0]);
-                CsvData.Month = Int16.Parse(dataCSV[1]);
-                CsvData.User_no = dataCSV[2];
-                CsvData.User_name = dataCSV[3];
-                CsvData.Theme_no = dataCSV[4];
-                CsvData.Theme_name1 = dataCSV[5];
-                CsvData.Work_contents_code = dataCSV[6];
-                CsvData.Work_contents_code_name = dataCSV[7];
-                CsvData.Work_contents_detail = dataCSV[8];
-                CsvData.Total = Double.Parse(dataCSV[9]);
-                CsvData.Day1 = Double.Parse(dataCSV[10]);
-                CsvData.Day2 = Double.Parse(dataCSV[11]);
-                CsvData.Day3 = Double.Parse(dataCSV[12]);
-                CsvData.Day4 = Double.Parse(dataCSV[13]);
-                CsvData.Day5 = Double.Parse(dataCSV[14]);
-                CsvData.Day6 = Double.Parse(dataCSV[15]);
-                CsvData.Day7 = Double.Parse(dataCSV[16]);
-                CsvData.Day8 = Double.Parse(dataCSV[17]);
-                CsvData.Day9 = Double.Parse(dataCSV[18]);
-                CsvData.Day10 = Double.Parse(dataCSV[19]);
-                CsvData.Day11 = Double.Parse(dataCSV[20]);
-                CsvData.Day12 = Double.Parse(dataCSV[21]);
-                CsvData.Day13 = Double.Parse(dataCSV[22]);
-                CsvData.Day14 = Double.Parse(dataCSV[23]);
-                CsvData.Day15 = Double.Parse(dataCSV[24]);
-                CsvData.Day16 = Double.Parse(dataCSV[25]);
-                CsvData.Day17 = Double.Parse(dataCSV[26]);
-                CsvData.Day18 = Double.Parse(dataCSV[27]);
-                CsvData.Day19 = Double.Parse(dataCSV[28]);
-                CsvData.Day20 = Double.Parse(dataCSV[29]);
-                CsvData.Day21 = Double.Parse(dataCSV[30]);
-                CsvData.Day22 = Double.Parse(dataCSV[31]);
-                CsvData.Day23 = Double.Parse(dataCSV[32]);
-                CsvData.Day24 = Double.Parse(dataCSV[33]);
-                CsvData.Day25 = Double.Parse(dataCSV[34]);
-                CsvData.Day26 = Double.Parse(dataCSV[35]);
-                CsvData.Day27 = Double.Parse(dataCSV[36]);
-                CsvData.Day28 = Double.Parse(dataCSV[37]);
-                CsvData.Day29 = Double.Parse(dataCSV[38]);
-                CsvData.Day30 = Double.Parse(dataCSV[39]);
-                CsvData.Day31 = Double.Parse(dataCSV[40]);
-                dataExport.Add(CsvData);
-            }
-
-            return dataExport;
-        }
-
-      
-
+        }      
         public async Task<int> UpdateManhours(Manhour manhours)
         {
             var result = 0;
@@ -671,8 +591,7 @@ namespace ProjectTeamNET.Service.Implement
                 return true;
             }
             return false;
-        }
-       
+        }       
         public bool CheckExist(Manhour manhour)
         {
           
@@ -701,7 +620,7 @@ namespace ProjectTeamNET.Service.Implement
             var addListTheme = new List<string>();
 
             //update screen item
-            var updateScreenItem = QueryLoader.GetQuery("ManhourInput", "UpdateUserScreenItem");
+            var updateScreenItem = QueryLoader.GetQuery("ManhourUpdateQuery", "UpdateUserScreenItem");
 
             List<string> items = new List<string>
             {
@@ -750,7 +669,7 @@ namespace ProjectTeamNET.Service.Implement
                 addListTheme.Add("SoldFlg");
             }
 
-            var query = QueryLoader.GetQuery("ManhourInput", "SelectHistoryThemeSelected", addListTheme);
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectHistoryThemeSelected", addListTheme);
 
             //if sold flag is null or empty set default value is empty
             if (string.IsNullOrEmpty(param.SoldFlg))
@@ -776,7 +695,7 @@ namespace ProjectTeamNET.Service.Implement
         }
         public async Task<List<WorkContents>> GetWorkContents()
         {
-            var query = QueryLoader.GetQuery("ManhourInput", "SelectWorkContent");
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectWorkContent");
             List<WorkContents> result = await groupRepository.Select<WorkContents>(query);
             return result;
         }
@@ -788,9 +707,13 @@ namespace ProjectTeamNET.Service.Implement
             };
             var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectWordContenClass");
             List<string> result = await manhourRepository.Select<string>(query, key);
+            if(result.Count == 0)
+            {
+                return null;
+            }
             return result[0];
         }
-        public async Task<User> GetUserImport(string userNo)
+        public async Task<User> GetUser(string userNo)
         {
             var key = new
             {

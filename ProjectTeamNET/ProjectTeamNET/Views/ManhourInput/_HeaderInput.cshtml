@@ -8,12 +8,12 @@
 
     </h2>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <button class="btn btn-sm btn-outline-secondary mr-2"><i class="fas fa-file-export"></i> CSVダウンロード</button>
+        <button class="btn btn-sm btn-outline-secondary mr-2"  onclick="exportCSV()"><i class="fas fa-file-export"></i> CSVダウンロード</button>
         <button class="btn btn-sm btn-outline-secondary mr-4" onclick="save()"><i class="far fa-save"></i> 保存</button>
         <div class="btn-group mr-2">
-            <button id="btPrev" class="btn btn-sm btn-outline-secondary" onclick="gotoPrevius()"><i class="fa fa-chevron-left"></i></button>
-            <button id="btNow" class="btn btn-sm btn-outline-secondary" onclick="gotoNow()">今日</button>
-            <button id="btNext" class="btn btn-sm btn-outline-secondary" onclick="gotoNext()"><i class="fa fa-chevron-right"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="gotoPrevious()"><i class="fa fa-chevron-left"></i></button>
+            <button id="btnNow" class="btn btn-sm btn-outline-secondary" onclick="gotoNow()">今日</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="gotoNext()"><i class="fa fa-chevron-right"></i></button>
         </div>
         <button class="btn btn-sm btn-outline-secondary mr-2" id="datepicker1"><i class="far fa-calendar-alt"></i></button>
         <div class="btn-group">
@@ -25,22 +25,19 @@
 </div>
 <div class="row mb-2 align-items-center">
     <div class="col-md-4 input-group">
-        <input type="text" class="form-control form-control-sm" placeholder="テーマ選択..." aria-label="..." aria-describedby="button-addon2" id="themeSelected" readonly>
+        <input type="text" class="form-control form-control-sm" placeholder="テーマ選択..." aria-label="..." aria-describedby="button-addon2" id="themeSelected1" readonly>
         <div class="input-group-append">
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadSelectTheme()"><i class="fas fa-search"></i></button>
         </div>
     </div>
     <div class="col-md-2 input-group pr-2">
-        <select id="workContentCode" class="form-control form-control-sm">
-            <option >内容選択...</option>
-            @foreach (var item in Model.Contents)
-            {
-                <option value="@item.Work_contents_code">@item.Work_contents_code [@item.Work_contents_code_name]</option>
-            }
+        <select id="workContentCode1" class="form-control form-control-sm">
+            <option>内容選択...</option>
+            <option>Please Choie Theme</option>
         </select>
     </div>
     <div class="col-md-2 input-group">
-        <input id="detailCode" onchange="validDetailCode()" type="text" class="form-control form-control-sm" placeholder="内容詳細..." aria-label="..." aria-describedby="button-addon2">
+        <input id="detailCode1" onchange="validDetailCode('detailCode1')" type="text" class="form-control form-control-sm" placeholder="内容詳細..." aria-label="..." aria-describedby="button-addon2">
     </div>
     <div class="col-md-4 pl-0">
         <button onclick="addTheme()" class="btn btn-sm btn-outline-secondary mr-2"><i class="fas fa-arrow-down"></i> テーマ追加</button>

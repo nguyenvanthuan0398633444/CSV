@@ -8,6 +8,7 @@ using ProjectTeamNET.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 
@@ -21,7 +22,8 @@ namespace ProjectTeamNET.Service.Implement
     {
 
         const string FORMATDATE = "yyyy/MM/dd";
-
+        const string HEADER = "年,月,ユーザNo,ユーザ名,テーマＮｏ,テーマ名,内容コード,内容名,内容詳細コード,合計," +
+                       "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31";
         private readonly IBaseRepository<Manhour> manhourRepository;
         private readonly IBaseRepository<SalesObject> saleRepository;
         private readonly IBaseRepository<UserScreenItem> screenRepository;
@@ -45,8 +47,8 @@ namespace ProjectTeamNET.Service.Implement
             InitDataModel model = new InitDataModel();
             model.Groups = await GetGroups();
             model.Objects = await saleRepository.Gets();
-            model.Contents = await GetWorkContents();
             model.DateSelect = date.ToString(FORMATDATE);
+
             //Check screen item history button to return view Day/week/month
             List<UserScreenItem> pageHistory = await GetsScreenItemHistory(pModel.userNo, "ManhourInput");
 
@@ -82,10 +84,11 @@ namespace ProjectTeamNET.Service.Implement
         public async Task<ManhourInputModel> GetManhourData(InputParamModel pModel)
         {
             DateTime date = DateTime.Parse(pModel.dateStr);
-            HorlidayParam hparam = new HorlidayParam();
+            HolidayParam hparam = new HolidayParam();
             hparam.Year = date.Year;
             hparam.Month = date.Month;
             hparam.SiteCode = "HP";
+
             //set data for manhourinput model
             ManhourInputModel model = new ManhourInputModel();
             model.ManhourDatas   = await GetManhours(pModel);
@@ -137,8 +140,22 @@ namespace ProjectTeamNET.Service.Implement
                         pinMh.Work_contents_class = pinManhour.Work_contents_class;
                         pinMh.Work_contents_code = pinManhour.Work_contents_code;
                         pinMh.Work_contents_detail = pinManhour.Work_contents_detail;
-                       
-                        manhourRepository.Create(pinMh);    
+
+                        manhourRepository.Create(pinMh);
+                        
+                        var query = QueryLoader.GetQuery("ManhourInput", "UpdatePinTheme");
+                        var keys = new
+                        {
+                            pinManhour.Year,
+                            pinManhour.Month,
+                            pinManhour.User_no,
+                            pinManhour.Theme_no,
+                            pinManhour.Work_contents_class,
+                            pinManhour.Work_contents_code,
+                            pinManhour.Work_contents_detail
+                        };
+
+                        int result = await manhourRepository.Update(query, keys);
                     }
                 }
 
@@ -165,7 +182,6 @@ namespace ProjectTeamNET.Service.Implement
 
             return result;
         }
-
         /// <summary>
         /// Get pin theme by param 
         /// </summary>
@@ -189,7 +205,6 @@ namespace ProjectTeamNET.Service.Implement
             List<ManhourInput> results = await manhourRepository.Select<ManhourInput>(query, pQuery);
             return results;
         }
-
         /// <summary>
         /// Get param search theme history
         /// </summary>
@@ -310,7 +325,7 @@ namespace ProjectTeamNET.Service.Implement
                 addListTheme.Add("SoldFlg");
             }
 
-            var query = QueryLoader.GetQuery("ManhourInput", "SelectHistoryThemeSelected", addListTheme);
+            var query = QueryLoader.GetQuery("ManhourInput", "SelectHistoryTheme", addListTheme);
 
             //if sold flag is null or empty set default value is empty
             if( string.IsNullOrEmpty(pSearchQuery.SoldFlg))
@@ -334,7 +349,6 @@ namespace ProjectTeamNET.Service.Implement
 
             return model;
         }
-
         /// <summary>
         /// Handle save data form client to db
         /// </summary>
@@ -356,9 +370,15 @@ namespace ProjectTeamNET.Service.Implement
             {
                 result = Create(saveDatas.Insert);
                 if (result <= 0)
-                { 
+                {
                     return false;
                 }
+            }
+
+            //Update theme change
+            if(saveDatas.NeedUpdate.Count !=0 && saveDatas.ForUpdate.Count != 0)
+            {
+                result = await ChangeManhour(saveDatas.NeedUpdate, saveDatas.ForUpdate);
             }
             //update information 
             if (saveDatas.Update.Count != 0)
@@ -369,9 +389,17 @@ namespace ProjectTeamNET.Service.Implement
                     return false;
                 }
             }
+            //Delete in list delete
+            if (saveDatas.Delete.Count != 0)
+            {
+                result = await DeleteManhours(saveDatas.Delete);
+                if (result < 0)
+                {
+                    return false;
+                }
+            }
             return result > 0;
         }
-
         /// <summary>
         /// Return list dayofweek need get
         /// </summary>
@@ -385,15 +413,8 @@ namespace ProjectTeamNET.Service.Implement
          
             DateTime sunday = dateSelected.AddDays(-currentDayOfWeek);
 
-            DateTime monday = sunday.AddDays(1);
-
-            if( currentDayOfWeek  == 0)
-            {
-                monday = monday.AddDays(-7);
-            }
-
             //get list date form monday to sunday
-            var dates = Enumerable.Range(0, 7).Select(days => monday.AddDays(days)).ToList();
+            var dates = Enumerable.Range(0, 7).Select(days => sunday.AddDays(days)).ToList();
             List<string> dateOfWeekList = new List<string>();
 
             foreach (var data in dates)
@@ -559,18 +580,123 @@ namespace ProjectTeamNET.Service.Implement
             await screenRepository.Update(updateScreenItem, updateParam);
         }
         /// <summary>
-        /// get list horliday by sitecode month and year
+        /// get list holiday by sitecode month and year
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-
-        public async Task<List<int>> GetHorliday(HorlidayParam param)
+        public async Task<List<int>> GetHorliday(HolidayParam param)
         {
 
             var query = QueryLoader.GetQuery("ManhourInput", "SelectHorliday");
 
             List<int> horlidays = await manhourRepository.Search<int>(query, param);
             return horlidays;
+        }
+        /// <summary>
+        /// get list workcontent by class code
+        /// </summary>
+        /// <param name="classCode"></param>
+        /// <returns></returns>
+        public async Task<List<WorkContents>> GetWorkContentsByClass(string classCode)
+        {
+            var query = QueryLoader.GetQuery("ManhourInput", "SelectByWorkClass");
+            var param = new {
+                Work_contents_class = classCode
+            };
+            return  await manhourRepository.Select<WorkContents>(query, param);
+        }
+        /// <summary>
+        /// Export manhour data of month selected
+        /// </summary>
+        /// <param name="pModel"></param>
+        /// <returns></returns>
+        public async Task<ExportModel> ExportCSV(string userNo, string dateStr)
+        {
+            ExportModel exportModel = new ExportModel();
+            DateTime date = DateTime.Parse(dateStr);
+
+            List<ManhourUpdateViewModel> result = await GetDataExport(userNo, date);
+            string name = "DL Manhour " + userNo + " " + date.ToString("yyyyMMddHHmmss") + ".csv";
+            StringBuilder buider = new StringBuilder();
+            buider.AppendLine(HEADER);
+
+            foreach (var item in result)
+            {
+                buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no}, {item.User_name}, {item.Theme_no}, {item.Theme_name1}, " +
+                                   $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail}, " +
+                                   $"{item.Total.ToString("0.0")},{item.Day1.ToString("0.0")}, {item.Day2.ToString("0.0")}, " +
+                                   $"{item.Day2.ToString("0.0")}, {item.Day3.ToString("0.0")},{item.Day4.ToString("0.0")}, " +
+                                   $"{item.Day5.ToString("0.0")}, {item.Day6.ToString("0.0")}, {item.Day7.ToString("0.0")}, " +
+                                   $"{item.Day8.ToString("0.0")}, {item.Day9.ToString("0.0")}, {item.Day10.ToString("0.0")}, " +
+                                   $"{item.Day11.ToString("0.0")}, {item.Day12.ToString("0.0")}, {item.Day13.ToString("0.0")}," +
+                                   $"{item.Day14.ToString("0.0")}, {item.Day15.ToString("0.0")}, {item.Day16.ToString("0.0")}, " +
+                                   $"{item.Day17.ToString("0.0")}, {item.Day18.ToString("0.0")}, {item.Day19.ToString("0.0")}," +
+                                   $"{item.Day20.ToString("0.0")}, {item.Day21.ToString("0.0")}, {item.Day22.ToString("0.0")}," +
+                                   $"{item.Day23.ToString("0.0")},{item.Day24.ToString("0.0")}, {item.Day25.ToString("0.0")}," +
+                                   $"{item.Day26.ToString("0.0")}, {item.Day27.ToString("0.0")}, {item.Day28.ToString("0.0")}," +
+                                   $"{item.Day29.ToString("0.0")}, {item.Day30.ToString("0.0")}, {item.Day31.ToString("0.0")}");
+            }
+
+            exportModel.builder = buider;
+            exportModel.nameFile = name;
+            return exportModel;
+        }
+        public async Task<List<ManhourUpdateViewModel>> GetDataExport(string userNo, DateTime date)
+        {
+            List<string> addlist = new List<string>{"Year","Month","User"};
+            var param = new
+            {
+                date.Year,
+                date.Month,
+                User = userNo,
+            };
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectManhourData", addlist);
+            List<ManhourUpdateViewModel> result = await manhourRepository.Search<ManhourUpdateViewModel>(query, param);
+            return result;
+        }
+
+        public async Task<bool> CheckThemeExist(ManhourKeys keys)
+        {
+            var query = QueryLoader.GetQuery("ManhourInput", "SelectManhour");
+            var param = new
+            {
+                keys.Year,
+                keys.Month,
+                keys.User_no,
+                keys.Theme_no,
+                keys.Work_contents_class,
+                keys.Work_contents_code,
+                keys.Work_contents_detail
+            };
+            List<Manhour> result = await manhourRepository.Select<Manhour>(query, param);
+            return result.Count > 0;
+        }
+
+        public async Task<int> ChangeManhour(List<Manhour> oldData, List<Manhour> newData)
+        {
+            var result = 0;
+            var query = QueryLoader.GetQuery("ManhourInput", "ChangeManhour");
+
+            for (int i = 0; i < oldData.Count; i++)
+            {
+                //Set param for update query
+                var param = new
+                {
+                    oldData[i].Year,
+                    oldData[i].Month,
+                    oldData[i].User_no,
+                    oldData[i].Theme_no,
+                    oldData[i].Work_contents_class,
+                    oldData[i].Work_contents_code,
+                    oldData[i].Work_contents_detail,
+                    NewTheme_no = newData[i].Theme_no,
+                    NewWork_contents_class = newData[i].Work_contents_class,
+                    Newwork_contents_code = newData[i].Work_contents_code,
+                    NewWork_contents_detail = newData[i].Work_contents_detail,
+                };
+                result = await manhourRepository.Update(query, param);
+            }
+            return result;
         }
     }
 }

@@ -4,7 +4,15 @@ const ERR_005 = "メッセージエリア表示";
 
 let namePageLoad = $('#pageHistory').val();
 let dateTitle = new Date(getDateTitle());
-let numDayOfMonth = daysInMonth(dateTitle.getFullYear(), dateTitle.getMonth() - 1);
+let numDayOfMonth = getDaysInMonth(dateTitle.getFullYear(), dateTitle.getMonth() - 1);
+let themeNo = null;
+let themeName = null;
+let workContentClass = null;
+let listDeleted = new Array();
+let listInserted = new Array();
+let listNeedUpdate = new Array();
+let listForUpdate = new Array();
+let holidayArr = new Array();
 
 $(document).ready(function () {
     loadInit();
@@ -51,26 +59,27 @@ function loadInit() {
     }
     changeBtActive();
 }
-//go to previus time
-function gotoPrevius() {
 
-    let pageActive = $('#btNow').text();
+//go to previous time
+function gotoPrevious() {
+    let pageActive = $('#btnNow').text();
     let dateTitle = getDateTitle();
+    let prevDate = gotoDate(dateTitle, -1);
     if (pageActive == '今日') {
-        loadDayTable(gotoDate(dateTitle, -1));
+        loadDayTable(prevDate);
     }
     if (pageActive == '今週') {
-        loadWeekTable(gotoDate(dateTitle, -1));
+        loadWeekTable(prevDate);
     }
     if (pageActive == '今月') {
         loadMonthTable(gotoMonth(dateTitle, -1));
     }
-
 }
 
 //goto next time
 function gotoNext() {
-    let pageActive = $('#btNow').text();
+
+    let pageActive = $('#btnNow').text();
     let dateTitle = getDateTitle();
     if (pageActive == '今日') {
         loadDayTable(gotoDate(dateTitle, 1));
@@ -83,41 +92,110 @@ function gotoNext() {
     }
 }
 
-// go to local time now
 function gotoNow() {
     let nowDate = formatDate(new Date(Date.now()));
-    let pageActive = $('#btNow').text();
-    if (pageActive == '今日') {
-        loadDayTable(nowDate);
-    }
-    if (pageActive == '今週') {
-        loadWeekTable(nowDate);
-    }
-    if (pageActive == '今月') {
-        loadMonthTable(nowDate);
-    }
+    displayLoad(nowDate);
 }
 
-//save information into DB
-let listDeleted = new Array();
-let listChanged = new Array();
-let listInserted = new Array();
+function displayLoad(dateStr) {
+    let pageName = $('#btnNow').text();
+    if (pageName == '今日') {
+        loadDayTable(dateStr);
+    }
+    if (pageName == '今週') {
+        loadWeekTable(dateStr);
+    }
+    if (pageName == '今月') {
+        loadMonthTable(dateStr);
+    }
+}
 
 // Change theme selected
 function changeTheme(el) {
 
     if (confirm("Do you want to change this theme?") == true) {
-
-        let themName = $(el).closest("tr").find(".ThemeName").text();
-        let themeNo = $(el).closest("tr").find(".ThemeNo").text();
-        let wContent = $(el).closest("tr").find(".WContent").text();
-        let detail = $(el).closest("tr").find(".Detail").text();
-
-        $("#modalThemeNo").val(themeNo);
-        $("#modalThemeName").val(themName);
-        $("#modalWC").val(wContent);
-        $("#modalDetail").val(detail);
+        $("#modalThemeNo").val($(el).closest("tr").find(".ThemeNo").text());
+        $("#modalThemeName").val($(el).closest("tr").find(".ThemeName").text());
+        $("#modalWC").val($(el).closest("tr").find(".WContent").text());
+        $("#modalDetail").val($(el).closest("tr").find(".Detail").text());
         $("#modal3").modal('show');
+
+        $('#btnChange').on('click', function () {
+
+            let workContentCode = $(`#workContentCode2 :selected`).val();
+            let workContentDetail = $(`#detailCode2`).val();
+            let year = parseInt($(el).closest('tr').find(".Year").val());
+            let month = parseInt($(el).closest("tr").find(".Month").val());
+            let userNo = $(el).closest("tr").find(".User_No").val();
+            if (!themeNo || !themeName || !workContentClass) {
+                alert("Please choice theme!");
+                return;
+            }
+            if (!workContentDetail) {
+                alert("Please choice work contents!");
+                return;
+            }
+            if (!workContentCode) {
+                alert("Please choice work content code!");
+                return;
+            }
+            let obj = {};
+                obj.Theme_no = themeNo;
+                obj.Year = year;
+                obj.Month = month;
+                obj.Work_contents_class = workContentClass;
+                obj.Work_contents_code = workContentCode;
+                obj.Work_contents_detail = workContentDetail;
+
+            $.ajax({
+                url: `/ManhourInput/CheckExistTheme`,
+                method: "POST",
+                data: obj,
+                success: function (result) {
+                    console.log(result);
+                    if (result == false) {
+                        let obj = {};
+                        obj.Year = year;
+                        obj.Month = month;
+                        obj.User_no = userNo;
+                        obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
+                        obj.Work_contents_class = $(el).closest("tr").find(".WC_Class").val();
+                        obj.Work_contents_code = $(el).closest("tr").find(".WC_Code").val();
+                        obj.Work_contents_detail = $(el).closest("tr").find(".WC_Detail").val();
+
+                        listNeedUpdate.push(obj);
+                        console.log(listNeedUpdate);
+
+                        obj = {};
+                        obj.Theme_no = themeNo;
+                        obj.Work_contents_class = workContentClass;
+                        obj.Work_contents_code = workContentCode;
+                        obj.Work_contents_detail = workContentDetail;
+
+                        listForUpdate.push(obj);
+                        console.log(listForUpdate);
+                        $('#modal3').modal('hide');
+                        //Change information row changed
+                        $(el).closest("tr").find(".ThemeName").text(themeName);
+                        $(el).closest("tr").find(".ThemeNo").text(themeNo);
+                        $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).text());
+                        $(el).closest("tr").find(".Detail").text(workContentDetail);
+
+                        //set default data 
+                        $(`#themeSelected1`).val('');
+                        $(`#themeSelected2`).val('');
+                        $(`#workContentCode1`).html('');
+                        $(`#detailCode1`).val('');
+                        $(`#workContentCode1`).html('<option value=" ">Please choice theme...</option>');
+                        $(`#workContentCode2`).html('<option value=" ">Please choice theme...</option>');
+                        themeNo = null; themeName = null; workContentClass = null;
+                        
+                    } else {
+                        alert('Theme is existed!');
+                    }
+                }
+                });
+        });
 
     }
 
@@ -151,9 +229,10 @@ function save() {
     let dayGet = 'day' + new Date(getDateTitle()).getDate();
     let listData = new Array();
     let saveData = {};
+    let isStop = false;
 
     //for each tr in table add to obj then add to list data need saved
-    $('#tbody tr').each(function () {
+    $('#tbody tr').each( function () {
         let obj = {};
 
         //value
@@ -167,23 +246,39 @@ function save() {
         obj.pin_flg = $(this).find(".Pin_flg").val() == 'true' ? true : false;
         obj.total = parseFloat($(this).find(".Total").val());
 
-        //convert 2021/06/23 => 20210623
+        //convert 2021/06/23 => 20210623 for fixdate varchar(8)
         obj.fix_date = formatDate(new Date()).split('/').join([]);
 
         //get input hour for month
         for (let i = 1; i <= numDayOfMonth; i++) {
-            obj[`day${i}`] = parseFloat($(this).find(`.day${i}`).val());
+            let inputHour = parseFloat($(this).find(`.day${i}`).val());
+            if (inputHour < 0 || isNaN(inputHour)) { //valid input hour
+                isStop = true;
+                return false;  
+            }
+            obj[`day${i}`] = inputHour;
+            
         }
 
         //get input hour for day
         if ($(this).find(".inputHour").val()) {
-            obj[dayGet] = parseFloat($(this).find(".inputHour").val());
+            let inputHour = parseFloat($(this).find(".inputHour").val());
+            if (inputHour < 0 || isNaN(inputHour)) {//valid input hour
+                isStop = true;
+                return false;
+            }
+            obj[dayGet] = inputHour;
         }
 
         //get input hour for week
         if (dayGetOfWeek.length > 0) {
             dayGetOfWeek.forEach(date => {
-                obj[`${date}`] = parseFloat($(this).find(`.input${date}`).val());
+                let inputHour = parseFloat($(this).find(`.input${date}`).val());
+                if (inputHour < 0 || isNaN(inputHour)) {//valid input hour
+                    isStop = true;
+                    return false;    
+                }
+                obj[`${date}`] = inputHour;
             })
         }
         // Add to list data
@@ -191,13 +286,19 @@ function save() {
 
     });
 
+    if (isStop) {
+        return alert('input hour is not valid');
+    }
     //list manhour change
     saveData.Update = listData;listdata = [];
     //list manhour deleted
     saveData.Delete = listDeleted;listDeleted = [];
     //list manhour insert
     saveData.Insert = listInserted;listInserted = [];
-
+    //list manhour insert
+    saveData.NeedUpdate = listNeedUpdate; listNeedUpdate = [];
+    //list manhour insert
+    saveData.ForUpdate = listForUpdate; listNeedUpdate = [];
     console.log(saveData);
     $.ajax({
         url: "/ManhourInput/Save",
@@ -297,9 +398,6 @@ function searchTheme() {
 }
 
 //get information when onclick add theme form checked row
-var themeNo = null;
-var themeName = null;
-var workContentClass = null;
 function choiceTheme() {
 
     $("#slThemeBody tr").each(function () {
@@ -308,8 +406,31 @@ function choiceTheme() {
             themeNo = $(this).find(".ThemeNo").val();
             workContentClass = $(this).find(".WorkContentClass").val();
             themeName = $(this).find(".ThemeName").val();
+
+            //load select list by class code
+            $(`#workContentCode1`).html('<option value=" ">内容選択...</option>');
+            $(`#workContentCode2`).html('<option value=" ">内容選択...</option>');
+            $.ajax({
+                url: "/ManhourInput/GetWorkContentByClass",
+                data: { classCode: workContentClass },
+                type: "GET",
+                contentType: "application/json",
+                dataType: "json",
+                success: function (result) {
+                    result.forEach(item => {
+                        var option = new Option(`${item.work_contents_code} [${item.work_contents_code_name}]`, `${item.work_contents_code}`);
+                      
+                        $(`#workContentCode2`).append(option);
+                        var option = new Option(`${item.work_contents_code} [${item.work_contents_code_name}]`, `${item.work_contents_code}`);
+                        $(`#workContentCode1`).append(option);
+                    })
+                }
+                 
+            });
+
             $('#modal1').modal('hide');
-            $('#themeSelected').val(themeNo + ' ' + themeName);
+            $('#themeSelected1').val(themeNo + ' ' + themeName);
+            $('#themeSelected2').val(themeNo + ' ' + themeName);
         }
 
     });
@@ -319,29 +440,45 @@ function choiceTheme() {
 //Add new theme to table
 function addTheme() {
 
-    let workcontent = $('#workContentCode :selected').text();
-    let workContentCode = $('#workContentCode :selected').val();
-    let workContentDetail = $(detailCode).val();
+    let workcontent = $(`#workContentCode1 :selected`).text();
+    let workContentCode = $(`#workContentCode1 :selected`).val();
+    let workContentDetail = $(`#detailCode1`).val();
     let userNo = 'BAOTQ';
     let dateTitle = new Date(getDateTitle());
+    let dayGet = new Date(getDateTitle()).getDate();
     let year = dateTitle.getFullYear();
     let month = dateTitle.getMonth() + 1;
-
+    //valid data 
     if (!themeNo || !themeName || !workContentClass) {
-        alert("please choice theme!");
+        alert("Please choice theme!");
         return;
     }
     if (!workContentDetail) {
-        alert("please choice work contents!");
+        alert("Please choice work contents!");
         return;
     }
     if (!workContentCode) {
-        alert("please choice work content code!");
+        alert("Please choice work content code!");
         return;
     }
+    let obj = {};
+        obj.Theme_no = themeNo;
+        obj.Year = year;
+        obj.Month = month;
+        obj.Work_contents_class = workContentClass;
+        obj.Work_contents_code = workContentCode;
+        obj.Work_contents_detail = workContentDetail;
 
-    var rowAdd = '';
-    rowAdd += `<tr>
+    $.ajax({
+        url: `/ManhourInput/CheckExistTheme`,
+        method: "POST",
+        data: obj,
+        success: function (result) {
+            console.log(result);
+            if (result == false) {
+
+                var rowAdd = '';
+                rowAdd += `<tr>
                         <td>
                             <div class="text-center">
                                 <i class="fas fa-thumbtack" style="color: #D3D3D3;"></i>
@@ -355,39 +492,129 @@ function addTheme() {
                             <input type="hidden" class="WC_Code"    name="WorkContentCode" value="${workContentCode}"/>
                             <input type="hidden" class="WC_Detail"  name="WorkContentCode" value="${workContentDetail}"/>
                             <input type="hidden" class="pin_flg"    name="Pin_flg" value="${false}" />
-                            <input type="hidden" class="Total"      name="Total" value="${0.0}" />`
-    for (let i = 1; i <= numDayOfMonth; i++) {
-        rowAdd += `<<input type="hidden" name="${'day' + i}" value="0.0" class="${'day' + i}">`
-    }
-    rowAdd += `         <td class="ThemeNo">${themeNo}</td>
-                        <td class="ThemeName">${themeName}</td>
-                        <td class="WContent">${workcontent}</td>
-                        <td class="Detail">${workContentDetail}</td>
-                        <td> <input onclick="this.select();" type="text" value="0.0" class="form-control table-big-input inputHour"></td>
-                        <td>
-                            <div>
-                                <button class="btn btn-sm btn-outline-secondary mr-2" onclick="changeTheme(this)">
-                                            <i class="fas fa-exchange-alt"></i> テーマ変更
-                                </button>
+                            <input type="hidden" class="Total"      name="Total" value="0.0" />`
+                for (let i = 1; i <= numDayOfMonth; i++) {
+                    rowAdd += `<input type="hidden" name="${'day' + i}" value="0.0" class="${'day' + i}">`
+                }
+                    rowAdd += ` <td class="ThemeNo">${themeNo}</td>
+                                <td class="ThemeName">${themeName}</td>`
+                let pageActive = $('#btnNow').text();
+                //add row for day table
+                if (pageActive == '今日') {
+                    rowAdd +=`<td class="WContent">${workcontent}</td>
+                            <td class="Detail">${workContentDetail}</td>
+                            <td>
+                                        <input type="text" onclick = "this.select();setOldVal(this,'${`inputHourday${dayGet}`}');"
+                                             onchange = "onChangeValid(this,'inputHourday${dayGet}')"
+                                             onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"
+                                        value="0.0" class="form-control table-big-input inputHourday${dayGet}">
+                            </td>
+                            <td>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary mr-2" onclick="changeTheme(this)">
+                                                <i class="fas fa-exchange-alt"></i> テーマ変更
+                                    </button>
                    
-                               <button class="btn btn-sm btn-outline-secondary mr-2" onclick="deleteTheme(this)">
-                                <i class="far fa-trash-alt"></i> 削除</button>
-                             <div>       
-                         </td>
-                       </tr>`;
-    $('#tbody').append(rowAdd);
-    let obj = {};
-    obj.Year = parseInt(year);
-    obj.Month = parseInt(month);
-    obj.Theme_no = themeNo;
-    obj.User_no = 'BAOTQ';
-    obj.Work_contents_class = workContentClass;
-    obj.Work_contents_code = workContentCode;
-    obj.Work_contents_detail = workContentDetail;
-    listInserted.push(obj);
-    //set theme information to null
-    themeNo = null; themeName = null; workContentClass = null;
+                                   <button class="btn btn-sm btn-outline-secondary mr-2" onclick="deleteTheme(this)">
+                                    <i class="far fa-trash-alt"></i> 削除</button>
+                                 <div>       
+                             </td>
+                           </tr>`;
+                    $('#tbody').append(rowAdd);
+                }
+                //add row for week table 
+                if (pageActive == '今週') {
+                    rowAdd +=  `<td class="WContent">${workcontent}</td>
+                                <td class="Detail">${workContentDetail}</td>
+                                <td class="total">0.0</td>`;
+                    dayGetOfWeek.forEach(date => {
+                        rowAdd += `<td class="${getNumInStr(date)}" >
+                                        <input onclick="this.select();setOldVal(this,'${'input' + date}');"
+                                        onchange="onChangeValid(this,'input${date}')"
+                                        onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122" type="text"
+                                        value="0.0" class="form-control table-big-input input${date}">
+                                   </td>`
+                    });
+
+                    rowAdd += `<td>
+                                    <button class="btn btn-sm mr-2" onclick="changeTheme(this)">
+                                                <i class="fas fa-exchange-alt"></i> 
+                                    </button>
+                                </td>
+                                <td>
+                                   <button class="btn btn-sm mr-2" onclick="deleteTheme(this)">
+                                    <i class="far fa-trash-alt"></i> </button>
+                                 <div>       
+                             </td>
+                           </tr>`;
+                    $('#tbody').append(rowAdd);
+                    setHolidayBackground(holidayArr);
+                }
+                //add row for month table
+                if (pageActive == '今月') {
+                    rowAdd = `<tr>
+                        <td>
+                            <div class="text-center">
+                                <i class="fas fa-thumbtack" style="color: #D3D3D3;"></i>
+                            </div>
+                        </td>
+                            <input type="hidden" class="Year"       name="Year" value="${year}"/>
+                            <input type="hidden" class="Month"      name="Month" value="${month}"/>
+                            <input type="hidden" class="User_No"    name="Month" value="${userNo}"/>
+                            <input type="hidden" class="Theme_No"   name="ThemeNo" value="${themeNo}"/>
+                            <input type="hidden" class="WC_Class"   name="WorkContentClass" value="${workContentClass}"/>
+                            <input type="hidden" class="WC_Code"    name="WorkContentCode" value="${workContentCode}"/>
+                            <input type="hidden" class="WC_Detail"  name="WorkContentCode" value="${workContentDetail}"/>
+                            <input type="hidden" class="pin_flg"    name="Pin_flg" value="${false}" />
+                            <input type="hidden" class="Total"      name="Total" value="0.0" />
+                        <td class="ThemeNo">${themeNo}</td>
+                        <td class="ThemeName">${themeName}</td>
+                        <td class="Detail">${workContentDetail}</td>
+                        <td class="total">0.0</td>`;
+
+                    for (let i = 1; i <= numDayOfMonth; i++) {
+                        rowAdd += `<td class="${i}">
+                                        <input  onclick="this.select();setOldVal(this,'${'day' + i}');" 
+                                        onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"
+                                        onchange="onChangeValid(this,'${'day' + i}')"
+                                        type="text" value="0.0" 
+                                        class="form-control table-input ${'day' + i}">
+                                    </td>`
+
+                    }
+                    rowAdd += `   <td><i onclick="changeTheme(this)" class="fas fa-exchange-alt"></i></td>    
+                                  <td><i onclick="deleteTheme(this)" class="far fa-trash-alt"></i></td>
+                            </tr>`;
+                    $('#tbody').append(rowAdd);
+                    setHolidayBackground(holidayArr);
+                }
+                          
+                let obj = {};
+                obj.Year = parseInt(year);
+                obj.Month = parseInt(month);
+                obj.Theme_no = themeNo;
+                obj.User_no = 'BAOTQ';
+                obj.Work_contents_class = workContentClass;
+                obj.Work_contents_code = workContentCode;
+                obj.Work_contents_detail = workContentDetail;
+
+                listInserted.push(obj);
+                //set theme information to null and default option
+                $(`#themeSelected1`).val('');
+                $(`#themeSelected2`).val('');
+                $(`#workContentCode1`).html('<option value=" ">Please choice theme...</option>');
+                $(`#workContentCode2`).html('<option value=" ">Please choice theme...</option>');
+                $(`#detailCode1`).val('');
+                themeNo = null; themeName = null; workContentClass = null;
+            } else {
+                alert("This theme is exist!")
+            }
+        }
+    });
+
+
 }
+
 //Sum number in a class
 (function ($) {
     $.fn.sum = function () {
@@ -402,7 +629,7 @@ function addTheme() {
 
 //format date return string date 2021/06/18
 function formatDate(date) {
-    return date.toISOString().slice(0, 10).replace(/-/g, "/");
+    return date.toLocaleDateString("ja-JP");
 }
 
 //get date title
@@ -431,14 +658,13 @@ function dayOfWeek(date) {
     return new Date(date).toLocaleString('ja-JP', { weekday: 'long' }).substring(0, 1);
 }
 
-
 //valid detail code in 00-99
-function validDetailCode() {
+function validDetailCode(name) {
 
-    let code = $("#detailCode").val();
+    let code = $(`#${name}`).val();
 
     if (code.length != 2 || code < 0 || code > 99) {
-        $("#detailCode").val('');
+        $(`#${name}`).val('');
         return alert('Giá tri nhập vào khác 00 - 99');
     }
 
@@ -472,6 +698,7 @@ function changeBtActive() {
 /* Handle main table event*/
 //Render day table by ajax
 function loadDayTable(dateStr) {
+
     dayGetOfWeek = [];
     listDeleted = [];
     listInserted = [];
@@ -486,7 +713,7 @@ function loadDayTable(dateStr) {
         contentType: "application/json",
         dataType: "json",
         success: function (result) {
-
+            holidayArr = result.horlidays;
             //thead
             var thead = `<tr>
                                 <th style="width:5%" ></th> 
@@ -514,8 +741,6 @@ function loadDayTable(dateStr) {
                                     <input type="hidden" class="Year"   name="Year" value="${data.year}" />
                                     <input type="hidden" class="Month"  name="Month" value="${data.month}" />
                                     <input type="hidden" class="User_No" name="User_No" value="${data.user_no}" />
-                                    <input type="hidden" class="Group_Code" name="Group_Code" value="${data.group_code}" />
-                                    <input type="hidden" class="Site_Code" name="Site_Code" value="${data.site_code}" />
                                     <input type="hidden" class="Theme_No" name="Theme_No" value="${data.theme_no}" />
                                     <input type="hidden" class="WC_Class" name="WorkContentClass" value="${data.work_contents_class}" />
                                     <input type="hidden" class="WC_Code" name="WorkContentCode" value="${data.work_contents_code}" />
@@ -527,11 +752,14 @@ function loadDayTable(dateStr) {
                 }
                 tbody += `<td class="ThemeNo">${data.theme_no}</td> 
                                     <td class="ThemeName">${data.theme_name1}</td>
-                                    <td class="WContent">${data.work_contents_code}:${data.work_contents_class_name}</td>
+                                    <td class="WContent">${data.work_contents_code}:${data.work_contents_code_name}</td>
                                     <td class="Detail">${data.work_contents_detail}</td>
 
                                     <td>
-                                        <input type="text"  onclick="this.select();" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122" value="${data[dayGet].toFixed(1)}" class="form-control table-big-input inputHour">
+                                        <input type="text" onclick = "this.select();setOldVal(this,'${`inputHour${dayGet}`}');"
+                                             onchange = "onChangeValid(this,'inputHour${ dayGet }')"
+                                             onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"
+                                        value="${data[dayGet].toFixed(1)}" class="form-control table-big-input inputHour${dayGet}">
                                     </td>                                  
                                     <td>
                                         <button class="btn btn-sm btn-outline-secondary mr-2 showchangeTheme" onclick="changeTheme(this)">
@@ -550,23 +778,37 @@ function loadDayTable(dateStr) {
                                 <td></td>
                                 <td></td>
                                 <td>合計</td>`
-            //render icon warning 
-            if (sum == 8) {
-                tfoot += `<td>
-                                <i data-toggle="tooltip" title="合計工数が8h未満です"></i> ${sum.toFixed(1)}
-                          </td>`
-            } else
-                if (sum == 0) {
-                    tfoot += `<td>
-                                   <i class="fas fa-exclamation-circle text-danger" data-toggle="tooltip" title="合計工数が8h未満です"></i> ${sum.toFixed(1)}
-                              </td>`
-                } else {
-                    tfoot += `<td>
-                                  <i class="fas fa-exclamation-circle text-warning" data-toggle="tooltip" title="合計工数が8h未満です"></i> ${sum.toFixed(1)}
-                              </td>`
+            let nowDate = new Date().getDate(); 
+            let numDayGet = getNumInStr(dayGet);
+            let index = isHoliday(result.horlidays, numDayGet);
+            if (sum == 0) {
+                if (index === -1 && numDayGet <= nowDate) { //is not a horliday
+                    tfoot += `<td class="${numDayGet}" id="TotalinputHourday${numDayGet}">
+                                        <i class="fas fa-exclamation-circle text-danger"
+                                        data-toggle="tooltip" title="合計工数が8h未満です">
+                                        </i>
+                                    ${sum.toFixed(1)}
+                                   </td>`;
                 }
 
-            tfoot += `  <td></td>
+                else {
+                    tfoot += `<td class="${numDayGet}" id="TotalinputHourday${numDayGet}">${sum.toFixed(1)}</td>`;
+                }
+
+            }
+            else
+                if (sum < 8 && numDayGet <= nowDate) { //is not normal working time
+
+                    tfoot += `<td class="${numDayGet}" id="TotalinputHourday${numDayGet}">
+                                        <i class="fas fa-exclamation-circle text-warning"
+                                          data-toggle="tooltip" title="合計工数が8h未満です">
+                                        </i> ${sum.toFixed(1)}
+                                    </td>`
+                } else { //is a normal working time
+                    tfoot += `<td class="${numDayGet}" id="TotalinputHourday${numDayGet}">${sum.toFixed(1)}</td>`;
+                }
+
+                tfoot += `      <td></td>
                                 </tr>
                                 <tr>
                                 <td></td>
@@ -574,7 +816,7 @@ function loadDayTable(dateStr) {
                                 <td></td>
                                 <td></td>
                                 <td>不足工数</td>
-                                <td>${(8 - sum) != 0 ? (8 - sum).toFixed(1) : ""}</td>
+                                <td id="missHour${getNumInStr(dayGet)}">${(8 - sum) > 0 ? ((8 - sum).toFixed(1) == 8 ? "" :(8 - sum).toFixed(1)) : ""}</td>
                                 <td></td>
                             </tr>`;
             $('#tfoot').html(tfoot);
@@ -582,8 +824,7 @@ function loadDayTable(dateStr) {
             $("#dateTitle").text(result.dateSelect + " (" + dayOfWeek(result.dateSelect) + ")");
             window.history.pushState('page2', 'Title', '/ManhourInput/Day');
             changeBtActive();
-            $("#btNow").text('今日');
-            
+            $("#btnNow").text('今日');
         },
         error: function (errormessage) {
             alert(errormessage.responseText);
@@ -592,8 +833,10 @@ function loadDayTable(dateStr) {
     });
 }
 
-//Render week table by ajax
+//render manhour week table
 let dayGetOfWeek = new Array();
+let sumByDay = new Array();
+let subByDay = new Array();
 function loadWeekTable(dateStr) {
     listDeleted = [];
     listInserted = [];
@@ -608,7 +851,10 @@ function loadWeekTable(dateStr) {
         contentType: "application/json",
         dataType: "json",
         success: function (result) {
+
             let dateSelected = result.listDateOfWeek;
+
+            holidayArr = result.horlidays;
             dayGetOfWeek = [];
             let thead = `<tr> 
                                 <th style="width:4%" ></th>
@@ -617,23 +863,22 @@ function loadWeekTable(dateStr) {
                                 <th style="width:6%">内容</th>
                                 <th style="width:6%">内容詳細</th>
                                 <th style="width:6%">週計</th>`
-            dateSelected.forEach(date => {
+            dateSelected.forEach(date => { 
                 thead += `<th style="width:6%">${date.substring(5, date.length)}-${dayOfWeek(date)}</th>`
-                dayGetOfWeek.push("day" + new Date(date).getDate())
+                dayGetOfWeek.push("day" + new Date(date).getDate())//day of week [day1,day2]
             })
 
-            thead += `<th style="width:4%" ></th >
+                thead +=       `<th style="width:4%" ></th >
                                 <th style="width:4%"></th>
-                            </tr>`;
+                       </tr>`;
             $('#thead').html(thead);
 
             // set tbody for table
             var tbody = '';
             result.manhourDatas.forEach(data => {
                 tbody += `<tr>
-                                    <td>
-                                        <div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></i>
-                                    </div>
+                                     <td>
+                                        <div class="text-center"> ${data.pin_flg == true ? `<i class="fas fa-thumbtack"></i>` : `<i class="fas fa-thumbtack"  style="color: #D3D3D3;"></i>`}</div>
                                     </td>
                                     <input type="hidden" class="Year"   name="Year" value="${data.year}" />
                                     <input type="hidden" class="Month"  name="Month" value="${data.month}" />
@@ -648,16 +893,19 @@ function loadWeekTable(dateStr) {
                 for (let i = 1; i <= numDayOfMonth; i++) {
                     tbody += `<input type="hidden" name="${'day' + i}" value="${data['day' + i].toFixed(1)}" class="${'day' + i}">`
                 } 
-                        tbody+=     `<td class="ThemeNo">${data.theme_no}</td> 
+                        tbody+=    `<td class="ThemeNo">${data.theme_no}</td> 
                                     <td class="ThemeName">${data.theme_name1}</td>
-                                    <td class="WContent">${data.work_contents_code}:${data.work_contents_class_name}</td>
+                                    <td class="WContent">${data.work_contents_code}:${data.work_contents_code_name}</td>
                                     <td class="Detail">${data.work_contents_detail}</td>
-                                    <td class="Total">${data.total.toFixed(1)}</td>` 
+                                    <td class="total">${data.total.toFixed(1)}</td>` 
 
                 dayGetOfWeek.forEach(date => {
-                    tbody += `<td class="${date.replace(/^.*?(\d+).*/, '$1')}"><input  onclick="this.select();" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"  type="text" value="${data[date].toFixed(1)}" class="form-control table-big-input input${date}"></td>`
+                    tbody += `<td class="${getNumInStr(date)}">
+                                    <input  onclick = "this.select();setOldVal(this,'${'input' + date}');"
+                                    onchange = "onChangeValid(this,'input${date}')"
+                                    onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"  type="text"
+                                    value="${data[date].toFixed(1)}" class="form-control table-big-input input${date}"></td>`
                 })
-
                 tbody += `          <td>
                                         <button class="btn btn-sm" onclick="changeTheme(this)">
                                             <i class="fas fa-exchange-alt"></i>
@@ -672,66 +920,66 @@ function loadWeekTable(dateStr) {
             });
             $('#tbody').html(tbody);
 
-            let sumArr = [];
+            sumByDay = [];
             dayGetOfWeek.forEach(data=> {
-                sumArr.push($(`.${data}`).sum());
+                sumByDay.push($(`.${data}`).sum());
             })
             // sub by column
-            let subArr = [];
+            subByDay = [];
             dayGetOfWeek.forEach(data => {
-                    subArr.push(8 - $(`.${data}`).sum());
+                subByDay.push(8 - $(`.${data}`).sum());
             });
 
             //set tfoot for table
-            let tfoot = `<tr><td></td><td></td><td></td><td></td><td>合計</td><td id="totalhour">${$(`.Total`).sum()}</td>`;
+            let tfoot = `<tr><td></td><td></td><td></td><td></td><td>合計</td><td id="totalHour">${$(`.Total`).sum()}</td>`;
 
             let x = 0;
             let nowDate = new Date().getDate(); 
-            sumArr.forEach(item => {
-                let numDayGet = dayGetOfWeek[x].replace(/^.*?(\d+).*/, '$1');
-                let index = isHorliday(result.horlidays, numDayGet);
-                if (item == 0) {
+            sumByDay.forEach(item => {
 
+                let numDayGet = getNumInStr(dayGetOfWeek[x]);
+                let index = isHoliday(result.horlidays, numDayGet);
+                if (item == 0) {
                     if (index === -1 && numDayGet <= nowDate) { //is not a horliday
-                        tfoot += `<td class="${numDayGet}">
+                        tfoot += `<td class="${numDayGet}" id="Totalinputday${numDayGet}">
                                         <i class="fas fa-exclamation-circle text-danger"
                                         data-toggle="tooltip" title="合計工数が8h未満です">
-                                        </i> ${item.toFixed(1)}
+                                        </i>
+                                    ${item.toFixed(1)}
                                    </td>`;
                     }
 
                     else {
-                        tfoot += `<td class="${numDayGet}">
-                                       <i data-toggle="tooltip" title="合計工数が8h未満です"></i> ${item.toFixed(1)}
-                                   </td>`;
+                        tfoot += `<td class="${numDayGet}" id="Totalinputday${numDayGet}">${item.toFixed(1)}</td>`;
                     }
 
                 }
-                else if (item < 8) { //is not normal working time
+                else
+                    if (item < 8 && numDayGet <= nowDate) { //is not normal working time
 
-                        tfoot += `<td class="${numDayGet}">
-                                <i class="fas fa-exclamation-circle text-warning"
-                                  data-toggle="tooltip" title="合計工数が8h未満です">
-                                </i> ${item.toFixed(1)}
-                              </td>`
-                    } else {
-                        tfoot += `<td class="${numDayGet}">
-                                <i data-toggle="tooltip" title="合計工数が8h未満です"></i> ${item.toFixed(1)}
-                              </td>`;
-                    } 
+                        tfoot += `<td class="${numDayGet}" id="Totalinputday${numDayGet}">
+                                        <i class="fas fa-exclamation-circle text-warning"
+                                          data-toggle="tooltip" title="合計工数が8h未満です">
+                                        </i> ${item.toFixed(1)}
+                                    </td>`
+                        } else { //is a normal working time
+                        tfoot += `<td class="${numDayGet}" id="Totalinputday${numDayGet}">${item.toFixed(1)}</td>`;
+                       }
+                
                 x++;
             });
 
             // Handle event in tfoot
-            tfoot += `<td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td>不足工数</td><td></td>`;
+            tfoot += `<td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td>不足工数</td><td></td>`
             x = 0;
-            subArr.forEach(item => {
-                let numDayGet = dayGetOfWeek[x].replace(/^.*?(\d+).*/, '$1');
-                let index = isHorliday(result.horlidays, numDayGet);
-                if (item == 0 || index !== -1 || item==8) {
-                    tfoot += `<td></td>` 
+            subByDay.forEach(item => {
+                let numDayGet = getNumInStr(dayGetOfWeek[x]);
+                let index = isHoliday(result.horlidays, numDayGet);
+
+                if (item <= 0 || index !== -1 || item==8) {//not display
+                    tfoot += `<td id="missHour${numDayGet}"></td>` 
                 } else {
-                    tfoot += `<td class="${numDayGet}">${item.toFixed(1)}</td>`
+                    tfoot += `<td class="${numDayGet}" id="missHour${numDayGet}">${item.toFixed(1)}</td>`
                 } 
                 x++;
             });
@@ -746,20 +994,21 @@ function loadWeekTable(dateStr) {
             window.history.pushState('page2', 'Title', '/ManhourInput/Week');
             changeBtActive();
             $("#dateTitle").text(fromDate + '-' + toDate);
-            $("#btNow").text('今週');
+            $("#btnNow").text('今週');
 
             //Set backgorund for horliday
-            horlidayBackground(result.horlidays);
+            setHolidayBackground(result.horlidays);
         }
 
     });
 
 }
 
-function isHorliday(horlidayArr, num) {
-    return horlidayArr.findIndex(e => e == num);
+function isHoliday(holidayArr, num) {
+    return holidayArr.findIndex(e => e == num);
 }
 
+//render manhour month table
 function loadMonthTable(dateStr) {
     dayGetOfWeek = [];
     listDeleted = [];
@@ -775,9 +1024,10 @@ function loadMonthTable(dateStr) {
         contentType: "application/json",
         dataType: "json",
         success: function (result) {
+            holidayArr = result.horlidays;
+
             //Set thead for table
             let thead = `tr><th></th><th>テーマNo</th><th>テーマ名</th><th>内容</th><th>月計</th>`
-
             for (let i = 1; i <= numDayOfMonth; i++) {
                 thead += `<th>${i}</th>`
             }
@@ -790,16 +1040,16 @@ function loadMonthTable(dateStr) {
             result.manhourDatas.forEach(data => {
                 tbody += `<tr>
                                 <td>
-                                    <div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
-                                <td>${data.theme_no}</td>
-                                <td>${data.theme_name1}</td>
-                                <td>${data.work_contents_code}</td>
-                                <td id="total">${data.total}</td>
+                                     <div class="text-center"> ${data.pin_flg == true ? //display pin icon
+                                    `<i class="fas fa-thumbtack"></i>` :`<i class="fas fa-thumbtack"  style="color: #D3D3D3;"></i>`}</div>
+                                </td>
+                                <td class="ThemeNo">${data.theme_no}</td> 
+                                <td class="ThemeName">${data.theme_name1}</td>
+                                <td class="Detail">${data.work_contents_detail}</td>
+                                <td class="total">${data.total.toFixed(1)}</td>
                                 <input type="hidden" class="Year"   name="Year" value="${data.year}" />
                                 <input type="hidden" class="Month"  name="Month" value="${data.month}" />
                                 <input type="hidden" class="User_No" name="User_No" value="${data.user_no}" />
-                                <input type="hidden" class="Group_Code" name="Group_Code" value="${data.group_code}" />
-                                <input type="hidden" class="Site_Code" name="Site_Code" value="${data.site_code}" />
                                 <input type="hidden" class="Theme_No" name="Theme_No" value="${data.theme_no}" />
                                 <input type="hidden" class="WC_Class" name="WorkContentClass" value="${data.work_contents_class}" />
                                 <input type="hidden" class="WC_Code" name="WorkContentCode" value="${data.work_contents_code}" />
@@ -807,72 +1057,79 @@ function loadMonthTable(dateStr) {
                                 <input type="hidden" class="Pin_flg" name="Pin_flg" value="${data.pin_flg}" />
                                 <input type="hidden" class="Total" name="Total" value="${data.total}" />`
                 for (let i = 1; i <= numDayOfMonth; i++) {
-                    tbody += `<td class="${i}"><input  onclick="this.select();" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"  type="text" value="${data['day' + i].toFixed(1)}" class="form-control table-input ${'day' + i}"></td>`
+
+                    tbody += `<td class="${i}">
+                                    <input  onclick="this.select();setOldVal(this,'${'day' + i}');" 
+                                    onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"
+                                    onchange="onChangeValid(this,'${'day' + i}')"
+                                    type="text" value="${data['day' + i].toFixed(1)}" 
+                                    class="form-control table-input ${'day' + i}">
+                             </td>`
+
                 }
 
-                tbody += `    <td><div class="text-center"><i class="fas fa-exchange-alt" ></i></div></td>
-                                <td><div class="text-center"><i class="far fa-trash-alt"></i></div></td>
-                              </tr>`;
+                tbody += `   <td><i onclick="changeTheme(this)" class="fas fa-exchange-alt"></i></td>    
+                             <td><i class="far fa-trash-alt" onclick="deleteTheme(this)"></i></td>
+                          </tr>`;
             })
 
             // Handle event in tfoot
             $('#tbody').html(tbody);
             // sum by column
-            let sumArr = [];
+            sumByDay = [];
             for (i = 1; i <= numDayOfMonth; i++) {
-                sumArr.push($('.day' + i).sum());
+                sumByDay.push($('.day' + i).sum());
             }
             // sub by column
-            let subArr = [];
+            subByDay = [];
             for (i = 1; i <= numDayOfMonth; i++) {
-                subArr.push(8 - $('.day' + i).sum());
+                subByDay.push(8 - $('.day' + i).sum());
             }
-            let tfoot = `<tr><td></td><td></td><td>合計</td><td></td><td>${$('#total').sum().toFixed(1)}</td>`
+
+            let tfoot = `<tr><td></td><td></td><td>合計</td><td></td><td id="totalHour">${$('.Total').sum().toFixed(1)}</td>`
+
             let x = 1;
             let nowDate = new Date().getDate(); 
-            sumArr.forEach(item => {
-                const index = isHorliday(result.horlidays, x);
-                if (item == 0) {//hour working equal 0
+            sumByDay.forEach(item => {
+                const index = isHoliday(result.horlidays, x);
 
-                    if (index === -1 && x <= nowDate) { //is not a horliday and less than now date
-                        tfoot += `<td class="${x}">
-                                        <i   class="fas fa-exclamation-circle fa-xs text-danger"
+                if (item == 0) {//hour working equal 0
+                    if (index === -1 && x <= nowDate) { //is not a horliday and less than date now
+                        tfoot += `<td class="${x}" id="Totalday${x}">
+                                        <i  class="fas fa-exclamation-circle fa-xs text-danger"
                                             data-toggle="tooltip" title="合計工数が8h未満です">
                                         </i>
                                     ${item.toFixed(1)}
                                    </td>`;
                     }
 
-                    else {
-                        tfoot += `<td class="${x}">
-                                       <i data-toggle="tooltip" title="合計工数が8h未満です"></i> ${item.toFixed(1)}
-                                   </td>`;
+                    else { //is horliday or more than date now
+
+                        tfoot += `<td class="${x}" id="Totalday${x}"> ${item.toFixed(1)}</td>`;
                     }
 
                 } else
-                    if (item < 8 && x <= nowDate) {
+                    if (item < 8 && x <= nowDate) { //is not a normal working time and less than date now
 
-                        tfoot += `<td class="${x}">
+                        tfoot += `<td class="${x}" id="Totalday${x}">
                                         <i class="fas fa-exclamation-circle fa-xs text-warning"
                                         data-toggle="tooltip" title="合計工数が8h未満です"></i> ${item.toFixed(1)}
                                   </td>`
-                    } else { // is a normal working date
+                    } else { // is a normal working time
 
-                        tfoot += `<td class="${x}">
-                                        <i data-toggle="tooltip" title="合計工数が8h未満です"></i> ${item.toFixed(1)}
-                                  </td>`;
+                        tfoot += `<td class="${x}" id="Totalday${x}">${item.toFixed(1)}</td>`;
                     }
                 x++;
             });
 
              tfoot += `<td></td><td></td></tr><tr><td></td><td></td><td>残工数</td><td></td><td></td>`
              x = 1;
-            subArr.forEach(item => {
-                const index = isHorliday(result.horlidays, x);
-                if (item == 0 || index !== -1 ||item ==8) {
-                    tfoot += `<td class="${x}"></td>`
+            subByDay.forEach(item => {
+                const index = isHoliday(result.horlidays, x);
+                if (item <= 0 || index !== -1 ||item ==8 ) {
+                    tfoot += `<td class="${x}" id="missHour${x}"></td>`
                 } else {
-                    tfoot += `<td class="${x}">${item.toFixed(1)}</td>`
+                    tfoot += `<td class="${x}" id="missHour${x}">${item.toFixed(1)}</td>`
                 }
                 x++;
             });
@@ -880,11 +1137,11 @@ function loadMonthTable(dateStr) {
             tfoot += `<td></td><td></td></tr>`;
             $('#tfoot').html(tfoot)
             let dateGet = new Date(result.dateSelect);
-            numDayOfMonth = daysInMonth(dateGet.getFullYear(), dateGet.getMonth()+1);
+            numDayOfMonth = getDaysInMonth(dateGet.getFullYear(), dateGet.getMonth()+1);
             $("#dateTitle").text(result.dateSelect + "-" + numDayOfMonth);
 
-            //Set backgorund for horliday
-            horlidayBackground(result.horlidays);
+            //Set backgorund for holiday
+            setHolidayBackground(result.horlidays);
 
         }
 
@@ -892,18 +1149,25 @@ function loadMonthTable(dateStr) {
     //Change layout information and animation
     window.history.pushState('page2', 'Title', '/ManhourInput/Month');
     changeBtActive();
-    $("#btNow").text('今月');
+    $("#btnNow").text('今月');
 }
 
-function horlidayBackground(horlidays) {
+function setHolidayBackground(holidays) {
 
-    horlidays.forEach(data => {
+    holidays.forEach(data => {
         $(`.${data}`).css("background-color", "#f5c6cb");
     })
     //set background for date now
     let now = new Date().getDate();
-    $(`.${now}`).css("background-color", "#bee5eb");
-     
+    let nowmonth = new Date().getMonth()+1;
+    let month = new Date(getDateTitle()).getMonth() + 1;
+    if (nowmonth == month) {
+        $(`.${now}`).css("background-color", "#bee5eb");
+    }
+}
+
+function getNumInStr(str) {
+    return str.replace(/^.*?(\d+).*/, '$1');
 }
 
 //save page clicked
@@ -918,16 +1182,17 @@ function savePageHistory(pageName) {
 }
 
 //return number day of the month
-function daysInMonth(year, month) {
+function getDaysInMonth(year, month) {
     return new Date(year, month, 0).getDate();
 }
 
 
-//show display modal
+//show display to show tooltip 
 $(function () {
     $('[data-toggle="tooltip"]').tooltip();
 })
 
+//display muilty modal to add z-index
 $(document).on('show.bs.modal', '.modal', function () {
     var zIndex = 1040 + (10 * $('.modal:visible').length);
     $(this).css('z-index', zIndex);
@@ -936,14 +1201,94 @@ $(document).on('show.bs.modal', '.modal', function () {
     }, 0);
 });
 
+//make checkbox like radio
 $(document).on('click', 'input[type="checkbox"]', function () {
     $('input[type="checkbox"]').not(this).prop('checked', false);
 });
 
-$('.inputday').on('change', function () {
-    if (this.val < 0 || this.val) {
-        alert
-    }
+
+//show date time picker
+$('#datepicker1').datepicker({format: "yyyy/mm/dd",language: "ja",autoclose: true,orientation: 'bottom right'
+}).on('changeDate', function (ev) {
+    var date = new Date(ev.date.valueOf());
+    console.log(date);
+    window.location = 'https://localhost:44363/ManhourInput/Index?dateSt=' + formatDate(date);
 });
+
+$('[data-toggle="tooltip"]').tooltip();
+
+//valid input hour 
+let oldVal = null;
+function setOldVal(el, name) { //onclick to save old value
+    oldVal = $(el).closest('tr').find(`.${name}`).val();
+    console.log(oldVal);
+}
+
+//onchange valid value input hour
+function onChangeValid(el, name) { 
+
+    let inputHour = parseInt($(el).closest('tr').find(`.${name}`).val());
+    let nowDate = new Date().getDate(); 
+
+    if (inputHour < 0 || isNaN(inputHour)) {
+        alert('Input hour not valid');
+        $(el).closest('tr').find(`.${name}`).val(oldVal);
+        oldVal = null;
+        return;
+    }
+    if (inputHour > 24) {
+        alert('Input hour must less than 24h');
+        $(el).closest('tr').find(`.${name}`).val(oldVal);
+        oldVal = null;
+        return;
+    }
+
+    let totalHourDay = $(`.${name}`).sum(); //sum hour value in class 
+    $(el).closest('tr').find(`.day${getNumInStr(name)}`).val(inputHour);
+    //set vlaue for sum hour by day array
+    sumByDay[getNumInStr(name) - 1] = totalHourDay;
+
+    let text = '';
+    //get text with value of totalHourDay
+    if (totalHourDay == 0) {//hour working equal 0
+        if (getNumInStr(name) <= nowDate) { //is not a horliday and less than date now
+            text += `<i  class="fas fa-exclamation-circle fa-xs text-danger"
+                         data-toggle="tooltip" title="合計工数が8h未満です"></i>${totalHourDay.toFixed(1)}`;
+        }
+
+        else { //is horliday or more than date now
+            text += totalHourDay.toFixed(1);
+        }
+    } else {
+        if (totalHourDay < 8 && getNumInStr(name) <= nowDate) { //is not a normal working time and less than date now
+
+            text += `<i class="fas fa-exclamation-circle fa-xs text-warning"
+                        data-toggle="tooltip" title="合計工数が8h未満です"></i> ${totalHourDay.toFixed(1)}`;
+
+        } else { // is a normal working time
+
+            text += `<i data-toggle="tooltip" title="合計工数が8h未満です"></i> ${totalHourDay.toFixed(1)}`;
+
+        }
+    }
+
+    //dispaly total hour by day
+    $(`#Total${name}`).html(text);
+
+    //total hour by month
+    let sumHourMonth = 0;
+    for (let i = 1; i <= numDayOfMonth; i++) {
+        sumHourMonth += parseInt($(el).closest('tr').find(`.day${i}`).val());
+    }
+    //display total hour in month 
+    $(el).closest('tr').find(`.total`).text(sumHourMonth.toFixed(1));
+    $(el).closest('tr').find(`.Total`).val(sumHourMonth.toFixed(1));
+    $('#totalHour').text($('.Total').sum().toFixed(1));
+    $(`#missHour${getNumInStr(name)}`).text((8 - totalHourDay) <= 0 ? '' : (8 - totalHourDay).toFixed(1));
+}
+function exportCSV() {
+    var url = "/ManhourInput/ExportCSV?dateStr=" + getDateTitle();
+    $(location).attr('href', url);
+}
 
 

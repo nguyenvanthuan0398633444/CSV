@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectTeamNET.Models.Request;
 using ProjectTeamNET.Models.Response;
@@ -11,25 +12,25 @@ namespace ProjectTeamNET.Controllers
 {
     public class LoginController : Controller
     {
-        
+
         private readonly ILoginService service;
 
         public LoginController(ILoginService service)
         {
             this.service = service;
         }
-     
+
         public IActionResult AutoLogin()
         {
             var check = CheckAutoLogin();
-            if(check)
+            if (check)
             {
                 UserPrincipal user = UserPrincipal.Current;
                 string loginName = user.SamAccountName;
                 HttpContext.Session.SetString("userName", loginName);
                 //var userInfo = service.GetInfoUser(loginName);
                 //HttpContext.Session.SetString("roleCode", userInfo.Result.RoleCode);
-                return this.RedirectToAction("Index", "Home");
+                return this.RedirectToAction("Index", "Menu");
             }
             else
             {
@@ -48,11 +49,11 @@ namespace ProjectTeamNET.Controllers
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        [HttpPost]   
-        public IActionResult Index(LoginModel model )
+        [HttpPost]
+        public IActionResult Index(LoginModel model)
         {
             var Url = service.GetDomainUrl();
-            
+
             //check null value
             if (string.IsNullOrEmpty(model.UserName) || string.IsNullOrEmpty(model.Password))
             {
@@ -61,12 +62,14 @@ namespace ProjectTeamNET.Controllers
             }
 
             var check = AuthenticateUser(Url, model.UserName, model.Password);
-            if(check)
-            {
-                HttpContext.Session.SetString("userName", model.UserName);            
-                //var userInfo = service.GetInfoUser(model.UserName);
-                //HttpContext.Session.SetString("roleCode", userInfo.Result.RoleCode);             
-                return RedirectToAction("Index", "Home"); // duong dan successs
+            if (check)
+            {                
+                var userInfo = service.GetInfoUser(model.UserName);
+                HttpContext.Session.SetString("userName", userInfo.Result.User_no);
+                HttpContext.Session.SetString("roleCode", userInfo.Result.Role_code);
+                HttpContext.Session.SetString("groupCode", userInfo.Result.Group_code);
+                HttpContext.Session.SetString("siteCode", userInfo.Result.Site_code);
+                return RedirectToAction("Index", "Menu"); // duong dan successs
             }
             else
             {
@@ -87,7 +90,8 @@ namespace ProjectTeamNET.Controllers
             var ret = false;
             try
             {
-                if (ModelState.IsValid) {
+                if (ModelState.IsValid)
+                {
                     DirectoryEntry de = new DirectoryEntry("LDAP://" + domainName, userName, password);
                     DirectorySearcher dsearch = new DirectorySearcher(de);
                     SearchResult results = null;
@@ -112,9 +116,9 @@ namespace ProjectTeamNET.Controllers
             UserPrincipal user = UserPrincipal.Current;
             string loginName = user.SamAccountName;
             var listUser = GetAllAdUsers();
-            for (int i =0; i < listUser.Count; i++)
+            for (int i = 0; i < listUser.Count; i++)
             {
-                if(listUser[i].Samaccountname == loginName)
+                if (listUser[i].Samaccountname == loginName)
                 {
                     return true;
                 }
@@ -126,9 +130,9 @@ namespace ProjectTeamNET.Controllers
         /// 
         /// </summary>
         /// <returns></returns>
-        public  List<UserProfile> GetAllAdUsers()
+        public List<UserProfile> GetAllAdUsers()
         {
-            List<UserProfile> adUsers = new List<UserProfile>();           
+            List<UserProfile> adUsers = new List<UserProfile>();
             PrincipalContext context = new PrincipalContext(ContextType.Domain);
             PrincipalSearcher search = new PrincipalSearcher(new UserPrincipal(context));
             UserPrincipal userPrin = new UserPrincipal(context);
@@ -145,7 +149,7 @@ namespace ProjectTeamNET.Controllers
                     Samaccountname = p.SamAccountName
                 });
             };
-                   
+
             return adUsers;
         }
         /// <summary>

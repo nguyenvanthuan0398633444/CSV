@@ -16,7 +16,7 @@ namespace ProjectTeamNET.Service.Interface
         Task<ManhourUpdate> GetGroupAndUser(string userId);
         Task<ExportModel> ExportCSV(string user, string group);
         Task<List<Manhour>> ImportCSV(IFormFile files);
-        ManhourUpdateUserSelectList GetUser(string groupId);   
+        ManhourUpdateUserSelectList GetUserInGroup(string groupId);   
         Task<List<int>> GetHoliday(ManhourUpdateSearch keySearch);
         Task<ManHourUpdateSearchModel> Search(ManhourUpdateSearch keySearch, string userId);
         Task<SelectThemeModel> SearchThemes(SearchThemeParam param, string user_no);

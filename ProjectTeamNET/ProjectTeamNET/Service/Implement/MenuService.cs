@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace ProjectTeamNET.Service.Implement
 {
@@ -32,8 +33,8 @@ namespace ProjectTeamNET.Service.Implement
             var param = new
             {
                 user_no = userNo,
-                YearConver = year,
-                MonthConver = month
+                currentYear = year,
+                currentMonth = month
 
             };
             List<Holiday> result = await menuRepository.Search<Holiday>(query, param);
@@ -113,9 +114,8 @@ namespace ProjectTeamNET.Service.Implement
         }
 
         //Send all data to Controller
-        public async Task<MenuViewModel> SendDataToController()
-        {
-            string userNo = "BAOTQ";
+        public async Task<MenuViewModel> SendDataToController(string userNo)
+        {                
             var checkWorkHours = true;
             var today = DateTime.Now;
             var prsmonth =await GetProcessMonth();

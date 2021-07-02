@@ -10,6 +10,7 @@ namespace ProjectTeamNET.Models.Response
     public class ManhourReportViewModel
     {
         public IList<SelectListItem> Users { get; set; }
+        public IList<SelectListItem> Themes { get; set; }
         public List<GroupNames> GroupName { get; set; }
     }
 }

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using ProjectTeamNET.Models.Response;
 using System.Collections.Generic;
 using ProjectTeamNET.Models.Request;
+using System;
+using System.Text;
 
 namespace ProjectTeamNET.Controllers
 {
@@ -15,7 +17,7 @@ namespace ProjectTeamNET.Controllers
     {
     
         string userDefault = "BAOTQ";
-        string dateDefault = "2021/06/23"; 
+        string localDate = DateTime.Now.ToString("yyyy/MM/dd"); 
 
         private readonly IManhourInputService _service;
         public ManhourInputController(IManhourInputService service)
@@ -24,7 +26,7 @@ namespace ProjectTeamNET.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Init(string dateSt)
+        public async Task<IActionResult> Index(string dateSt)
         {
             InputParamModel pModel = new InputParamModel();
             pModel.userNo = userDefault;
@@ -34,7 +36,7 @@ namespace ProjectTeamNET.Controllers
             }
             else
             {
-                pModel.dateStr = dateDefault;
+                pModel.dateStr = localDate;
             }
 
             InitDataModel data = await _service.Init(pModel);
@@ -42,7 +44,7 @@ namespace ProjectTeamNET.Controllers
             return View("Index", data);
         }
         /// <summary>
-        /// return Day view
+        /// return manhour day view
         /// </summary>
         /// <param name="dateSt"></param>
         /// <returns></returns>
@@ -57,15 +59,16 @@ namespace ProjectTeamNET.Controllers
             }
             else
             {
-                pModel.dateStr = dateDefault;
+                pModel.dateStr = localDate;
             }
 
             InitDataModel data = await _service.Init(pModel);
+            data.pageHistory = "Day";
 
             return View("Index", data);
         }
         /// <summary>
-        /// return week view 
+        /// return manhour week view 
         /// </summary>
         /// <param name="dateSt"></param>
         /// <returns></returns>
@@ -81,16 +84,15 @@ namespace ProjectTeamNET.Controllers
             }
             else
             {
-                pModel.dateStr = dateDefault;
+                pModel.dateStr = localDate;
             }
 
             InitDataModel data = await _service.Init(pModel);
-
             return View("Index", data);
 
         }
         /// <summary>
-        /// 
+        /// return manhour month view
         /// </summary>
         /// <param name="dateSt"></param>
         /// <returns></returns>
@@ -105,16 +107,15 @@ namespace ProjectTeamNET.Controllers
             }
             else
             {
-                pModel.dateStr = dateDefault;
+                pModel.dateStr = localDate;
             }
             
             InitDataModel data = await _service.Init(pModel);
 
             return View("Index", data);
         }
-
         /// <summary>
-        /// Return json to ajax called this
+        /// Return manhour data  to ajax 
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -172,7 +173,7 @@ namespace ProjectTeamNET.Controllers
             return Json(data);
         }
         /// <summary>
-        /// 
+        /// Save data from client 
         /// </summary>
         /// <param name="listData"></param>
         /// <returns></returns>
@@ -186,6 +187,36 @@ namespace ProjectTeamNET.Controllers
             }
             return Json(string.Format(Resources.Messages.INF_001,"更新"));
 
+        }
+        /// <summary>
+        /// return work contents by class
+        /// </summary>
+        /// <param name="Data"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<JsonResult> GetWorkContentByClass(string classCode)
+        {
+            var result = await _service.GetWorkContentsByClass(classCode);
+            return Json(result);
+
+        }
+        /// <summary>
+        /// Export csv file by format
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> ExportCSV(string dateStr)
+        {
+            ExportModel exportModel = await _service.ExportCSV(userDefault, dateStr);
+            return File(Encoding.UTF8.GetBytes(exportModel.builder.ToString()), "text/csv", exportModel.nameFile);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CheckExistTheme(ManhourKeys keys)
+        {
+            keys.User_no = userDefault;
+            return Json(await _service.CheckThemeExist(keys));
         }
 
     }

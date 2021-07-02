@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjectTeamNET.Service.Interface;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace ProjectTeamNET.Controllers
 {
@@ -15,8 +16,8 @@ namespace ProjectTeamNET.Controllers
         }
         public async Task<IActionResult> Index()
         {
-          
-            var result = await service.SendDataToController();
+            string userNo = HttpContext.Session.GetString("userName");
+            var result = await service.SendDataToController(userNo);
           
             return View(result);
         }

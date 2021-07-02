@@ -46,7 +46,7 @@
 
 	</query>
 	<query id ="GetHoliday">
-		SELECT*FROM(SELECT
+		SELECT * FROM (SELECT
 		DISTINCT(cal.date),
 		cal.horiday,
 		u.user_no,
@@ -55,31 +55,29 @@
 		date_part('month', cal.date)  as MonthConver
 		FROM public.m_calendar as cal
 		Join public.m_user as U ON U.site_code = cal.site_code) as tem
-		WHERE tem.user_no = user_no
+		WHERE
+		1 = 1
 		<addif key="user_no" >
-			AND tem.user_no = 'BAOTQ'
-		</addif>
-		and tem.YearConver =YearConver
+			AND tem.user_no =:user_no
+		</addif>	
 		<addif key="YearConver" >
-			AND tem.YearConver = 2021
-		</addif>
-		and tem.MonthConver =MonthConver
+			AND tem.YearConver =:currentYear
+		</addif>	
 		<addif key="MonthConver" >
-			AND tem.MonthConver = 6
+			AND tem.MonthConver =:currentMonth
 		</addif>
 
 	</query>
 	<query id ="GetWorkHourOfMonth">
 		SELECT * FROM public.t_manhour as MH
-		WHERE MH.user_no = user_no
+		WHERE 
+		1 = 1 
 		<addif key="user_no" >
-			AND MH.user_no = :user_no
-		</addif>
-		and MH.Year =year
+		   AND	MH.user_no = :user_no
+		</addif>		
 		<addif key="year" >
 			AND MH.year = :year
-		</addif>
-		and MH.Month =month
+		</addif>		
 		<addif key="month" >
 			AND MH.month = :month
 		</addif>
@@ -87,14 +85,15 @@
 	</query>
 	<query id ="GetUserInfo">
 		SELECT
-		U.user_no
-		, U.role_code
+		 U.user_no
+		,U.role_code
+		,U.site_code
+		,U.group_code
 		FROM
 		public.m_user as U
-		WHERE
-		U.user_no = user_no
+		WHERE		
 		<addif key="user_no" >
-			AND U.user_no = :user_no
+			U.user_no = :user_no
 		</addif>
 	</query>
 </root>

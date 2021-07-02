@@ -14,6 +14,6 @@ namespace ProjectTeamNET.Service.Interface
         Task<double[]> GetWorkHourOfMonth(string userNo, int year, int month);
         Task <Dictionary<int, bool>> GetHoliday(string userNo,int year, int month);
 
-        Task<MenuViewModel> SendDataToController();
+        Task<MenuViewModel> SendDataToController(string userNo);
     }
 }

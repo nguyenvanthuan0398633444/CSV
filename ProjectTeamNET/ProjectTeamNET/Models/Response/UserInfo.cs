@@ -7,7 +7,9 @@ namespace ProjectTeamNET.Models.Response
 {
     public class UserInfo
     {
-        public string UserNo { get; set; }
-        public string RoleCode { get; set; }
+        public string User_no { get; set; }
+        public string Role_code { get; set; }
+        public string Group_code { get; set; }
+        public string Site_code { get; set; }
     }
 }

@@ -81,6 +81,7 @@ namespace ProjectTeamNET.Service.Interface
         /// <param name="manhours"></param>
         /// <returns></returns>
         Task<int> UpdateManhours(List<Manhour> manhours);
+        Task<int> ChangeManhour(List<Manhour> oldData, List<Manhour> newData);
         /// <summary>
         /// delete data if it deleted in data form client
         /// </summary>
@@ -98,6 +99,26 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<List<int>> GetHorliday(HorlidayParam param);
+        Task<List<int>> GetHorliday(HolidayParam param);
+        /// <summary>
+        /// get list work contents by class code
+        /// </summary>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        Task<List<WorkContents>> GetWorkContentsByClass(string className);
+        /// <summary>
+        /// Export manhour data to csv
+        /// </summary>
+        /// <param name="pmodel"></param>
+        /// <returns></returns>
+        Task<ExportModel> ExportCSV(string userNo,string dateStr);
+        /// <summary>
+        /// Get data exprot
+        /// </summary>
+        /// <param name="pmodel"></param>
+        /// <returns></returns>
+        Task<List<ManhourUpdateViewModel>> GetDataExport(string userNo, DateTime date);
+        Task<bool> CheckThemeExist(ManhourKeys keys);
+
     }
 }

@@ -49,16 +49,16 @@ namespace ProjectTeamNET.Repository.Implement
             return result;
         }
 
-        public  int Create(T obj)
+        public int Create(T obj)
         {
-            int result = -1;
+            int result = 0;
 
             using (IDbContextTransaction transaction = context.Database.BeginTransaction())
             {
                 try
                 {
                     dbset.Add(obj);
-                    result =  context.SaveChanges();
+                    result = context.SaveChanges();
 
                     transaction.Commit();
                 }
@@ -66,8 +66,11 @@ namespace ProjectTeamNET.Repository.Implement
                 {
                     _ = e.Message;
                     transaction.Rollback();
+                    result = 0;
                 }
             }
+            context.SaveChanges();
+            result = 1;
             return result;
         }
         public async Task<int> Update(T obj)
@@ -155,7 +158,7 @@ namespace ProjectTeamNET.Repository.Implement
         {
             try
             {
-                context.Database.GetDbConnection().QueryAsync<M>(sql, param);
+                context.Database.GetDbConnection().Query<M>(sql, param);
             }
             catch(Exception e)
             {
@@ -169,5 +172,4 @@ namespace ProjectTeamNET.Repository.Implement
             context.Database.GetDbConnection().QueryAsync<M>(sql, param);
         }
     }
-
 }

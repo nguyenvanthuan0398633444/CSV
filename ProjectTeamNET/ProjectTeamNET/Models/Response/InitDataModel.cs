@@ -8,7 +8,6 @@ namespace ProjectTeamNET.Models.Response
 {
     public class InitDataModel
     {
-        public List<WorkContents> Contents { get; set; }
         public List<Group> Groups { get; set; }
         public List<SalesObject> Objects { get; set; }
         public string DateSelect { get; set; }

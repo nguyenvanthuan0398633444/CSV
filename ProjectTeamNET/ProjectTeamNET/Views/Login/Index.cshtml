@@ -17,7 +17,7 @@
 
             <div class="div">
                 <div class="form-group ">
-                    <input class="form-control col-4 input-login" asp-for="UserName" placeholder="ユーザーID" style="text-transform:uppercase;" type="text">
+                    <input class="form-control col-4 input-login" asp-for="UserName" placeholder="ユーザーID" type="text">
 
                 </div>
                 <div class="form-group">
@@ -35,4 +35,11 @@
     </div>
 
 </div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script>
+    $('#UserName').on("change", function () {
+        console.log(1);
+        $(this).val($(this).val().toUpperCase());
+    })
+</script>
 

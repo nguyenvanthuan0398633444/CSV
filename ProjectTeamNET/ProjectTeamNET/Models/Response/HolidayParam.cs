@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ProjectTeamNET.Models.Response
 {
-    public class HorlidayParam
+    public class HolidayParam
     { 
         public int Year { get; set; }
         public int Month { get; set; }

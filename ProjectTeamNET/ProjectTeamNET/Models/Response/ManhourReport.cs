@@ -16,6 +16,7 @@ namespace ProjectTeamNET.Models.Response
         public string WorkContentCode { get; set; }
         public string WorkContentCodeName { get; set; }
         public string WorkContentDetail { get; set; }
+        public double Overalltotal { get; set; }
         public string Column { get; set; }
         public double Total { get; set; }
         public List<double> Monthly { get; set; }

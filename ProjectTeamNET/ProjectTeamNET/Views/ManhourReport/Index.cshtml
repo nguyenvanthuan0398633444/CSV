@@ -1,67 +1,9 @@
-﻿
-<head>
-    <!-- BootstrapのCSS読み込み -->
-    <!-- bootstrap-datepickerのCSS読み込み -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
-    <!-- jQuery読み込み -->
-    <!-- Popper.js読み込み -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <!-- BootstrapのJS読み込み -->
-    <!-- bootstrap-datepickerのJS読み込み -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.ja.min.js"></script>
-    <link href="~/css/ManhourReport.css" rel="stylesheet" />
-    <!-- FontAwesomeの読み込み -->
-    <link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
-</head>
-<script type="text/javascript">
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
-        $('#datepicker1').datepicker({ format: "yyyy/mm/dd", language: "ja", autoclose: true, orientation: 'bottom left' });
-        $('#datepicker2').datepicker({ format: "yyyy/mm/dd", language: "ja", autoclose: true, orientation: 'bottom left' });
-    })
-</script>
-<nav class="navbar navbar-expand-sm navbar-dark bg-primary sticky-top flex-md-nowrap p-0 shadow">
-    <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#"><i class="fa fa-home"></i> 工数管理システム</a>
-    <div class="collapse navbar-collapse" id="navmenu1">
-        <div class="navbar-nav">
-            <span class="form-control-menu">@ViewBag.Title</span>
-        </div>
-    </div>
-    <ul class="navbar-nav px-3 d-flex align-items-center">
-        <li class="nav-item text-nowrap">
-            <button type="button" class="btn btn-light"><i class="fas fa-backward"></i> 戻る</button>
-        </li>
-        <span class="form-control-user">テスト太郎さん</span>
-        <li class="nav-item text-nowrap">
-            <button type="button" class="btn btn-light">ログアウト <i class="fas fa-sign-out-alt"></i></button>
-        </li>
-    </ul>
-</nav>
+﻿@model ProjectTeamNET.Models.Response.ManhourReportViewModel
+<link href="~/css/toastr.min.css" rel="stylesheet" />
+
 <div class="row">
 
     <main role="main" class="container-fluid px-4">
-
-        <!-- <fieldset class="form-group">
-        <div class="row">
-            <legend class="col-form-label col-md-2 pt-0">集計単位2</legend>
-            <div class="col-md-10">
-                <div class="custom-control custom-radio custom-control-inline">
-                    <input id="customRadio2-1" name="customRadio2" type="radio" class="custom-control-input" checked>
-                    <label class="custom-control-label" for="customRadio2-1">個人別</label>
-                </div>
-                <div class="custom-control custom-radio custom-control-inline">
-                    <input id="customRadio2-2" name="customRadio2" type="radio" class="custom-control-input">
-                    <label class="custom-control-label" for="customRadio2-2">所属別</label>
-                </div>
-                <div class="custom-control custom-radio custom-control-inline">
-                    <input id="customRadio2-3" name="customRadio2" type="radio" class="custom-control-input">
-                    <label class="custom-control-label" for="customRadio2-3">テーマ別</label>
-                </div>
-            </div>
-        </div>
-    </fieldset>
-    -->
 
         <div class="h5 pt-1 pb-1 border-bottom">画面項目呼出・保存・クリア</div>
 
@@ -70,22 +12,21 @@
             <div class="col-md-10">
                 <div class="col-md-4 input-group pl-0">
 
-                    @Html.DropDownList("userScreenName", Model.Users, "保存名...", new { @class = "form-control form-control-sm", @onchange = "changeCall();" })
+                    @Html.DropDownList("userScreenName", Model.Users, "保存名...", new { @class = "form-control form-control-sm", @onchange = "changeCall();", @id = "userScreenName" })
                     <button class="btn btn-sm btn-outline-secondary mr-2" onclick="deleteUserScreenName()">削除</button>
                 </div>
             </div>
             <label class="col-form-label col-md-2 text-right">保存</label>
             <div class="col-md-10">
                 <div class="col-md-4 input-group pl-0">
-                    <input type="text" class="form-control form-control-sm" value="" id="SaveName" />
-                    <button class="btn btn-sm btn-outline-secondary mr-2">保存</button>
+                    <input type="text" class="form-control form-control-sm" value="" id="SaveName"/>
+                    <button class="btn btn-sm btn-outline-secondary mr-2" onclick="saveUserScreenName()">保存</button>
                 </div>
-                <div id="savename"></div>
             </div>
             <label class="col-form-label col-md-2 text-right">クリア</label>
             <div class="col-md-10">
                 <div class="col-md-4 input-group pl-0">
-                    <button class="btn btn-sm btn-outline-secondary mr-2">クリア</button>
+                    <button class="btn btn-sm btn-outline-secondary mr-2" onclick="reset()">クリア</button>
                 </div>
             </div>
         </div>
@@ -95,35 +36,19 @@
         <div class="form-group row">
             <label class="col-form-label col-md-2 text-right">期間</label>
             <div class="col-md-2 p-0">
-                <div class="input-group date" id="datepicker1">
+                <div class="input-group date">
                     <input type="text" class="form-control form-control-sm" id="fromDate" />
-                    <span class="input-group-append">
+                    <span class="input-group-append" id="datepicker1">
                         <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
                     </span>
                 </div>
             </div>
             <div class="col-md-1 p-0 text-md-center"><span>～</span></div>
             <div class="col-md-2 p-0">
-                <div class="input-group date" id="datepicker2">
+                <div class="input-group date">
                     <input type="text" class="form-control form-control-sm" id="toDate" />
-                    <span class="input-group-append">
+                    <span class="input-group-append" id="datepicker2">
                         <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-                    </span>
-                </div>
-            </div>
-        </div>
-        <div class="form-group row">
-            <label class="col-form-label col-md-2 text-right"></label>
-            <div class="col-md-2 p-0">
-                <div class="input-group date">
-                    <span id="fromDate1">
-                    </span>
-                </div>
-            </div>
-            <div class="col-md-1 p-0 text-md-center"></div>
-            <div class="col-md-2 p-0">
-                <div class="input-group date">
-                    <span id="toDate1">
                     </span>
                 </div>
             </div>
@@ -134,7 +59,7 @@
             <div class="col-md-10">
                 <div class="row align-items-center" id="addFirst">
                     <div class="col-md-4 input-group pl-0" style="margin-bottom: auto;">
-                        <select class="form-control form-control-sm" id="GroupId">
+                        <select class="form-control form-control-sm" id="GroupId1">
                             @foreach (var item in Model.GroupName)
                             {
                                 <option value="@item.group_code">@item.GroupName</option>
@@ -143,13 +68,13 @@
                         <div class="col-md-1"></div>
                     </div>
                     <div class="col-md-3 input-group pl-0">
-                        <div id="addUserinGroup"></div>
+                        <div class="countUser" id="addUserinGroup1" style="width: 100%"></div>
                         <div class="input-group pl-0">
-                            <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUserFirstGroup()"><i class="fas fa-plus"></i> ユーザ追加</button>
+                            <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUser(1)"><i class="fas fa-plus"></i> ユーザ追加</button>
                         </div>
                     </div>
-                    <div class="col-md-4 pl-0" id="firstUser28002000000" style="margin-top:-15px">
-                        <div id="trashUser"></div>
+                    <div class="col-md-4 pl-0" style="margin-top:-15px">
+                        <div id="trashUser1"></div>
                     </div>
                 </div>
             </div>
@@ -180,12 +105,46 @@
 
         <div class="form-group row">
             <label class="col-form-label col-md-2 text-right">テーマ</label>
-
-
+            <div class="col-md-10">
+                <div class="row align-items-center">
+                    <div class="col-md-4 input-group pl-0">
+                        <input type="text" class="form-control form-control-sm" placeholder="テーマ選択..." aria-label="..." aria-describedby="button-addon2" id="theme_1" readonly="">
+                        <div class="input-group-append">
+                            <button type="button" id="button-addtheme_1" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#Modal_1"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    <div class="col-md-2 input-group pr-2">
+                        <select class="form-control form-control-sm" id="addWorkContent_1">
+                        </select>
+                    </div>
+                    <div class="col-md-2 input-group">
+                        <input type="number" class="form-control form-control-sm" id="addWorkDetail_1" placeholder="内容詳細..." aria-label="..." aria-describedby="button-addon2" min="00" max="99">
+                    </div>
+                    <div class="col-md-4 input-group pl-0">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="Modal_1" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @Html.DropDownList("Theme", Model.Themes, new { @class = "form-control form-control-sm", @id = "value1" })
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="SaveTheme(1)">Save changes</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="AddTheme"></div>
-
-
 
 
         <div class="form-group row">
@@ -281,5 +240,6 @@
 <div id="AddModal"></div>
 
 @section Scripts{
+    <script src="~/js/toastr.min.js"></script>
     <script src="~/js/ManhourReport.js"></script>
 }

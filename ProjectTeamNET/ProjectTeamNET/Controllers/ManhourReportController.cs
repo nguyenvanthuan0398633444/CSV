@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using ProjectTeamNET.Models.Request;
 using ProjectTeamNET.Service.Interface;
 using System;
@@ -21,7 +23,7 @@ namespace ProjectTeamNET.Controllers
         }
         public async Task<IActionResult> Index()
         {
-            var model = await manhourReportService.Init();
+            var model = await manhourReportService.Init(HttpContext.Session.GetString("userName").ToUpper());
             return View(model);
         }
         [HttpGet("/ManhourReport/AddTheme/{count}")]
@@ -34,24 +36,46 @@ namespace ProjectTeamNET.Controllers
         [HttpPost("/ManhourReport/CheckReport")]
         public OkObjectResult CheckReport(ManHourReportSearch data)
         {
-            var tmp = manhourReportService.ValidateReport(data);
-
-            return Ok(tmp);
+            var result = manhourReportService.ValidateReport(data);
+            return Ok(result);
+        }
+        [HttpPost("/ManhourReport/CheckSave")]
+        public OkObjectResult CheckSave(ManHourReportSearch data)
+        {
+            var result = manhourReportService.ValidateSaveName(data);
+            return Ok(result);
         }
 
         [HttpPost("/ManhourReport/GetDataCSV")]
         public async Task<IActionResult> GetDataCSV(ManHourReportSearch data)
         {
             var exportModel = await manhourReportService.GetDataReportCSV(data);
-
-            return Ok(new {data= exportModel.builder.ToString(),fileName= exportModel.nameFile });
+            if (exportModel.nameFile == "")
+            {
+                return Ok(new { messenge = Resources.Messages.ERR_005 });
+            }
+            return Ok(new { data = exportModel.builder.ToString(), fileName = exportModel.nameFile, messenge = ""});
+        }
+        [HttpPost("/ManhourReport/SaveScreen")]
+        public async Task<IActionResult> SaveScreen(ManHourReportSearch data)
+        {
+            var result = await manhourReportService.SaveScreen(data, HttpContext.Session.GetString("userName").ToUpper());
+            return Ok(result);
+        }
+        [HttpGet("/ManhourReport/GetsScreen")]
+        public async Task<IActionResult> GetsScreen()
+        {
+            var result = await manhourReportService.GetsScreen(HttpContext.Session.GetString("userName").ToUpper());
+            return Ok(result);
         }
 
         [HttpPost("/ManhourReport/CreateData")]
         public async Task<OkObjectResult> CreateData(ManHourReportSearch data)
         {
-            var draw = await manhourReportService.SetManhourReport(data);
-            return Ok(draw);
+            var result = await manhourReportService.SetManhourReport(data);
+            if(result.Count >0)
+                return Ok(new {data = result,messenge="" });
+            return Ok(new { messenge = Resources.Messages.ERR_005 });
         }
 
         public IActionResult ShowReport()
@@ -63,7 +87,11 @@ namespace ProjectTeamNET.Controllers
         public async Task<OkObjectResult> DeleteScreenUser(string surrogate)
         {
             var result = await manhourReportService.Delete(surrogate);
-            return Ok(result);
+            if(result > 0)
+            {
+                return Ok(Resources.Messages.INF_001);
+            }
+            return Ok("Error");
         }
 
         [HttpGet("/ManhourReport/GetsUserName/{GroupCode}")]

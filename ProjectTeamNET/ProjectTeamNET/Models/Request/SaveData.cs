@@ -11,6 +11,8 @@ namespace ProjectTeamNET.Models.Request
         public List<Manhour> Update { get; set; }
         public List<Manhour> Delete { get; set; }
         public List<Manhour> Insert { get; set; }
+        public List<Manhour> NeedUpdate { get; set; }
+        public List<Manhour> ForUpdate { get; set; }
 
     }
 }

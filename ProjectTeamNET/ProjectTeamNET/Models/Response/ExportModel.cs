@@ -10,5 +10,6 @@ namespace ProjectTeamNET.Models.Response
     {
         public StringBuilder builder { get; set; }
         public string nameFile { get; set; }
+        public string message { get; set; }
     }
 }

@@ -26,32 +26,35 @@
 				<addif key="User_no" > 
 					 AND t1.user_no = :User_no
 				</addif>
-		ORDER BY 
-			t1.theme_no
 	</query>
-	
+
 	<query id="SelectManhour">
-	
-		SELECT 
-				t1.year
-				,t1.month
-				,t1.user_no
-				,t1.theme_no
-				,t1.work_contents_code
-				,t1.work_contents_class
-				,t1.work_contents_detail
-        FROM	t_manhour AS t1 
-        WHERE
-					 1 = 1 
-			<addif key="Year" > 
-                 AND t1.YEAR = :Year
-            </addif>    
-			<addif key="Month" >
-                 AND t1.Month = :Month
-            </addif>
-			<addif key="User_no" > 
-                 AND t1.user_no = :User_no
-			</addif>
+
+		SELECT
+		t1.year
+		,t1.month
+		,t1.user_no
+		,t1.theme_no
+		,t1.work_contents_code
+		,t1.work_contents_class
+		,t1.work_contents_detail
+		FROM	t_manhour AS t1
+		WHERE
+			1=1
+			AND t1.year = :Year
+
+			AND t1.month = :Month
+
+			AND t1.user_no = :User_no
+
+			AND t1.theme_no = :Theme_no
+
+			AND t1.work_contents_class = :Work_contents_class
+
+			AND t1.work_contents_code = :Work_contents_code
+
+			AND t1.work_contents_detail = :Work_contents_detail
+
 	</query>
 	
 	<query id="SelectScreenItem">
@@ -101,7 +104,7 @@
     ]]>
 	</query>	
 	
-	<query id="SelectHistoryThemeSelected">
+	<query id="SelectHistoryTheme">
 
 		SELECT
 			*
@@ -147,6 +150,28 @@
 			AND
 				work_contents_code = :Work_contents_code
 			AND
+				work_contents_detail = :Work_contents_detail
+	</query>
+
+	<query id="ChangeManhour">
+
+		UPDATE	t_manhour
+		SET		theme_no = :NewTheme_no, work_contents_class =:NewWork_contents_class,work_contents_code = :NewWork_contents_code
+				,work_contents_detail = :NewWork_contents_detail
+
+		WHERE
+				year = :Year
+				AND
+				month = :Month
+				AND
+				user_no = :User_no
+				AND
+				theme_no = :Theme_no
+				AND
+				work_contents_class = :Work_contents_class
+				AND
+				work_contents_code = :Work_contents_code
+				AND
 				work_contents_detail = :Work_contents_detail
 	</query>
 	<query id="UpdateManhourDay">
@@ -224,7 +249,7 @@
 
 	<query id="SelectGroupCode">
 
-		SELECT	  distinct accounting_group_code, accounting_group_name 
+		SELECT	  DISTINCT accounting_group_code, accounting_group_name
 		FROM	  m_group
 		ORDER BY  accounting_group_code
 
@@ -232,7 +257,7 @@
 
 	<query id="SelectWorkContent">
 
-		SELECT DISTINCT work_contents_code, work_contents_code_name  
+		SELECT work_contents_class, work_contents_code, work_contents_code_name  
 		FROM			m_work_contents
 		ORDER BY		work_contents_code
 
@@ -258,7 +283,32 @@
 				AND site_code =:SiteCode
 		ORDER BY DATE_PART('day', date)
 	</query>
-	
 
+	<query id="UpdatePinTheme">
+
+		UPDATE  t_manhour
+		SET		pin_flg = false
+		WHERE
+					year = :Year
+				AND
+					month = :Month
+				AND
+					user_no = :User_no
+				AND
+					Theme_no = :Theme_no
+				AND
+					work_contents_class = :Work_contents_class
+				AND
+					work_contents_code = :Work_contents_code
+				AND
+					work_contents_detail = :Work_contents_detail
+	</query>
+
+	<query id="SelectByWorkClass">
+		SELECT work_contents_code,work_contents_code_name
+		FROM m_work_contents
+		WHERE work_contents_class =:Work_contents_class
+	</query>
+	
 
 </root>

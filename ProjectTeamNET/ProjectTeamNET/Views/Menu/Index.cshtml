@@ -1,11 +1,11 @@
 ﻿@model MenuViewModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "メニュー";
     DateTime startDate = new DateTime(Model.processingMonth.Year, Model.processingMonth.Month, 1);
     var daysOfMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month); // get how many day from processing Month , return int
     DateTime today = DateTime.Now;
-    int currentMonth = Model.processingMonth.Month; // is Processing Month not Current Month in PC 
-    int currentYear = Model.processingMonth.Year; // is Processing Year not Current Year in PC 
+    int currentMonth = Model.processingMonth.Month; // is Processing Month not Current Month in PC
+    int currentYear = Model.processingMonth.Year; // is Processing Year not Current Year in PC
     int startIndex = (int)startDate.DayOfWeek; // start (index) from calendar (index 0 = sunday)
     int dayNo = 0;
 
@@ -21,6 +21,7 @@
     }
 }
 <link href="~/css/Menu.css" rel="stylesheet" />
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
 <div class="container-fluid">
 
     <div class="row">
@@ -37,7 +38,7 @@
 
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link sidebar-sub active" href="#">
+                        <a class="nav-link sidebar-sub active" href="/ManhourInput">
                             <span class="fa fa-clock"></span> 工数入力 <span class="sr-only">(current)</span>
                         </a>
                     </li>
@@ -47,7 +48,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link sidebar-sub" href="#">
+                        <a class="nav-link sidebar-sub" href="/ManhourReport">
                             <span class="fas fa-file-export"></span> 工数集計
                         </a>
                     </li>
@@ -71,7 +72,7 @@
 
                 <ul class="nav flex-column mb-2">
                     <li class="nav-item sidebar-sub">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="/ManhourUpdate">
                             <span class="fa fa-clock"></span> 工数修正
                         </a>
                     </li>
@@ -97,7 +98,7 @@
                 </div>
             }
             <div class="row p-3">
-                <table class="table table-bordered">
+                <table class="table table-bordered" id="dataTable">
                     <tbody>
                         <tr>
                             <td class="" colspan="7"><div class="h6 text-center m-0">@currentYear 年 @currentMonth 月</div></td>
@@ -132,43 +133,43 @@
                                     if (Model.holidays.ContainsKey(dayNo + 1) && Model.holidays[dayNo])
                                     {
                                         //if holiday is true
-                                        <td style="color: red"><a class="h5" asp-controller="ManhourInput" asp-action="Init" asp-route-id="" style="color:red">@dayNo</a><p class="workHours">0h</p></td>
+                                        <td style="color: red" data-value="@currentYear/@currentMonth/@dayNo"><a class="h5" style="color:red">@dayNo</a><p class="workHours">0h</p></td>
 
                                     }
                                     else
                                     {
                                         if ((int)today.Day > (int)dayNo)
-                                        {   //case workHour < 8 
+                                        {   //case workHour < 8
                                             if (Model.totalWorkHour[dayNo - 1] > 0 && Model.totalWorkHour[dayNo - 1] < 8)
                                             {
-                                                <td><a class="h5" asp-controller="ManhourInput" asp-action="Index">@dayNo</a><span class="badge badge-warning">入力エラー</span><p class="workHours"><i class="fas fa-exclamation-circle text-warning" data-toggle="tooltip"></i>@Model.totalWorkHour[dayNo - 1]h</p></td>
+                                                <td data-value="@currentYear/@currentMonth/@dayNo"><a class="h5">@dayNo</a><span class="badge badge-warning">入力エラー</span><p class="workHours"><i class="fas fa-exclamation-circle text-warning" data-toggle="tooltip"></i>@Model.totalWorkHour[dayNo - 1]h</p></td>                                                
                                             }
                                             // case not yet input workHour
                                             else if (Model.totalWorkHour[dayNo - 1] == 0)
                                             {
-                                                <td><a class="h5" asp-controller="ManhourInput" asp-action="Index">@dayNo</a><span class="badge badge-danger">未入力</span><p class="workHours"><i class="fas fa-exclamation-circle text-danger" data-toggle="tooltip" title="" data-original-title="工数が未入力です"></i>@Model.totalWorkHour[dayNo - 1]h</p></td>
+                                                <td data-value="@currentYear/@currentMonth/@dayNo"><a class="h5" >@dayNo</a><span class="badge badge-danger">未入力</span><p class="workHours"><i class="fas fa-exclamation-circle text-danger" data-toggle="tooltip" title="" data-original-title="工数が未入力です"></i>@Model.totalWorkHour[dayNo - 1]h</p></td>
                                             }
                                             //case no problem
                                             else
                                             {
-                                                <td><a class="h5" asp-controller="ManhourInput" asp-action="Index">@dayNo</a><p class="workHours">@Model.totalWorkHour[dayNo - 1]h</p></td>
+                                                <td data-value="@currentYear/@currentMonth/@dayNo"><a class="h5" >@dayNo</a><p class="workHours">@Model.totalWorkHour[dayNo - 1]h</p></td>
                                             }
                                         }
                                         else if ((int)today.Day == (int)dayNo)
                                         {   // is Today
-                                            <td style="background-color: lightblue;"><a class="h5" asp-controller="ManhourInput" asp-action="Index">@dayNo</a><p class="workHours">0h</p></td>
+                                            <td data-value="@currentYear/@currentMonth/@dayNo" style="background-color: lightblue;"><a class="h5" >@dayNo</a><p class="workHours">0h</p></td>
                                         }
                                         else
-                                        {  
-                                            <td><a class="h5" asp-controller="ManhourInput" asp-action="Index">@dayNo</a><p class="workHours">0h</p></td>
+                                        {
+                                            <td data-value="@currentYear/@currentMonth/@dayNo"><a class="h5" >@dayNo</a><p class="workHours">0h</p></td>
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    <td style="color: gray"><a class="h5"></a></td>
+                                    <td style="color: gray" data-value="@currentYear/@currentMonth/@dayNo"><a class="h5" ></a></td>
                                 }
-                            }           
+                            }
                         </tr>
                     </tbody>
                 </table>
@@ -176,4 +177,6 @@
         </main>
     </div>
 </div>
+<script src="~/js/Menu.js">
+</script>
 

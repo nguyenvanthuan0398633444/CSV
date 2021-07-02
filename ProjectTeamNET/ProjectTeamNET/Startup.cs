@@ -50,8 +50,6 @@ namespace ProjectTeamNET
             services.AddScoped<IManhourInputService, ManhourInputService>();         
             services.AddScoped<IManhourUpdateService, ManhourUpdateService>();
 
-
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

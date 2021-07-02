@@ -3,22 +3,23 @@
 
 <root>
   <query id="SelectManhourData">
-						select
-								t1.*
-								, t2.user_name
-								, t3.theme_name1	
-                ,t4.work_contents_code_name
-						from
-								t_manhour AS t1 
-								inner join m_user As t2 
-										on t2.user_no = t1.user_no 
-								inner join m_theme AS t3 
-										on t3.theme_no = t1.theme_no 	
-                inner join m_work_contents as t4
-										on t4.work_contents_code = t1.work_contents_code and t4.work_contents_class = t1.work_contents_class
-					where
-						1 = 1 
-						<addif key="Year" > 
+	  select
+	  t1.*
+	  , t2.user_name
+	  , t3.theme_name1
+	  , t4.work_contents_code_name
+	  from
+	  t_manhour AS t1
+	  inner join m_user As t2
+	  on t2.user_no = t1.user_no
+	  inner join m_theme AS t3
+	  on t3.theme_no = t1.theme_no
+	  inner join m_work_contents as t4
+		on t1.work_contents_code = t4.work_contents_code and t1.work_contents_class = t4.work_contents_class
+
+	  where
+	  1 = 1
+	  <addif key="Year" > 
 								and t1.YEAR = :Year
 						</addif>
 						<addif key="Month" >
@@ -255,4 +256,49 @@
         theme_no = :themeNo
       </addif>   
   </query>
+  <query id="UpdateUserScreenItem">
+
+    UPDATE  m_user_screen_item
+    SET     screen_input =:ScreenInput
+    WHERE
+    screen_url =:ScreenUrl
+    AND
+    user_no =:UserNo
+    AND
+    screen_item = :ScreenItem
+  </query>
+  <query id="SelectHistoryThemeSelected">
+
+    SELECT
+    *
+    FROM
+    m_theme
+    WHERE
+    1=1
+    <addif key="ThemeNo" >
+      AND  theme_no = :ThemeNo
+    </addif>
+    <addif key="ThemeName" >
+      AND theme_name1 like :ThemeName OR theme_name2 like :ThemeName
+    </addif>
+    <addif key="SoldFlg" >
+      AND  sold_flg = :SoldFlg
+    </addif>
+    <addif key="GroupCode" >
+      AND accounting_group_code = :GroupCode
+    </addif>
+    <addif key="ObjectCode" >
+      AND sales_object_code = :ObjectCode
+    </addif>
+
+  </query>
+  <query id="SelectWorkContent">
+
+    SELECT DISTINCT work_contents_code, work_contents_code_name
+    FROM			m_work_contents
+    ORDER BY		work_contents_code
+
+  </query>
+
+
 </root>

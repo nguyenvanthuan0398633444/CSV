@@ -1,4 +1,5 @@
-﻿using ProjectTeamNET.Models.Entity;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using ProjectTeamNET.Models.Entity;
 using ProjectTeamNET.Models.Request;
 using ProjectTeamNET.Models.Response;
 using System;
@@ -10,7 +11,7 @@ namespace ProjectTeamNET.Service.Interface
 {
     public interface IManhourReportService
     {
-        Task<ManhourReportViewModel> Init();
+        Task<ManhourReportViewModel> Init(string userName);
         Task<int> Delete(string id);
         Task<List<UserName>> GetsUserName(string groupCode);
         Task<string> GetsGroupName(string groupCode);
@@ -20,9 +21,12 @@ namespace ProjectTeamNET.Service.Interface
         Task<int> SaveManHourReport(List<Manhour> manhours);
         Task<List<UserScreenItem>> GetsManHourReportSaved(string userScreenName);
         IDictionary<string, string> ValidateReport(ManHourReportSearch data);
+        IDictionary<string, string> ValidateSaveName(ManHourReportSearch data);
         Task<List<ManhourReport>> SetManhourReport(ManHourReportSearch data);
         List<double> ManhourReportMonthly(string group, string user, string theme, DateTime toDate, DateTime fromDate, string workContentCodes, string workContentDetails);
         List<double> ManhourReportDaily(string group, string user, string theme, DateTime toDate, DateTime fromDate, string workContentCodes, string workContentDetails);
         Task<ExportModel> GetDataReportCSV(ManHourReportSearch data);
+        Task<string> SaveScreen(ManHourReportSearch data,string userName);
+        Task<List<SelectListItem>> GetsScreen(string User);
     }
 }
