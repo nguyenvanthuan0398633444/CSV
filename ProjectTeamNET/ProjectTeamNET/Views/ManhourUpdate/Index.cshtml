@@ -1,5 +1,7 @@
 ﻿@inject ProjectDbContext context;
 @model ProjectTeamNET.Models.Response.ManhourUpdate;
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_LayoutUpdate.cshtml";
@@ -46,7 +48,7 @@
             </div>
             <div class="row mb-2 align-items-center">
                 <div class="col-md-4 input-group">
-                    <input type="text" id="theme" class="form-control form-control-sm" placeholder="テーマ選択..." aria-label="..." aria-describedby="button-addon2" readonly >
+                    <input type="text" id="theme" class="form-control form-control-sm" placeholder="テーマ選択..." aria-label="..." aria-describedby="button-addon2" readonly>
                     <div class="input-group-append">
                         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadSelectTheme()"><i class="fas fa-search"></i></button>
                     </div>
@@ -54,7 +56,7 @@
                 <div class="col-md-2 input-group pr-2">
                     @Html.DropDownListFor(Model => Model.wordContents,
                                               new SelectList(Model.wordContents, "Value", "Text"), "内容選択...",
-                                              new { @class = "form-control form-control-sm selectGroup" })                   
+                                              new { @class = "form-control form-control-sm selectGroup" })
                 </div>
                 <div class="col-md-2 input-group">
                     <input type="text" id="workContentDetail" class="form-control form-control-sm" placeholder="内容詳細..." aria-label="..." aria-describedby="button-addon2">
@@ -149,7 +151,6 @@
                                                 </tr>
                                             </thead>
                                             <tbody id="slThemeBody">
-                                                
                                             </tbody>
                                         </table>
                                     </div>
@@ -164,11 +165,65 @@
                 </div>
             </div>
             <!-- Modal -->
+            <!-- Modal -->
+            <div class="modal fade" id="modal3" tabindex="-1" role="dialog" aria-labelledby="label1" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="label1">テーマ変更</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-2">
+                                <div class="col-md-6 input-group">
+                                    <input id="modalThemeNo" type="text" class="form-control form-control-sm col-md-4" value="" readonly>
+                                    <input id="modalThemeName" type="text" class="form-control form-control-sm col-md-8" value="" readonly>
+                                </div>
+                                <div class="col-md-6 input-group">
+                                    <input id="modalWC" type="text" class="form-control form-control-sm col-md-12" value="" readonly>
+                                    <input id="modalDetail" type="text" class="form-control form-control-sm col-md-12" value="" readonly="">
+                                </div>
+                            </div>
+                            <div class="row d-flex justify-content-center mb-2">
+                                <span><i class="fas fa-arrow-down"></i></span>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 input-group">
+                                    <input id="themeSelected2" type="text" class="form-control form-control-sm" placeholder="テーマ選択..." aria-label="..." aria-describedby="button-addon2" readonly>
+                                    <div class="input-group-append">
+                                        <button type="button" id="button-addon2" class="btn btn-sm btn-outline-secondary" onclick="loadSelectTheme()"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 input-group pr-2">
+                                    @Html.DropDownListFor(Model => Model.wordContents,
+                                             new SelectList(Model.wordContents, "Value", "Text"), "内容選択...",
+                                             new { @id = "workContentCode2", @class = "form-control form-control-sm selectGroup" })
+                                </div>
+                                <div class="col-md-3 input-group pr-2">
+                                    <input type="text" class="form-control form-control-sm" id="detailCode2" placeholder="内容詳細..." aria-label="..." aria-describedby="button-addon2" onchange="validDetailCode('detailCode2')">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">キャンセル</button>
+                            <button type="button" class="btn btn-primary" id="btnChange">変更</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal -->
+
         </main>
     </div>
 </div>
 @section scripts{
-    <script>       
+    <script>
+        debugger;
+        var userNo = '@HttpContextAccessor.HttpContext.Session.GetString("userNo")';
+        var group = '@HttpContextAccessor.HttpContext.Session.GetString("groupCode")';
+        var siteCode = '@HttpContextAccessor.HttpContext.Session.GetString("siteCode")';
         document.getElementById('groups').value = "@group";
         document.getElementById('users').value = "@user";
     </script>

@@ -49,6 +49,12 @@ namespace ProjectTeamNET
             services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IManhourInputService, ManhourInputService>();         
             services.AddScoped<IManhourUpdateService, ManhourUpdateService>();
+            services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromSeconds(3000);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
 
         }
 

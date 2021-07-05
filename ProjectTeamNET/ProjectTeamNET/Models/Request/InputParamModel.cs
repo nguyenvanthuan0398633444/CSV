@@ -7,8 +7,10 @@ namespace ProjectTeamNET.Models.Request
 {
     public class InputParamModel
     {
-        public string dateStr { get; set; }
-        public string userNo { get; set; }
-        public string pageName { get; set; }
+        public string DateStr { get; set; }
+        public string UserNo { get; set; }
+        public string GroupCode { get; set; }
+        public string SiteCode { get; set; }
+        public string PageName { get; set; }
     }
 }

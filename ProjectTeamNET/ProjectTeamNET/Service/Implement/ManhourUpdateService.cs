@@ -230,25 +230,26 @@ namespace ProjectTeamNET.Service.Implement
         }
         public async Task<List<Manhour>> ImportCSV(IFormFile files)
         {
-            List<Manhour> dataExport = new List<Manhour>();
-            if (files.FileName.EndsWith(".csv"))
+            List<Manhour> dataExport = new List<Manhour>();            
+            using (var sreader = new StreamReader(files.OpenReadStream()))
             {
-                using (var sreader = new StreamReader(files.OpenReadStream()))
+                string headers = sreader.ReadLine();
+                bool checkHeader = CheckHeaderFileCSV(headers);
+                if (checkHeader)
                 {
-                    string[] headers = sreader.ReadLine().Split(',');     //Title
                     while (!sreader.EndOfStream)                          //get all the content in rows 
                     {
-                        string[] dataCSV = sreader.ReadLine().Split(',');                     
+                        string[] dataCSV = sreader.ReadLine().Split(',');
                         string WorkContentsClass = await GetWordConteClass(dataCSV[4]);
-                        if(WorkContentsClass == null)
+                        if (WorkContentsClass == null)
                         {
                             continue;
                         }
                         Manhour CsvData = new Manhour();
                         CsvData.Year = Int16.Parse(dataCSV[0]);
                         CsvData.Month = Int16.Parse(dataCSV[1]);
-                        CsvData.User_no = dataCSV[2].Trim();                        
-                        CsvData.Theme_no = dataCSV[4].Trim();                        
+                        CsvData.User_no = dataCSV[2].Trim();
+                        CsvData.Theme_no = dataCSV[4].Trim();
                         CsvData.Work_contents_code = dataCSV[6].Trim();
                         CsvData.Work_contents_class = WorkContentsClass.Trim();
                         CsvData.Work_contents_detail = dataCSV[8].Trim();
@@ -261,15 +262,15 @@ namespace ProjectTeamNET.Service.Implement
                             int j = i + 9;
                             if (CheckNumber(dataCSV[j]))
                             {
-                                CsvData.GetType().GetProperty("Day"+i).SetValue(CsvData, Double.Parse(dataCSV[j]));
+                                CsvData.GetType().GetProperty("Day" + i).SetValue(CsvData, Double.Parse(dataCSV[j]));
                             }
-                        }                       
+                        }
                         User user = await GetUser(CsvData.User_no);
                         CsvData.Group_code = user.Group_code.Trim();
-                        CsvData.Site_code = user.Site_code.Trim() ;
-                        CsvData.Fix_date =  DateTime.Now.ToString("yyyyMMdd");                     
-                        CsvData.Pin_flg = false;                        
-                        bool check = CheckExist(CsvData) ;
+                        CsvData.Site_code = user.Site_code.Trim();
+                        CsvData.Fix_date = DateTime.Now.ToString("yyyyMMdd");
+                        CsvData.Pin_flg = false;
+                        bool check = CheckExist(CsvData);
                         if (check)
                         {
                             await UpdateManhours(CsvData);
@@ -278,10 +279,17 @@ namespace ProjectTeamNET.Service.Implement
                         {
                             manhourRepository.Create(CsvData);
                         }
+                        dataExport.Add(CsvData);
                     }
+                    return dataExport;
                 }
-            }         
-            return dataExport;
+                else
+                {
+                    dataExport = null;
+                    return dataExport;
+                }
+            }
+            
         }
         public bool CheckNumber(string day)
         {
@@ -478,10 +486,10 @@ namespace ProjectTeamNET.Service.Implement
             return true;
         }
         // check header file csv duplicate header data
-        public bool CheckHeaderFileCSV(string header, string headerCSV)
+        public bool CheckHeaderFileCSV(string header)
         {
-            string[] listHeader = header.Split(",");
-            string[] listHeaderCSV = headerCSV.Split(",");
+            string[] listHeaderCSV = header.Split(",");
+            string[] listHeader = HEADER.Split(",");
 
             if (listHeader.Length == listHeaderCSV.Length)
             {

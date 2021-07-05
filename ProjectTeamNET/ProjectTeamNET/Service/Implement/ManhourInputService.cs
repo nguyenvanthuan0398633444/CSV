@@ -43,30 +43,31 @@ namespace ProjectTeamNET.Service.Implement
         /// <returns></returns>
         public async Task<InitDataModel> Init(InputParamModel pModel)
         { 
-            DateTime date = DateTime.Parse(pModel.dateStr);          
+            DateTime date = DateTime.Parse(pModel.DateStr);
+           
             InitDataModel model = new InitDataModel();
             model.Groups = await GetGroups();
             model.Objects = await saleRepository.Gets();
             model.DateSelect = date.ToString(FORMATDATE);
 
             //Check screen item history button to return view Day/week/month
-            List<UserScreenItem> pageHistory = await GetsScreenItemHistory(pModel.userNo, "ManhourInput");
+            List<UserScreenItem> pageHistory = await GetsScreenItemHistory(pModel.UserNo, "ManhourInput");
 
-            if (pageHistory.FirstOrDefault().Screen_item != null)
+            if (pageHistory.Count != 0)
             {
                 model.pageHistory = pageHistory.FirstOrDefault().Screen_item;
             }
             else
             {
                 //Insert new a user screen item into database
-                string key = DateTime.Now.ToString("yyyyMMddHHmmss");
+                string key =pModel.UserNo+DateTime.Now.ToString("yyyyMMddHHmmss");
                 key += 0.ToString("D3");
                 UserScreenItem user = new UserScreenItem
                 {
                         Surrogate_key = key,
-                        User_no = pModel.userNo,
+                        User_no = pModel.UserNo,
                         Screen_url = "ManhourInput",
-                        Screen_item = null,
+                        Screen_item = "ManhourInput",
                         Screen_input = null,
                         Save_name = null
                 };
@@ -83,11 +84,11 @@ namespace ProjectTeamNET.Service.Implement
         /// <returns></returns>
         public async Task<ManhourInputModel> GetManhourData(InputParamModel pModel)
         {
-            DateTime date = DateTime.Parse(pModel.dateStr);
+            DateTime date = DateTime.Parse(pModel.DateStr);
             HolidayParam hparam = new HolidayParam();
             hparam.Year = date.Year;
             hparam.Month = date.Month;
-            hparam.SiteCode = "HP";
+            hparam.SiteCode = pModel.SiteCode;
 
             //set data for manhourinput model
             ManhourInputModel model = new ManhourInputModel();
@@ -190,7 +191,7 @@ namespace ProjectTeamNET.Service.Implement
         public async Task<List<ManhourInput>> GetPinTheme(InputParamModel pModel)
         {
             //get date and user_no from paramSt
-            DateTime date = DateTime.Parse(pModel.dateStr);
+            DateTime date = DateTime.Parse(pModel.DateStr);
 
             //get query by xml file
             var query = QueryLoader.GetQuery("ManhourInput","SelectPinTheme");
@@ -200,7 +201,7 @@ namespace ProjectTeamNET.Service.Implement
             {
                 Year = date.Year,
                 Month = date.Month-1,
-                User_no = pModel.userNo
+                User_no = pModel.UserNo
             };
             List<ManhourInput> results = await manhourRepository.Select<ManhourInput>(query, pQuery);
             return results;
@@ -216,7 +217,7 @@ namespace ProjectTeamNET.Service.Implement
             // Get History Theme selected
             List<UserScreenItem> searchHistory = await GetsScreenItemHistory(user_no,"SelectTheme");
            
-            if(searchHistory == null)
+            if(searchHistory.Count == 0)
             {
                 List<string> items = new List<string>
                 {
@@ -229,10 +230,9 @@ namespace ProjectTeamNET.Service.Implement
                 
                 //if not exist insert new  user screen item select theme
                 var i = 0;
-                string key = DateTime.Now.ToString("yyyyMMddHHmmss");
                 foreach (string item in items)
                 {
-                    key += i.ToString("D3");
+                    string key = user_no + DateTime.Now.ToString("yyyyMMddHHmmss") + i.ToString("D3");   
                     UserScreenItem user = new UserScreenItem 
                     {
                         Surrogate_key = key,
@@ -353,7 +353,7 @@ namespace ProjectTeamNET.Service.Implement
         /// Handle save data form client to db
         /// </summary>
         /// <param name="screenItems"></param>
-        public async Task<bool> Save(SaveData saveDatas)
+        public async Task<bool> Save(SaveData saveDatas, UserInfo user)
         {
             var result = 0;
             //Delete in list delete
@@ -368,7 +368,7 @@ namespace ProjectTeamNET.Service.Implement
             //Insert new record in save list 
             if (saveDatas.Insert.Count != 0)
             {
-                result = Create(saveDatas.Insert);
+                result = Create(saveDatas.Insert,user);
                 if (result <= 0)
                 {
                     return false;
@@ -383,7 +383,7 @@ namespace ProjectTeamNET.Service.Implement
             //update information 
             if (saveDatas.Update.Count != 0)
             {
-                result = await UpdateManhours(saveDatas.Update);
+                result = await UpdateManhours(saveDatas.Update,user.User_no);
                 if (result <= 0)
                 {
                     return false;
@@ -433,7 +433,7 @@ namespace ProjectTeamNET.Service.Implement
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        public int Create(List<Manhour> manhours)
+        public int Create(List<Manhour> manhours, UserInfo user)
         {
             var result = 0;
             foreach (Manhour mh in manhours)
@@ -442,7 +442,9 @@ namespace ProjectTeamNET.Service.Implement
                 {
                     Year = mh.Year,
                     Month = mh.Month,
-                    User_no = mh.User_no,
+                    User_no = user.User_no,
+                    Group_code = user.Group_code,
+                    Site_code = user.Site_code,
                     Theme_no = mh.Theme_no,
                     Work_contents_class = mh.Work_contents_class,
                     Work_contents_code = mh.Work_contents_code,
@@ -458,7 +460,7 @@ namespace ProjectTeamNET.Service.Implement
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        public async Task<int> UpdateManhours(List<Manhour> manhours)
+        public async Task<int> UpdateManhours(List<Manhour> manhours, string user_no)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "UpdateManhour");
@@ -468,7 +470,7 @@ namespace ProjectTeamNET.Service.Implement
                 //Set param for update query
                 var param = new
                 {
-                    mh.Year,mh.Month, mh.User_no,mh.Theme_no,mh.Work_contents_class,mh.Work_contents_code,
+                    mh.Year,mh.Month,User_no=user_no,mh.Theme_no,mh.Work_contents_class,mh.Work_contents_code,
                     mh.Work_contents_detail,mh.Pin_flg,mh.Total,
                     mh.Day1,mh.Day2,mh.Day3,mh.Day4,mh.Day5,mh.Day6,mh.Day7,mh.Day8,mh.Day9,mh.Day10,
                     mh.Day11,mh.Day12,mh.Day13,mh.Day14,mh.Day15,mh.Day16,mh.Day17,mh.Day18,mh.Day19,
@@ -514,7 +516,7 @@ namespace ProjectTeamNET.Service.Implement
         public async Task<List<ManhourInput>> GetManhours(InputParamModel paramModel)
         {
             
-            DateTime date = DateTime.Parse(paramModel.dateStr);
+            DateTime date = DateTime.Parse(paramModel.DateStr);
 
             //add list for where select if value of condition not null or empty
             var addList = new List<string>();
@@ -526,7 +528,7 @@ namespace ProjectTeamNET.Service.Implement
             {
                 addList.Add("Month");
             }
-            if (!string.IsNullOrEmpty(paramModel.userNo))
+            if (!string.IsNullOrEmpty(paramModel.UserNo))
             {
                 addList.Add("User_no");
             }
@@ -539,7 +541,7 @@ namespace ProjectTeamNET.Service.Implement
             {
                 Year = date.Year,
                 Month = date.Month,
-                User_no = paramModel.userNo
+                User_no = paramModel.UserNo
             };
             return await manhourRepository.Select<ManhourInput>(query, param);
         }
@@ -572,9 +574,9 @@ namespace ProjectTeamNET.Service.Implement
             var updateScreenItem = QueryLoader.GetQuery("ManhourInput", "UpdatePage");
             var updateParam = new
             {
-                ScreenItem = pModel.pageName,
+                ScreenItem = pModel.PageName,
                 ScreenUrl = "ManhourInput",
-                UserNo = pModel.userNo,
+                UserNo = pModel.UserNo,
             };
 
             await screenRepository.Update(updateScreenItem, updateParam);

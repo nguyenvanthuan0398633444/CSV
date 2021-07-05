@@ -2,6 +2,8 @@
 let holiday = [];
 let today = new Date();
 let row = 1;
+let listForUpdate = new Array();
+let listNeedUpdate = new Array();
 const HEADER = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
 //format date return string date 2021/06/18
 formatDate = function (date) {
@@ -48,7 +50,7 @@ function search() {
             let thead = `<tr>
                             <th></th>
                             <th>テーマNo</th>
-                            <th>テーマ名</th>
+                            <th style="width:50px;">テーマ名</th>
                             <th>内容</th>
                             <th>月計</th> `
             for (var i of HEADER) {
@@ -60,10 +62,10 @@ function search() {
             result.data.models.forEach(data => {
                 tbody += `<tr>
                                 <td><div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
-                                <td>${data.theme_no}</td>
-                                <td>${data.theme_name1}</td>
-                                <td>${data.work_contents_code}</td>
-                                <td class="sum${'row' + row}">${data.total}</td>
+                                <td class="ThemeNo">${data.theme_no}</td>
+                                <td class="ThemeName">${data.theme_name1}</td>
+                                <td >${data.work_contents_code}</td>
+                                <td class="sum${'row' + row}">${data.total.toFixed(1)}</td>
                                 <input type="hidden" class="Year"   name="Year" value="${data.year}" />
                                 <input type="hidden" class="Month"  name="Month" value="${data.month}" />
                                 <input type="hidden" class="User_No" name="User_No" value="${data.user_no}" />
@@ -74,12 +76,12 @@ function search() {
                                 <input type="hidden" class="WorkContentCode" name="WorkContentCode" value="${data.work_contents_code}" />
                                 <input type="hidden" class="WorkContentDetail" name="WorkContentDetail" value="${data.work_contents_detail}" />
                                 <input type="hidden" class="pin_flg" name="Pin_flg" value="${data.pin_flg}" />
-                                <input type="hidden" class="Total ${'row' + row}" name="Total" value="${data.total}" />  `
+                                <input type="hidden" class="Total Total${'row' + row}" name="Total" value="${0}" />  `
                                 for (var i of HEADER) {
                                     tbody += `<td class = "${i}"><input type="text" value="${data['day' + i].toFixed(1)}" class="form-control table-input ${'day' + i} ${'row' + row}"></td>`
                 }
                 row++;
-                tbody +=`<td><div class="text-center"><i class="fas fa-exchange-alt" ></i></div></td><td >
+                tbody +=`<td><div class="text-center"><i class="fas fa-exchange-alt" onclick="changeTheme(this)" ></i></div></td><td >
                              <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
                         </tr >`;             
                 tmp[0] += data.total;
@@ -104,11 +106,11 @@ function search() {
                 else {
                     if (tmp[item] == 0) {
                         tfoot += `<td class="${day} ${'sumday' + day++}">
-                                    ${tmp[item].toFixed(1)} <i class="fas fa-exclamation-circle text-danger" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                                    ${tmp[item].toFixed(1)} <i class="fas fa-exclamation-circle text-danger error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
                                  </td>`
                     } else {
                         tfoot += `<td class="${day} ${'sumday' + day++}">
-                                      ${tmp[item].toFixed(1)}<i class="fas fa-exclamation-circle text-warning" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
+                                      ${tmp[item].toFixed(1)}<i class="fas fa-exclamation-circle text-warning error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
                                   </td>`
                     }
                 }               
@@ -123,9 +125,9 @@ function search() {
             // time difference
             for (var i = 1; i < tmp.length; i++) {
                 if (8 - (tmp[i]) <= 0 || i > today.getDate() || holiday.find(element => element == i) != undefined) {
-                    tfoot += `<td class="${i}"></td>`
+                    tfoot += `<td class="${i} ${'missingday' + i}"></td>`
                 } else {
-                    tfoot += `<td class="${i}">${(8 - tmp[i]).toFixed(1)}</td> `
+                    tfoot += `<td class="${i} ${'missingday' + i}">${(8 - tmp[i]).toFixed(1)}</td> `
                 }           
             }
             // color holiday                                  
@@ -158,12 +160,17 @@ $("#fileCSVimport").on('change', function () {
         data: formData,     
         contentType: false,
         processData: false,
-        beforeSend: function (xhr) {
-            xhr.setRequestHeader("XSRF-TOKEN",
-                $('input:hidden[name="__RequestVerificationToken"]').val());
-        },
         success: function (result) {
-            search();
+            console.log(result)
+            if (result.messages == "メッセージエリア表示") {
+                alert("メッセージエリア表示");
+            }
+            else if (result.messages == "Header does not match") {
+                alert("Header does not match")
+            }
+            else {
+                search();
+            }          
         },
         error: function () {
             alert("Error occurs");
@@ -277,6 +284,8 @@ $("#choiceTheme").on("click",
             }
         });
         var theme = themeName + ", " + themeName + ", " + workContentClass + ", " + soldFlag;
+        $('#modal1').modal('hide');
+        $('#themeSelected2').val(theme);
         $("#theme").val(theme);
     });
 /* Handle select theme evet*/
@@ -312,7 +321,7 @@ $("#addTheme").on("click",
                         <input type="hidden" class="Month"  name="Month" value="${month}" />
                         <input type="hidden" class="User_No" name="User_No" value="${$('#users').val()}" />
                         <input type="hidden" class="Group_Code" name="Group_Code" value="${$('#groups').val()}" />
-                        <input type="hidden" class="Site_Code" name="Site_Code" value="HP" />
+                        <input type="hidden" class="Site_Code" name="Site_Code" value="${siteCode}" />
                         <input type="hidden" class="Theme_No" name="Theme_No" value="${themeNo}" />
                         <input type="hidden" class="WorkContentClass" name="WorkContentClass" value="${workContentClass}" />
                         <input type="hidden" class="WorkContentCode" name="WorkContentCode" value="${workContentCode}" />
@@ -327,7 +336,7 @@ $("#addTheme").on("click",
                         }  
                         row++;
                         rowAdd +=`<td>
-                                    <div class="text-center"><i class="fas fa-exchange-alt" ></i></div></td>
+                                    <div class="text-center"><i class="fas fa-exchange-alt" onclick="changeTheme(this)" ></i></div></td>
                                 <td >
                                     <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
                                 </tr>`;
@@ -392,15 +401,21 @@ $("#tbody").on("click", "input", function () {
     $(this).select();
 });
 
-$(".container-fluid").on("change", "input", function () {
-    //$(".table-input").on("change", function(){
+$(".table-responsive").on("change", ".table-input", function (e) {
+    e.stopPropagation();
     var valueChange = parseFloat($(this).val());
     if (isNaN(valueChange)) {
         valueChange = 0.0;
     }
-    if (valueChange > 24) {       
-        valueChange = 0.0;
+    if (valueChange > 24 ) {
+        valueChange = 0;
+        $(this).val(valueChange.toFixed(1));
         return alert('Input hour must less than 24h!');
+    }
+    if (valueChange < 0) {
+        valueChange = 0;
+        $(this).val(valueChange.toFixed(1));
+        return alert('Input time must be greater than 0 hours!');
     }
     $(this).val(valueChange.toFixed(1));
     var addressRow;
@@ -425,7 +440,7 @@ $(".container-fluid").on("change", "input", function () {
     });
     var a = '.sum' + addressRow;
     $('.sum' + addressRow).html(sumValueRow.toFixed(1));
-    $('.totalR' + addressRow).val(sumValueRow.toFixed(1));
+    $('.Total' + addressRow).val(sumValueRow.toFixed(1));
     // change value follow column you choose and change sumValueMonth
     changeValueByColumn(addressCol, sumValueCol, sumValueMonth);
 
@@ -441,26 +456,42 @@ function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
         sumValueMonth += parseFloat($('.sumday' + i).html());
     }
     $('.sumday0').html(sumValueMonth.toFixed(1));
-
+    let checkHoliday = holiday.find(element => element == i) != undefined;
     //missing manhour 1 date check manhour > 0 && manhour < 8
-    if ($(".sum" + addressCol).closest("td").hasClass("table-danger") == false) {
-        if (sumValueCol > 0 && sumValueCol < 8) {
-            $(".missing_" + addressCol).html((8 - sumValueCol).toFixed(1));
+    if ($(".sum" + addressCol).closest("td").hasClass("table-danger") == false && checkHoliday != undefined) {
+        if (sumValueCol > 0 && sumValueCol < 8 && checkHoliday == undefined) {
+            $(".missing" + addressCol).html((8 - sumValueCol).toFixed(1));
 
             var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i.hour-min");
             if (checkTagIRange0To8.html() == undefined) {
                 var i = '<i class="fas fa-exclamation-circle text-warning hour-min" data-toggle="tooltip" title="合計工数が8h未満です"></i> ';
-                $(".sum" + addressCol).closest("td").find('span').before(i);
+               $(".sum" + addressCol).append(i);
             } else {
                 checkTagIRange0To8.show();
             }
 
-        } else {
-            $(".missing_" + addressCol).html('');
+        }
+        else if (sumValueCol == 8 && checkHoliday == undefined) {
+            $(".missing" + addressCol).html('');
             $(".sum" + addressCol).closest("td").find("i").hide();
         }
+        else if (sumValueCol == 0 && checkHoliday == undefined) {
+            var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i");
+            $(".missing" + addressCol).html('');
+            if (checkTagIRange0To8.html() == undefined) {
+                var i = '<i class="fas fa-exclamation-circle text-danger error" data-toggle="tooltip" title="合計工数が8h未満です"></i>';
+                $(".sum" + addressCol).append(i);
+            }
+        }
+        else {
+            var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i");
+            $(".missing" + addressCol).html('');
+            if (checkTagIRange0To8.html() == undefined ) {
+                var i = '<i class="fas fa-exclamation-circle text-warning hour-min" data-toggle="tooltip" title="合計工数が8h未満です"></i> ';
+                $(".sum" + addressCol).append(i);
+            }
+        }
     }
-
     //check manhour > 24
     if (sumValueCol > 24) {
         var checkTagIGreater24 = $(".sum" + addressCol).closest("td").find("i.hour-max");
@@ -473,4 +504,99 @@ function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
     } else {
         $(".sum" + addressCol).closest("td").find("i.hour-max").hide();
     }
+}
+                                                                                                                                                                                                                                    
+$(document).on('show.bs.modal', '.modal', function () {
+    var zIndex = 1040 + (10 * $('.modal:visible').length);
+    $(this).css('z-index', zIndex);
+    setTimeout(function () {
+        $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+    }, 0);
+});
+function changeTheme(el) {
+    if (confirm("Do you want to change this theme?") == true) {
+        $("#modalThemeNo").val($(el).closest("tr").find(".ThemeNo").text());
+        $("#modalThemeName").val($(el).closest("tr").find(".ThemeName").text());
+        $("#modalWC").val($(el).closest("tr").find(".WorkContentCode").val());
+        $("#modalDetail").val($(el).closest("tr").find(".WorkContentDetail").val());
+        $("#modal3").modal('show');
+
+        $('#btnChange').on('click', function () {
+
+            let workContentCode = $(`#workContentCode2 :selected`).val();
+            let workContentDetail = $(`#detailCode2`).val();
+            let year = parseInt($(el).closest('tr').find(".Year").val());
+            let month = parseInt($(el).closest("tr").find(".Month").val());
+            let userNo = $(el).closest("tr").find(".User_No").val();
+            if (!themeNo || !themeName || !workContentClass) {
+                alert("Please choice theme!");
+                return;
+            }
+            if (!workContentDetail) {
+                alert("Please choice work contents!");
+                return;
+            }
+            if (!workContentCode) {
+                alert("Please choice work content code!");
+                return;
+            }
+            let obj = {};
+            obj.Theme_no = themeNo;
+            obj.Year = year;
+            obj.Month = month;
+            obj.Work_contents_class = workContentClass;
+            obj.Work_contents_code = workContentCode;
+            obj.Work_contents_detail = workContentDetail;
+
+            $.ajax({
+                url: `/ManhourInput/CheckExistTheme`,
+                method: "POST",
+                data: obj,
+                success: function (result) {
+                    console.log(result);
+                    if (result == false) {
+                        let obj = {};
+                        obj.Year = year;
+                        obj.Month = month;
+                        obj.User_no = userNo;
+                        obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
+                        obj.Work_contents_class = $(el).closest("tr").find(".WorkContentClass").val();
+                        obj.Work_contents_code = $(el).closest("tr").find(".WorkContentCode").val();
+                        obj.Work_contents_detail = $(el).closest("tr").find(".WorkContentDetail").val();
+
+                        listNeedUpdate.push(obj);
+                        console.log(listNeedUpdate);
+
+                        obj = {};
+                        obj.Theme_no = themeNo;
+                        obj.Work_contents_class = workContentClass;
+                        obj.Work_contents_code = workContentCode;
+                        obj.Work_contents_detail = workContentDetail;
+
+                        listForUpdate.push(obj);
+                        console.log(listForUpdate);
+                        $('#modal3').modal('hide');
+                        //Change information row changed
+                        $(el).closest("tr").find(".ThemeName").text(themeName);
+                        $(el).closest("tr").find(".ThemeNo").text(themeNo);
+                        $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).text());
+                        $(el).closest("tr").find(".Detail").text(workContentDetail);                      
+                        //set default data 
+                        $(`#themeSelected1`).val('');
+                        $(`#themeSelected2`).val('');
+                        $(`#workContentCode1`).html('');
+                        $(`#detailCode1`).val('');
+                        $(`#workContentCode1`).html('<option value=" "></option>');
+                        $(`#workContentCode2`).html('<option value=" "></option>');
+                        themeNo = null; themeName = null; workContentClass = null;
+
+                    } else {
+                        alert('Theme is existed!');
+                    }
+                }
+            });
+        });
+
+    }
+
 }

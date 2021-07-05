@@ -27,7 +27,7 @@ namespace ProjectTeamNET.Controllers
             {
                 UserPrincipal user = UserPrincipal.Current;
                 string loginName = user.SamAccountName;
-                HttpContext.Session.SetString("userName", loginName);
+                HttpContext.Session.SetString("userNo", loginName);
                 //var userInfo = service.GetInfoUser(loginName);
                 //HttpContext.Session.SetString("roleCode", userInfo.Result.RoleCode);
                 return this.RedirectToAction("Index", "Menu");
@@ -65,7 +65,7 @@ namespace ProjectTeamNET.Controllers
             if (check)
             {                
                 var userInfo = service.GetInfoUser(model.UserName);
-                HttpContext.Session.SetString("userName", userInfo.Result.User_no);
+                HttpContext.Session.SetString("userNo", userInfo.Result.User_no);
                 HttpContext.Session.SetString("roleCode", userInfo.Result.Role_code);
                 HttpContext.Session.SetString("groupCode", userInfo.Result.Group_code);
                 HttpContext.Session.SetString("siteCode", userInfo.Result.Site_code);
@@ -158,7 +158,7 @@ namespace ProjectTeamNET.Controllers
         /// <returns></returns>
         public IActionResult Logout()
         {
-            HttpContext.Session.Remove("userName");
+            HttpContext.Session.Remove("userNo");
             HttpContext.Session.Remove("roleCode");
             return this.RedirectToAction("Index", "Login");
         }

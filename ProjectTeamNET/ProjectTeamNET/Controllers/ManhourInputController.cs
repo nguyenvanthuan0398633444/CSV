@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using ProjectTeamNET.Models.Request;
 using System;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ProjectTeamNET.Controllers
 {
@@ -15,10 +17,7 @@ namespace ProjectTeamNET.Controllers
     /// </summary>
     public class ManhourInputController : Controller
     {
-    
-        string userDefault = "BAOTQ";
-        string localDate = DateTime.Now.ToString("yyyy/MM/dd"); 
-
+        readonly string localDate = DateTime.Now.ToString("yyyy/MM/dd");
         private readonly IManhourInputService _service;
         public ManhourInputController(IManhourInputService service)
         {
@@ -28,17 +27,23 @@ namespace ProjectTeamNET.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string dateSt)
         {
-            InputParamModel pModel = new InputParamModel();
-            pModel.userNo = userDefault;
+            if (HttpContext.Session.GetString("userNo")==null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+            InputParamModel pModel = new InputParamModel
+            {
+                UserNo = HttpContext.Session.GetString("userNo")
+            };
             if (dateSt != null)
             {
-                pModel.dateStr = dateSt;
+                pModel.DateStr = dateSt;
             }
             else
             {
-                pModel.dateStr = localDate;
+                pModel.DateStr = localDate;
             }
-
+           
             InitDataModel data = await _service.Init(pModel);
 
             return View("Index", data);
@@ -51,15 +56,21 @@ namespace ProjectTeamNET.Controllers
         [HttpGet]
         public async Task<IActionResult> Day(string dateSt)
         {
-            InputParamModel pModel = new InputParamModel();
-            pModel.userNo = userDefault;
+            if (HttpContext.Session.GetString("userNo") == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+            InputParamModel pModel = new InputParamModel
+            {
+                UserNo = HttpContext.Session.GetString("userNo")
+            };
             if (dateSt != null)
             {
-                pModel.dateStr = dateSt;
+                pModel.DateStr = dateSt;
             }
             else
             {
-                pModel.dateStr = localDate;
+                pModel.DateStr = localDate;
             }
 
             InitDataModel data = await _service.Init(pModel);
@@ -76,15 +87,21 @@ namespace ProjectTeamNET.Controllers
         public async Task<IActionResult> Week(string dateSt)
         {
 
-            InputParamModel pModel = new InputParamModel();
-            pModel.userNo = userDefault;
+            if (HttpContext.Session.GetString("userNo") == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+            InputParamModel pModel = new InputParamModel
+            {
+                UserNo = HttpContext.Session.GetString("userNo")
+            };
             if (dateSt != null)
             {
-                pModel.dateStr = dateSt;
+                pModel.DateStr = dateSt;
             }
             else
             {
-                pModel.dateStr = localDate;
+                pModel.DateStr = localDate;
             }
 
             InitDataModel data = await _service.Init(pModel);
@@ -99,15 +116,21 @@ namespace ProjectTeamNET.Controllers
         [HttpGet]
         public async Task<IActionResult> Month(string dateSt)
         {
-            InputParamModel pModel = new InputParamModel();
-            pModel.userNo = userDefault;
+            if (HttpContext.Session.GetString("userNo") == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+            InputParamModel pModel = new InputParamModel
+            {
+                UserNo = HttpContext.Session.GetString("userNo")
+            };
             if (dateSt != null)
             {
-                pModel.dateStr = dateSt;
+                pModel.DateStr = dateSt;
             }
             else
             {
-                pModel.dateStr = localDate;
+                pModel.DateStr = localDate;
             }
             
             InitDataModel data = await _service.Init(pModel);
@@ -122,10 +145,11 @@ namespace ProjectTeamNET.Controllers
         public async Task<JsonResult> LoadDatas(string dateStr)
         {
             InputParamModel pModel = new InputParamModel();
-            pModel.userNo = userDefault;
+            pModel.UserNo = HttpContext.Session.GetString("userNo");
+            pModel.SiteCode = HttpContext.Session.GetString("siteCode");
             if (dateStr != null)
             {
-                pModel.dateStr = dateStr;
+                pModel.DateStr = dateStr;
             }
             ManhourInputModel data = await _service.GetManhourData(pModel);
             return Json(data);
@@ -138,8 +162,8 @@ namespace ProjectTeamNET.Controllers
         public OkObjectResult SavePageHistory(string pageName)
         {
             InputParamModel pModel = new InputParamModel();
-            pModel.userNo = userDefault;
-            pModel.pageName = pageName;
+            pModel.UserNo = HttpContext.Session.GetString("userNo");
+            pModel.PageName = pageName;
             _service.SavePageHistory(pModel);
             return Ok("Saved");
         }
@@ -152,7 +176,8 @@ namespace ProjectTeamNET.Controllers
         [HttpPost]
         public async Task<JsonResult> GetHistoryThemes()
         {
-            SearchThemeParam data = await _service.GetHistoryThemes(userDefault);
+            string userNo = HttpContext.Session.GetString("userNo");
+            SearchThemeParam data = await _service.GetHistoryThemes(userNo);
             return Json(data);
         }
 
@@ -164,7 +189,8 @@ namespace ProjectTeamNET.Controllers
         [HttpPost]
         public async Task<JsonResult> SearchThemes(SearchThemeParam param)
         {
-            SelectThemeModel data = await _service.SearchThemes(param,userDefault);
+            string userNo = HttpContext.Session.GetString("userNo");
+            SelectThemeModel data = await _service.SearchThemes(param,userNo);
 
             if(data.Themes.Count >= 1000)
             {
@@ -180,7 +206,14 @@ namespace ProjectTeamNET.Controllers
         [HttpPost]
         public async Task<JsonResult> Save([FromBody]SaveData Data)
         {
-            var result = await _service.Save(Data);
+            UserInfo user = new UserInfo
+            {
+                User_no = HttpContext.Session.GetString("userNo"),
+                Group_code = HttpContext.Session.GetString("groupCode"),
+                Site_code = HttpContext.Session.GetString("siteCode")
+            };
+
+            var result = await _service.Save(Data,user);
             if (result == false)
             {   
                 return Json(string.Format(Resources.Messages.INF_001, "エラー"));
@@ -208,14 +241,16 @@ namespace ProjectTeamNET.Controllers
         [HttpGet]
         public async Task<IActionResult> ExportCSV(string dateStr)
         {
-            ExportModel exportModel = await _service.ExportCSV(userDefault, dateStr);
+            string userNo = HttpContext.Session.GetString("userNo");
+            ExportModel exportModel = await _service.ExportCSV(userNo, dateStr);
             return File(Encoding.UTF8.GetBytes(exportModel.builder.ToString()), "text/csv", exportModel.nameFile);
         }
 
         [HttpPost]
         public async Task<IActionResult> CheckExistTheme(ManhourKeys keys)
         {
-            keys.User_no = userDefault;
+            string userNo = HttpContext.Session.GetString("userNo");
+            keys.User_no = userNo;
             return Json(await _service.CheckThemeExist(keys));
         }
 

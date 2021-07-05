@@ -68,7 +68,7 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="saveDatas"></param>
         /// <returns></returns>
-        Task<bool> Save(SaveData saveDatas);
+        Task<bool> Save(SaveData saveDatas, UserInfo user);
         /// <summary>
         /// Get list date of week 
         /// </summary>
@@ -80,7 +80,7 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        Task<int> UpdateManhours(List<Manhour> manhours);
+        Task<int> UpdateManhours(List<Manhour> manhours, string user_no);
         Task<int> ChangeManhour(List<Manhour> oldData, List<Manhour> newData);
         /// <summary>
         /// delete data if it deleted in data form client
@@ -88,7 +88,7 @@ namespace ProjectTeamNET.Service.Interface
         /// <param name="manhours"></param>
         /// <returns></returns>
         Task<int> DeleteManhours(List<Manhour> manhours);
-        int Create(List<Manhour> manhours);
+        int Create(List<Manhour> manhours, UserInfo user);
         /// <summary>
         /// Save page cliked history
         /// </summary>

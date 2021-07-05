@@ -16,7 +16,7 @@ namespace ProjectTeamNET.Controllers
         }
         public async Task<IActionResult> Index()
         {
-            string userNo = HttpContext.Session.GetString("userName");
+            string userNo = HttpContext.Session.GetString("userNo");
             var result = await service.SendDataToController(userNo);
           
             return View(result);

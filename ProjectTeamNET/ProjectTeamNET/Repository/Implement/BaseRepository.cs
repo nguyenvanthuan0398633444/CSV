@@ -171,5 +171,25 @@ namespace ProjectTeamNET.Repository.Implement
         {
             context.Database.GetDbConnection().QueryAsync<M>(sql, param);
         }
+        public int Create(List<T> objs)
+        {
+            var result = -1;
+            using (IDbContextTransaction transaction = context.Database.BeginTransaction())
+            {
+                try
+                {
+                    dbset.AddRange(objs);
+                    result = context.SaveChanges();
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                }
+            }
+
+            return result;
+        }
     }
 }

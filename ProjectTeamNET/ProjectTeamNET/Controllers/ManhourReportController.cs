@@ -23,7 +23,7 @@ namespace ProjectTeamNET.Controllers
         }
         public async Task<IActionResult> Index()
         {
-            var model = await manhourReportService.Init(HttpContext.Session.GetString("userName").ToUpper());
+            var model = await manhourReportService.Init(HttpContext.Session.GetString("userNo").ToUpper());
             return View(model);
         }
         [HttpGet("/ManhourReport/AddTheme/{count}")]

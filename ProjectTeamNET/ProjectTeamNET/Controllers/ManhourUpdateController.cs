@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 using System.Text;
 using ProjectTeamNET.Models.Entity;
 using Microsoft.AspNetCore.Http;
+using ProjectTeamNET.Resources;
+
 namespace ProjectTeamNET.Controllers
 {
     public class ManhourUpdateController : Controller
     {
         private readonly IManhourUpdateService manhourUpdateService;
-        private const string user = "BAOTQ";
+        string user = "";
         public ManhourUpdateController(IManhourUpdateService manhourUpdateService)
         {
             this.manhourUpdateService = manhourUpdateService;           
@@ -20,7 +22,11 @@ namespace ProjectTeamNET.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Index()
-        {            
+        {           
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            {
+                user = HttpContext.Session.GetString("userNo").ToUpper();
+            }
             ManhourUpdate model = await manhourUpdateService.GetGroupAndUser(user);
             if (model != null)
             {
@@ -53,10 +59,22 @@ namespace ProjectTeamNET.Controllers
         }
 
         [HttpPost("/ManhourUpdate/ImportCSV")]
-        public async Task<IActionResult> ImportCSV(IFormFile file)
+        public async Task<JsonResult> ImportCSV(IFormFile file)
         {
-            List<Manhour> result = await manhourUpdateService.ImportCSV(file);
-            return Json(new { data = result });
+            
+            if (file.FileName.EndsWith(".csv"))
+            {
+                List<Manhour> result = await manhourUpdateService.ImportCSV(file);
+                if(result.Count != 0)
+                {
+                    return Json(new { data = result ,messages =""});
+                }
+                else
+                {
+                    return Json(new { messages = "Header does not match" });
+                }
+            }
+            return Json(new { messages = "メッセージエリア表示" });
 
         }
 
