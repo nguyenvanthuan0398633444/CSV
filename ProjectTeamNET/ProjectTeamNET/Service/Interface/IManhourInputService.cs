@@ -87,7 +87,7 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        Task<int> DeleteManhours(List<Manhour> manhours);
+        Task<int> DeleteManhours(List<Manhour> manhours, string user_no);
         int Create(List<Manhour> manhours, UserInfo user);
         /// <summary>
         /// Save page cliked history

@@ -27,10 +27,13 @@ namespace ProjectTeamNET.Controllers
             {
                 UserPrincipal user = UserPrincipal.Current;
                 string loginName = user.SamAccountName;
-                HttpContext.Session.SetString("userNo", loginName);
-                //var userInfo = service.GetInfoUser(loginName);
-                //HttpContext.Session.SetString("roleCode", userInfo.Result.RoleCode);
-                return this.RedirectToAction("Index", "Menu");
+                var userInfo = service.GetInfoUser(loginName.ToUpper());
+
+                HttpContext.Session.SetString("userNo", userInfo.Result.User_no);
+                HttpContext.Session.SetString("roleCode", userInfo.Result.Role_code);
+                HttpContext.Session.SetString("groupCode", userInfo.Result.Group_code);
+                HttpContext.Session.SetString("siteCode", userInfo.Result.Site_code);
+                return RedirectToAction("Index", "Menu"); // duong dan successs
             }
             else
             {

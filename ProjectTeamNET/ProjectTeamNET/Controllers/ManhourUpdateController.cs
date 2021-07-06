@@ -32,12 +32,16 @@ namespace ProjectTeamNET.Controllers
             {
                 return View(model);
             }
-            return RedirectToAction("Index", "HOME");
+            return RedirectToAction("Index", "Menu");
         }
 
         [HttpPost("/ManhourUpdate/Search")]
         public async Task<JsonResult> Search(ManhourUpdateSearch keySearch)
         {
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            {
+                user = HttpContext.Session.GetString("userNo").ToUpper();
+            }
             ManHourUpdateSearchModel result = new ManHourUpdateSearchModel();
             result = await manhourUpdateService.Search(keySearch,user);
             return Json(new { data = result });

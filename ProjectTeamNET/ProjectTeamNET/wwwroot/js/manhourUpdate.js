@@ -27,7 +27,7 @@ $("#groups").change(function users() {
         });
 })
 // search
-function search() {
+async function search() {
     $('#tbody').empty();
     $('#thead').empty();
     $('#tfoot').empty();
@@ -37,7 +37,7 @@ function search() {
     obj.Month = date.split('/')[1].toString();
     obj.Group = $("#groups").val();
     obj.User = $("#users").val();  
-    $.ajax({
+    await $.ajax({
         url: "/ManhourUpdate/Search",
         method: 'Post',
         data: obj,
@@ -65,7 +65,7 @@ function search() {
                                 <td class="ThemeNo">${data.theme_no}</td>
                                 <td class="ThemeName">${data.theme_name1}</td>
                                 <td >${data.work_contents_code}</td>
-                                <td class="sum${'row' + row}">${data.total.toFixed(1)}</td>
+                                <td class="sum${'row' + row} day0">${data.total.toFixed(1)}</td>
                                 <input type="hidden" class="Year"   name="Year" value="${data.year}" />
                                 <input type="hidden" class="Month"  name="Month" value="${data.month}" />
                                 <input type="hidden" class="User_No" name="User_No" value="${data.user_no}" />
@@ -81,7 +81,7 @@ function search() {
                                     tbody += `<td class = "${i}"><input type="text" value="${data['day' + i].toFixed(1)}" class="form-control table-input ${'day' + i} ${'row' + row}"></td>`
                 }
                 row++;
-                tbody +=`<td><div class="text-center"><i class="fas fa-exchange-alt" onclick="changeTheme(this)" ></i></div></td><td >
+                tbody +=`<td><div class="text-center"><i class="fas fa-exchange-alt" onclick="checkHour(this)" ></i></div></td><td >
                              <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
                         </tr >`;             
                 tmp[0] += data.total;
@@ -96,8 +96,9 @@ function search() {
                         <td></td>
                         <td>合計</td>
                         <td></td>`        
-            let day = 0;        
+            let day = 0;                               
             for (var item in tmp) {
+
                 if (tmp[item] == 8 || holiday.find(element => element == day) != undefined || item == 0 || item > today.getDate()) {
                     tfoot += `<td class="${day} ${'sumday' + day++}">
                                 ${tmp[item].toFixed(1)} <i class="error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
@@ -107,8 +108,9 @@ function search() {
                     if (tmp[item] == 0) {
                         tfoot += `<td class="${day} ${'sumday' + day++}">
                                     ${tmp[item].toFixed(1)} <i class="fas fa-exclamation-circle text-danger error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
-                                 </td>`
-                    } else {
+                                 </td>`                      
+                    }
+                    else {
                         tfoot += `<td class="${day} ${'sumday' + day++}">
                                       ${tmp[item].toFixed(1)}<i class="fas fa-exclamation-circle text-warning error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
                                   </td>`
@@ -136,7 +138,9 @@ function search() {
                 $(`.${data}`).css("background-color", "#f5c6cb");           
             })            
             // color today
-            $(`.${today.getDate()}`).css("background-color", "#bee5eb");            
+            $(`.${today.getDate()}`).css("background-color", "#bee5eb");       
+            $('#warningCSV').empty();
+            checkTotalHours();
         }
     });
 }
@@ -160,16 +164,22 @@ $("#fileCSVimport").on('change', function () {
         data: formData,     
         contentType: false,
         processData: false,
-        success: function (result) {
-            console.log(result)
+        success: async function (result) {
+            $('#warningCSV').empty();
             if (result.messages == "メッセージエリア表示") {
-                alert("メッセージエリア表示");
+                
+                $('#warningCSV').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > メッセージエリア表示 </div >`);                      
             }
             else if (result.messages == "Header does not match") {
-                alert("Header does not match")
+                $('#warningCSV').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > タイトルが一致しません </div >`);               
             }
-            else {
-                search();
+            else {  
+                await search();
+                $('#warningCSV').append(`<div class="alert alert-primary mb-2"  role="alert">
+                                            <strong> アラート</strong > - セーブに成功！</div >`);
+                
             }          
         },
         error: function () {
@@ -178,50 +188,51 @@ $("#fileCSVimport").on('change', function () {
     });
 }); 
 //save information into DB
-$("#btSave").on("click",
-    function () {
-        let dayGet = 'day' + new Date().getDate();
-        let listData = new Array();
-
-        //for each tr in table add to obj then add to list data need saved
-        $('#tbody tr').each(function () {
-            let obj = {};
-
-            obj.Year = parseInt($(this).find(".Year").val());
-            obj.Month = parseInt($(this).find(".Month").val());
-            obj.User_no = $(this).find(".User_No").val();
-            obj.Group_code = $(this).find(".Group_Code").val();
-            obj.Site_code = $(this).find(".Site_Code").val();
-            obj.Theme_no = $(this).find(".Theme_No").val();
-            obj.Work_contents_class = $(this).find(".WorkContentClass").val();
-            obj.Work_contents_code = $(this).find(".WorkContentCode").val();
-            obj.Work_contents_detail = $(this).find(".WorkContentDetail").val();
-            obj.Pin_flg = false;
-            obj.Total = parseFloat($(this).find(".Total").val());
-            obj.fix_date = formatDate(new Date()).split('/').join([]);
-            //get date value for obj
-            for (let i = 1; i < 32; i++) {
-                obj[`day${i}`] = parseFloat($(this).find(`.day${i}`).val());
-            }
-            // Add to list data
-            listData.push(obj);
-        });
-        var data = {};
-        data.save = listData;
-        data.delete = deletedThemeArr;
-        deletedThemeArr = [];
-        $.ajax({
-            url: "/ManhourUpdate/Save",
-            data: JSON.stringify(data),
-            type: "POST",
-            contentType: "application/json",
-            dataType: "json",
-            success: function (result) {
-                return alert(result);
-            }
-        });
-
+$("#btSave").on("click",function () {
+    let dayGet = 'day' + new Date().getDate();
+    let listData = new Array();
+    //for each tr in table add to obj then add to list data need saved
+    $('#tbody tr').each(function () {
+        let obj = {};
+        obj.Year = parseInt($(this).find(".Year").val());
+        obj.Month = parseInt($(this).find(".Month").val());
+        obj.User_no = $(this).find(".User_No").val();
+        obj.Group_code = $(this).find(".Group_Code").val();
+        obj.Site_code = $(this).find(".Site_Code").val();
+        obj.Theme_no = $(this).find(".Theme_No").val();
+        obj.Work_contents_class = $(this).find(".WorkContentClass").val();
+        obj.Work_contents_code = $(this).find(".WorkContentCode").val();
+        obj.Work_contents_detail = $(this).find(".WorkContentDetail").val();
+        obj.Pin_flg = false;
+        obj.Total = parseFloat($(this).find(".Total").val());
+        obj.fix_date = formatDate(new Date()).split('/').join([]);
+        //get date value for obj
+        for (let i = 1; i < 32; i++) {
+            obj[`day${i}`] = parseFloat($(this).find(`.day${i}`).val());
+        }
+        // Add to list data
+        listData.push(obj);
     });
+    var data = {};
+    data.save = listData;
+    data.delete = deletedThemeArr;
+    deletedThemeArr = [];
+    $.ajax({
+        url: "/ManhourUpdate/Save",
+        data: JSON.stringify(data),
+        type: "POST",
+        contentType: "application/json",
+        dataType: "json",
+        success: function (result) {
+                $('#warningSave').append(`<div class="alert alert-primary mb-2"  role="alert">
+                                            <strong> アラート</strong > - セーブに成功！</div >`);
+            setTimeout(function () {
+                $('#warningSave').empty();
+            }, 1000);
+        }
+    });
+
+});
 
 $("#searchTheme").on("click",
     function () {
@@ -272,8 +283,7 @@ let themeNo = null;
 let themeName = null;
 let workContentClass = null;
 let soldFlag = null;
-$("#choiceTheme").on("click",
-    function addTheme() {
+$("#choiceTheme").on("click", function addTheme() {
         $("#slThemeBody tr").each(function () {
             if ($(this).closest('tr').find("input[type=checkbox]").prop('checked')) {
                 themeNo = $(this).find(".ThemeNo").val();
@@ -316,7 +326,7 @@ $("#addTheme").on("click",
                         <td>${themeNo}</td>
                         <td>${themeName}</td>
                         <td>${workContentCode}</td>
-                        <td class="sum${'row' + row}">0.0</td>
+                        <td class="sum${'row' + row} day0">0.0</td>
                         <input type="hidden" class="Year"   name="Year" value="${year}" />
                         <input type="hidden" class="Month"  name="Month" value="${month}" />
                         <input type="hidden" class="User_No" name="User_No" value="${$('#users').val()}" />
@@ -336,7 +346,7 @@ $("#addTheme").on("click",
                         }  
                         row++;
                         rowAdd +=`<td>
-                                    <div class="text-center"><i class="fas fa-exchange-alt" onclick="changeTheme(this)" ></i></div></td>
+                                    <div class="text-center"><i class="fas fa-exchange-alt" onclick="checkHour(this)" ></i></div></td>
                                 <td >
                                     <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
                                 </tr>`;
@@ -354,16 +364,26 @@ $("#addTheme").on("click",
 $("#tbody").on("click", ".delete-Theme", function () {
     var obj = {};
     if (confirm('Do you want to delete this row?')) {
-        
-        obj.Year = parseInt($(this).closest('tr').find('input[name="Year"]').val());
-        obj.Month = parseInt($(this).closest('tr').find('input[name="Month"]').val());
-        obj.User_no = $(this).closest('tr').find('input[name="User_No"]').val();
-        obj.Theme_no = $(this).closest('tr').find('input[name="Theme_No"]').val();
-        obj.Work_contents_class = $(this).closest('tr').find('input[name="WorkContentClass"]').val();
-        obj.Work_contents_code = $(this).closest('tr').find('input[name="WorkContentCode"]').val() ;
-        obj.Work_contents_detail = $(this).closest('tr').find('input[name="WorkContentDetail"]').val();       
+        obj.Year = parseInt($(this).closest('tr').find('.Year').val());
+        obj.Month = parseInt($(this).closest('tr').find('.Month').val());
+        obj.User_no = $(this).closest('tr').find('.User_No').val();
+        obj.Theme_no = $(this).closest('tr').find('.Theme_No').val();
+        obj.Work_contents_class = $(this).closest('tr').find('.WorkContentClass').val();
+        obj.Work_contents_code = $(this).closest('tr').find('.WorkContentCode').val();
+        obj.Work_contents_detail = $(this).closest('tr').find('.WorkContentDetail').val();
         deletedThemeArr.push(obj);
-        $(this).closest('tr').remove();       
+        $(this).closest('tr').remove();
+        var sum = 0;      
+        for (var i = 1; i <= 31; i++) {
+            var addressRow = 'day' + i;
+            var sumValueRow = 0;
+            $('.' + addressRow ).each(function () {
+                sumValueRow += parseFloat($(this).val());
+            });
+            sum += sumValueRow;
+            $('.sum' + addressRow).html(sumValueRow.toFixed(1));
+        }
+        $('.sumday0').html(sum.toFixed(1));
     }
 });
 function loadSelectTheme() {
@@ -372,7 +392,6 @@ function loadSelectTheme() {
         url: `/ManhourInput/GetHistoryThemes`,
         method: "POST",
         success: function (result) {
-
             if (result == null) {
                 return;
             }
@@ -423,8 +442,7 @@ $(".table-responsive").on("change", ".table-input", function (e) {
     var sumValueRow = 0;
     var sumValueCol = 0;
     var sumValueMonth = 0;
-
-    var classAll = $(this).attr('class').split(' ');
+    var classAll = $(this).attr('class').split(' ');    
     // find address column and row.
     $.each(classAll, function (i, className) {
         if (className.indexOf('row') != -1) {
@@ -443,7 +461,7 @@ $(".table-responsive").on("change", ".table-input", function (e) {
     $('.Total' + addressRow).val(sumValueRow.toFixed(1));
     // change value follow column you choose and change sumValueMonth
     changeValueByColumn(addressCol, sumValueCol, sumValueMonth);
-
+    checkTotalHours();
 });
 //funtion change manhour one colum
 function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
@@ -456,12 +474,12 @@ function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
         sumValueMonth += parseFloat($('.sumday' + i).html());
     }
     $('.sumday0').html(sumValueMonth.toFixed(1));
-    let checkHoliday = holiday.find(element => element == i) != undefined;
+    let dayInt = addressCol.charAt(addressCol.length - 1);
+    let checkHoliday = holiday.find(element => element == dayInt);
     //missing manhour 1 date check manhour > 0 && manhour < 8
-    if ($(".sum" + addressCol).closest("td").hasClass("table-danger") == false && checkHoliday != undefined) {
-        if (sumValueCol > 0 && sumValueCol < 8 && checkHoliday == undefined) {
+    if ($(".sum" + addressCol).closest("td").hasClass("table-danger") == false && checkHoliday == undefined && sumValueCol <= 24) {
+        if (sumValueCol > 0 && sumValueCol < 8 ) {
             $(".missing" + addressCol).html((8 - sumValueCol).toFixed(1));
-
             var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i.hour-min");
             if (checkTagIRange0To8.html() == undefined) {
                 var i = '<i class="fas fa-exclamation-circle text-warning hour-min" data-toggle="tooltip" title="合計工数が8h未満です"></i> ';
@@ -471,11 +489,11 @@ function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
             }
 
         }
-        else if (sumValueCol == 8 && checkHoliday == undefined) {
+        else if (sumValueCol == 8 ) {
             $(".missing" + addressCol).html('');
             $(".sum" + addressCol).closest("td").find("i").hide();
         }
-        else if (sumValueCol == 0 && checkHoliday == undefined) {
+        else if (sumValueCol == 0 ) {
             var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i");
             $(".missing" + addressCol).html('');
             if (checkTagIRange0To8.html() == undefined) {
@@ -496,8 +514,8 @@ function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
     if (sumValueCol > 24) {
         var checkTagIGreater24 = $(".sum" + addressCol).closest("td").find("i.hour-max");
         if (checkTagIGreater24.html() == undefined) {
-            var i = '<i class="fas fa-exclamation-circle text-warning hour-max" data-toggle="tooltip" title="労働時間の合計が24hを超えることはできません。"></i> ';
-            $(".sum" + addressCol).closest("td").find('span').before(i);
+            var i = '<i class="fas fa-exclamation-circle text-danger hour-max" data-toggle="tooltip" title="労働時間の合計が24hを超えることはできません。"></i> ';
+            $(".sum" + addressCol).append(i);
         } else {
             checkTagIGreater24.show();
         }
@@ -513,90 +531,114 @@ $(document).on('show.bs.modal', '.modal', function () {
         $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
     }, 0);
 });
-function changeTheme(el) {
-    if (confirm("Do you want to change this theme?") == true) {
-        $("#modalThemeNo").val($(el).closest("tr").find(".ThemeNo").text());
-        $("#modalThemeName").val($(el).closest("tr").find(".ThemeName").text());
-        $("#modalWC").val($(el).closest("tr").find(".WorkContentCode").val());
-        $("#modalDetail").val($(el).closest("tr").find(".WorkContentDetail").val());
-        $("#modal3").modal('show');
-
-        $('#btnChange').on('click', function () {
-
-            let workContentCode = $(`#workContentCode2 :selected`).val();
-            let workContentDetail = $(`#detailCode2`).val();
-            let year = parseInt($(el).closest('tr').find(".Year").val());
-            let month = parseInt($(el).closest("tr").find(".Month").val());
-            let userNo = $(el).closest("tr").find(".User_No").val();
-            if (!themeNo || !themeName || !workContentClass) {
-                alert("Please choice theme!");
-                return;
-            }
-            if (!workContentDetail) {
-                alert("Please choice work contents!");
-                return;
-            }
-            if (!workContentCode) {
-                alert("Please choice work content code!");
-                return;
-            }
-            let obj = {};
-            obj.Theme_no = themeNo;
-            obj.Year = year;
-            obj.Month = month;
-            obj.Work_contents_class = workContentClass;
-            obj.Work_contents_code = workContentCode;
-            obj.Work_contents_detail = workContentDetail;
-
-            $.ajax({
-                url: `/ManhourInput/CheckExistTheme`,
-                method: "POST",
-                data: obj,
-                success: function (result) {
-                    console.log(result);
-                    if (result == false) {
-                        let obj = {};
-                        obj.Year = year;
-                        obj.Month = month;
-                        obj.User_no = userNo;
-                        obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
-                        obj.Work_contents_class = $(el).closest("tr").find(".WorkContentClass").val();
-                        obj.Work_contents_code = $(el).closest("tr").find(".WorkContentCode").val();
-                        obj.Work_contents_detail = $(el).closest("tr").find(".WorkContentDetail").val();
-
-                        listNeedUpdate.push(obj);
-                        console.log(listNeedUpdate);
-
-                        obj = {};
-                        obj.Theme_no = themeNo;
-                        obj.Work_contents_class = workContentClass;
-                        obj.Work_contents_code = workContentCode;
-                        obj.Work_contents_detail = workContentDetail;
-
-                        listForUpdate.push(obj);
-                        console.log(listForUpdate);
-                        $('#modal3').modal('hide');
-                        //Change information row changed
-                        $(el).closest("tr").find(".ThemeName").text(themeName);
-                        $(el).closest("tr").find(".ThemeNo").text(themeNo);
-                        $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).text());
-                        $(el).closest("tr").find(".Detail").text(workContentDetail);                      
-                        //set default data 
-                        $(`#themeSelected1`).val('');
-                        $(`#themeSelected2`).val('');
-                        $(`#workContentCode1`).html('');
-                        $(`#detailCode1`).val('');
-                        $(`#workContentCode1`).html('<option value=" "></option>');
-                        $(`#workContentCode2`).html('<option value=" "></option>');
-                        themeNo = null; themeName = null; workContentClass = null;
-
-                    } else {
-                        alert('Theme is existed!');
-                    }
-                }
-            });
-        });
-
+function checkHour(el) {
+    var a = $(el).closest("tr").find(".day0").text();
+    if (a == '0.0') {
+        changeTheme(el);
     }
+    else {
+        if (confirm("Do you want to change this theme?") == true) {
+            changeTheme(el);
+        }
+    }
+}
+function changeTheme(el) { 
+    $("#modalThemeNo").val($(el).closest("tr").find(".ThemeNo").text());
+    $("#modalThemeName").val($(el).closest("tr").find(".ThemeName").text());
+    $("#modalWC").val($(el).closest("tr").find(".WorkContentCode").val());
+    $("#modalDetail").val($(el).closest("tr").find(".WorkContentDetail").val());
+    $("#modal3").modal('show');
 
+    $('#btnChange').on('click', function () {
+
+        let workContentCode = $(`#workContentCode2 :selected`).val();
+        let workContentDetail = $(`#detailCode2`).val();
+        let year = parseInt($(el).closest('tr').find(".Year").val());
+        let month = parseInt($(el).closest("tr").find(".Month").val());
+        let userNo = $(el).closest("tr").find(".User_No").val();
+        if (!themeNo || !themeName || !workContentClass) {
+            alert("Please choice theme!");
+            return;
+        }
+        if (!workContentDetail) {
+            alert("Please choice work contents!");
+            return;
+        }
+        if (!workContentCode) {
+            alert("Please choice work content code!");
+            return;
+        }
+        let obj = {};
+        obj.Theme_no = themeNo;
+        obj.Year = year;
+        obj.Month = month;
+        obj.Work_contents_class = workContentClass;
+        obj.Work_contents_code = workContentCode;
+        obj.Work_contents_detail = workContentDetail;
+
+        $.ajax({
+            url: `/ManhourInput/CheckExistTheme`,
+            method: "POST",
+            data: obj,
+            success: function (result) {
+                console.log(result);
+                if (result == false) {
+                    let obj = {};
+                    obj.Year = year;
+                    obj.Month = month;
+                    obj.User_no = userNo;
+                    obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
+                    obj.Work_contents_class = $(el).closest("tr").find(".WorkContentClass").val();
+                    obj.Work_contents_code = $(el).closest("tr").find(".WorkContentCode").val();
+                    obj.Work_contents_detail = $(el).closest("tr").find(".WorkContentDetail").val();
+
+                    listNeedUpdate.push(obj);
+                    console.log(listNeedUpdate);
+
+                    obj = {};
+                    obj.Theme_no = themeNo;
+                    obj.Work_contents_class = workContentClass;
+                    obj.Work_contents_code = workContentCode;
+                    obj.Work_contents_detail = workContentDetail;
+
+                    listForUpdate.push(obj);
+                    console.log(listForUpdate);
+                    $('#modal3').modal('hide');
+                    //Change information row changed
+                    $(el).closest("tr").find(".ThemeName").text(themeName);
+                    $(el).closest("tr").find(".ThemeNo").text(themeNo);
+                    $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).text());
+                    $(el).closest("tr").find(".Detail").text(workContentDetail);                      
+                    //set default data 
+                    $(`#themeSelected1`).val('');
+                    $(`#themeSelected2`).val('');
+                    $(`#workContentCode1`).html('');
+                    $(`#detailCode1`).val('');
+                    $(`#workContentCode1`).html('<option value=" "></option>');
+                    $(`#workContentCode2`).html('<option value=" "></option>');
+                    themeNo = null; themeName = null; workContentClass = null;
+
+                } else {
+                    alert('Theme is existed!');
+                }
+            }
+        });
+    });
+}
+function checkTotalHours() {
+    $('#warningDay').empty();
+    for (var i = 1; i <= 31; i++) {
+        if (i < today.getDate()) {
+            var dayCheck = parseFloat($('.sumday' + i).text().trim());
+            if (dayCheck < 8 && holiday.find(element => element == i) == undefined) {
+                $('#warningDay').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > - 合計工数が8h未満のデータが存在します！</div >`);
+                break;
+            }
+        }
+        else {
+            break;
+        }
+       
+    }
 }

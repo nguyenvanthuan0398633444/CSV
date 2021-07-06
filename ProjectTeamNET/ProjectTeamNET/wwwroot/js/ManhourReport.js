@@ -15,6 +15,11 @@ $.ajax({
     }
 });
 
+$('#GroupId1').on("change", function () {
+    if ($('#GroupId1').val() != "") {
+        $('#UserAdd1').removeAttr("hidden");
+    }
+})
 //init get screenUserItem by userScreenName last action
 if ($('#userScreenName > option').length > 1) {
     var idUserScr = [];
@@ -55,22 +60,27 @@ function addUser(id) {
         success: function (response) {
             var options = '';
             countUser++;
-
             $.each(response, function (i, v) {
                 options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
             });
-            $(`#addUserinGroup${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}"><select class="form-control form-control-sm" id="selectUser${countUser}">
+            $(`#addUserinGroup${id}`).append(`<div class="UserCount${id}" style="margin-bottom: 15px; height: 30px" id="addUser${countUser}"><select class="form-control form-control-sm" id="selectUser${countUser}">
                                         ${options}
                                         </select></div>
                                     `);
-            $(`#trashUser${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}del"><i class="far fa-trash-alt" onclick="delUser(addUser${countUser})"></i></div>
+            $(`#trashUser${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}del"><i class="far fa-trash-alt" onclick="delUser(addUser${countUser},${id})"></i></div>
                                         `);
         }
     });
+    if ($(`.UserCount${id}`).length >= 9) {
+        $(`#UserAdd${id}`).attr("hidden", true);
+    }
 }
 
 //Delete 1 User
-function delUser(GroupCode) {
+function delUser(GroupCode, id) {
+    if ($(`.UserCount${id}`).length <= 10) {
+        $(`#UserAdd${id}`).removeAttr("hidden");
+    }
     $(`#${GroupCode.id}`).remove();
     $(`#${GroupCode.id}del`).remove();
 }
@@ -82,7 +92,7 @@ function delUserFirstGroup(GroupCode) {
 function addGroup() {
     countGroup++;
     $('#AddGroup').append(`
-        <div class="form-group row" id="Group${countGroup}">
+        <div class="form-group row addGroup" id="Group${countGroup}">
             <label class="col-form-label col-md-2 text-right"></label>
             <div class="col-md-10">
                 <div class="row align-items-center" id="addFirst">
@@ -94,7 +104,7 @@ function addGroup() {
                     </div>
                     <div class="col-md-3 input-group pl-0">
                         <div class="countUser" id="addUserinGroup${countGroup}" style="width: 100%"></div>
-                        <div class="input-group pl-0">
+                        <div class="input-group pl-0 UserAdd" id="UserAdd${countGroup}">
                             <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUser(${countGroup})"><i class="fas fa-plus"></i> ユーザ追加</button>
                         </div>
                     </div>
@@ -104,10 +114,16 @@ function addGroup() {
                 </div>
             </div>
         </div>`);
+    if ($('.addGroup').length >= 9) {
+        $('#addGroup').attr("hidden", true);
+    }
 }
 
 function deleteGroup(id) {
     $(`#${id}`).remove();
+    if ($('.addGroup').length < 9) {
+        $('#addGroup').removeAttr('hidden');
+    }
 }
 
 async function addTheme() {
@@ -150,7 +166,9 @@ async function addTheme() {
                 `);
         }
     });
-
+    if ($('.themeadd').length >= 8) {
+        $('#buttonAddTheme').attr("hidden", true);
+    }
 }
 
 function SaveTheme(id) {
@@ -172,6 +190,9 @@ function SaveTheme(id) {
 
 function deleteTheme(id) {
     document.getElementById(`Theme_${id}`).remove();
+    if ($('.themeadd').length < 9) {
+        $('#buttonAddTheme').removeAttr('hidden');
+    }
 }
 
 function WorkContent() {
@@ -319,6 +340,7 @@ function selectDown() {
 
 // change condition 絞り込み条件 and レイアウト設定 has save in database by 呼出
 async function changeCall() {
+    $('#error').empty();
     var surrogatekey = $('#userScreenName').val();
     countUser = 0;
     var numberGroup = 0;
@@ -387,7 +409,7 @@ async function changeCall() {
                 });
             }
         });
-    count = 1;countGroup++;
+    count = 1; countGroup++;
     $('#addUserinGroup1').empty();
     $('#trashUser1').empty();
     $('#AddGroup').empty();
@@ -404,8 +426,10 @@ async function changeCall() {
         countUser++;
         await GetsUser(countGroup, group_code[0], UserNames[countUser-1], countUser);
     }
-    // Get value nhiều User của từng group đã có trong db(ngoai` first group)
+    // Get value group
     $(`#GroupId1`).val(group_code[0]);
+
+    // add value group Gets value group in db
     if (numberGroup > 1) {
         for (let i = 1; i < numberGroup; i++) {
             addGroup();
@@ -416,8 +440,9 @@ async function changeCall() {
             }
         }
     }
+    // add theme and Gets value theme in db
     for (let i = 0; i < numberTheme; i++) {
-        if(i>0)
+        if(i > 0)
             await addTheme();
         await save(i + 1, Themes[i].substring(0,10))
         $(`#theme_${i + 1}`).val(Themes[i]);
@@ -499,6 +524,7 @@ function AddSelect1() {
 }
 
 function checkform() {
+    $('#error').empty();
     var Obj = setObj();
     //check validate or save localStorage
     $.ajax({
@@ -548,22 +574,39 @@ function checkform() {
             }
             else {
                 if (response.toDate != "") {
-                    toastr.warning(response.toDate)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.toDate}
+                                        </div>`);
                 }
                 if (response.fromDate != "") {
-                    toastr.warning(response.fromDate)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.fromDate}
+                                        </div>`);
                 }
                 if (response.date != "") {
-                    toastr.warning(response.date)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.date}
+                                        </div>`);
                 }
                 if (response.dateCalculate != "") {
-                    toastr.warning(response.dateCalculate);
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.dateCalculate}
+                                        </div>`);
                 }
                 if (response.theme != "") {
-                    toastr.warning(response.theme)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.theme}
+                                        </div>`);
                 }
                 if (response.user != "") {
-                    toastr.warning(response.user);
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.user}
+                                        </div>`);
+                }
+                if (response.headerItems != "") {
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.headerItems}
+                                        </div>`);
                 }
             }
         }
@@ -572,6 +615,7 @@ function checkform() {
 
 //Get 絞り込み条件 AND レイアウト設定
 function setObj() {
+    $('#error').empty();
     var Obj = {} || data1;
     Obj.save = $("#SaveName").val();
     Obj.fromDate = $("#fromDate").val();
@@ -587,9 +631,13 @@ function setObj() {
         else
             Obj.selectedHeaderItems += "," + $('#Select option')[i].value;
     }
-    Obj.numberTheme = $('#AddTheme > div').length + 1;
+    if ($("#theme_1").val() == "")
+        Obj.numberTheme = 0;
+    else {
+        Obj.numberTheme = $('#AddTheme > div').length + 1;
+    }
     Obj.themeNos = "";
-    for (let i = 0; i < $('#AddTheme > div').length + 1; i++) {
+    for (let i = 0; i < Obj.numberTheme; i++) {
         if (i == 0)
             Obj.themeNos += $(`#theme_${i + 1}`)[0].value;
         else
@@ -629,6 +677,7 @@ function setObj() {
 }
 
 function outputCSV() {
+    $('#error').empty();
     var Obj = setObj();
     $.ajax({
         url: '/ManhourReport/CheckReport',
@@ -652,28 +701,47 @@ function outputCSV() {
                             link.click();
                         }
                         else
-                            toastr.warning(response.messenge)
+                            $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.messenge}
+                                        </div>`);
                     }
                 });
             }
             else {
                 if (response.toDate != "") {
-                    toastr.warning(response.toDate)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.toDate}
+                                        </div>`);
                 }
                 if (response.fromDate != "") {
-                    toastr.warning(response.fromDate)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.fromDate}
+                                        </div>`);
                 }
                 if (response.date != "") {
-                    toastr.warning(response.date)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.date}
+                                        </div>`);
                 }
                 if (response.dateCalculate != "") {
-                    toastr.warning(response.dateCalculate);
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.dateCalculate}
+                                        </div>`);
                 }
                 if (response.theme != "") {
-                    toastr.warning(response.theme)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.theme}
+                                        </div>`);
                 }
                 if (response.user != "") {
-                    toastr.warning(response.user);
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.user}
+                                        </div>`);
+                }
+                if (response.headerItems != "") {
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.headerItems}
+                                        </div>`);
                 }
             }
         }
@@ -682,6 +750,7 @@ function outputCSV() {
 
 // set default
 function reset() {
+    $('#error').empty();
     $('#fromDate').val(null);
     $('#toDate').val(null);
     $('#addUserinGroup1').empty();
@@ -706,6 +775,7 @@ function reset() {
 }
 
 function saveUserScreenName() {
+    $('#error').empty();
     var Obj = setObj();
     $.ajax({
         url: '/ManhourReport/CheckSave',
@@ -719,7 +789,9 @@ function saveUserScreenName() {
                     data: Obj,
                     success: function (response) {
                         if (response != "error") {
-                            toastr.success(response);
+                            $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response}
+                                        </div>`);
                             GetScreen();
                         }
                     }
@@ -727,25 +799,39 @@ function saveUserScreenName() {
             }
             else {
                 if (response.toDate != "") {
-                    toastr.warning(response.toDate)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.toDate}
+                                        </div>`);
                 }
                 if (response.fromDate != "") {
-                    toastr.warning(response.fromDate)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.fromDate}
+                                        </div>`);
                 }
                 if (response.date != "") {
-                    toastr.warning(response.date)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.date}
+                                        </div>`);
                 }
                 if (response.dateCalculate != "") {
-                    toastr.warning(response.dateCalculate);
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.dateCalculate}
+                                        </div>`);
                 }
                 if (response.theme != "") {
-                    toastr.warning(response.theme)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.theme}
+                                        </div>`);
                 }
                 if (response.user != "") {
-                    toastr.warning(response.user);
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.user}
+                                        </div>`);
                 }
                 if (response.savename != "") {
-                    toastr.warning(response.savename)
+                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                                            <strong>アラート</strong> - ${response.savename}
+                                        </div>`);
                 }
             }
         }
@@ -754,11 +840,11 @@ function saveUserScreenName() {
 
 $('#datepicker1').datepicker({ autoclose: true, language: 'ja' }).on('changeDate', function (ev) {
     var date = new Date(ev.date.valueOf());
-    $('#fromDate').val(`${date.getFullYear()}/${date.getMonth() >= 9 ? date.getMonth() + 1 : "0" + (date.getMonth()+1)}/${date.getDate() >= 10 ? date.getDate() + 1 : "0" + date.getDate()}`);
+    $('#fromDate').val(`${date.getFullYear()}/${date.getMonth() >= 9 ? date.getMonth() + 1 : "0" + (date.getMonth()+1)}/${date.getDate() >= 10 ? date.getDate() : "0" + date.getDate()}`);
   });
 $('#datepicker2').datepicker({ format: "yyyy/mm/dd", language: "ja", autoclose: true, orientation: 'bottom left' }).on('changeDate', function (ev) {
     var date = new Date(ev.date.valueOf());
-    $('#toDate').val(`${date.getFullYear()}/${date.getMonth() >= 9 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1)}/${date.getDate() >= 10 ? date.getDate() + 1 : "0" + date.getDate()}`);
+    $('#toDate').val(`${date.getFullYear()}/${date.getMonth() >= 9 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1)}/${date.getDate() >= 10 ? date.getDate(): "0" + date.getDate()}`);
 });
 
 function GetScreen() {

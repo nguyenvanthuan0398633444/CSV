@@ -60,5 +60,10 @@ td {
     width: 20px;
     font-size: .8rem
 }
+#warningSave{
+    position:absolute;
+    z-index: 10;
+    width: 95%;
+}
 
 

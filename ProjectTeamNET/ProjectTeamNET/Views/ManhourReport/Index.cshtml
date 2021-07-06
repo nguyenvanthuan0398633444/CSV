@@ -1,10 +1,14 @@
 ﻿@model ProjectTeamNET.Models.Response.ManhourReportViewModel
+<!-- BootstrapのCSS読み込み -->
+<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+<link href="~/css/datepicker.css" rel="stylesheet" />
 <link href="~/css/toastr.min.css" rel="stylesheet" />
 
 <div class="row">
 
     <main role="main" class="container-fluid px-4">
-
+        <div id="error">
+        </div>
         <div class="h5 pt-1 pb-1 border-bottom">画面項目呼出・保存・クリア</div>
 
         <div class="form-group row">
@@ -19,7 +23,7 @@
             <label class="col-form-label col-md-2 text-right">保存</label>
             <div class="col-md-10">
                 <div class="col-md-4 input-group pl-0">
-                    <input type="text" class="form-control form-control-sm" value="" id="SaveName"/>
+                    <input type="text" class="form-control form-control-sm" value="" id="SaveName" />
                     <button class="btn btn-sm btn-outline-secondary mr-2" onclick="saveUserScreenName()">保存</button>
                 </div>
             </div>
@@ -60,6 +64,7 @@
                 <div class="row align-items-center" id="addFirst">
                     <div class="col-md-4 input-group pl-0" style="margin-bottom: auto;">
                         <select class="form-control form-control-sm" id="GroupId1">
+                            <option></option>
                             @foreach (var item in Model.GroupName)
                             {
                                 <option value="@item.group_code">@item.GroupName</option>
@@ -69,7 +74,7 @@
                     </div>
                     <div class="col-md-3 input-group pl-0">
                         <div class="countUser" id="addUserinGroup1" style="width: 100%"></div>
-                        <div class="input-group pl-0">
+                        <div class="input-group pl-0 UserAdd" id="UserAdd1" hidden>
                             <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUser(1)"><i class="fas fa-plus"></i> ユーザ追加</button>
                         </div>
                     </div>
@@ -96,7 +101,7 @@
 
         <div id="AddGroup"></div>
 
-        <div class="form-group row">
+        <div class="form-group row" id="addGroup">
             <div class="col-md-2"></div>
             <div class="col-md-10 p-0">
                 <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addGroup()"><i class="fas fa-plus"></i> 所属追加</button>
@@ -147,7 +152,7 @@
         <div id="AddTheme"></div>
 
 
-        <div class="form-group row">
+        <div class="form-group row" id="buttonAddTheme">
             <div class="col-md-2"></div>
             <div class="col-md-10 p-0">
                 <button class="btn btn-sm btn-outline-secondary mr-2" onclick="addTheme()"><i class="fas fa-plus"></i> テーマ追加</button>
@@ -167,6 +172,8 @@
                             <option value="theme">テーマ</option>
                             <option value="workcontent">作業内容</option>
                             <option value="detailworkcontent">作業内容詳細</option>
+                            <option value="affiliation">所属</option>
+                            <option value="overalltotal">全体合計</option>
                             <option value="monthlytotal">月別合計</option>
                             <option value="dailytotal">日別合計</option>
                         </select>
@@ -178,8 +185,6 @@
                     <div class="col-auto">
                         <p class="m-0">選択された項目</p>
                         <select multiple style="height:200px; width:150px;" id="Select">
-                            <option value="affiliation">所属</option>
-                            <option value="overalltotal">全体合計</option>
                         </select>
                     </div>
                     <div class="col-auto">
@@ -240,6 +245,6 @@
 <div id="AddModal"></div>
 
 @section Scripts{
-    <script src="~/js/toastr.min.js"></script>
+    <script src="~/js/datepicker.js"></script>
     <script src="~/js/ManhourReport.js"></script>
 }

@@ -16,8 +16,8 @@ namespace ProjectTeamNET.Repository.Interface
         Task<List<T>> Gets();
         void Delete(T obj);
         Task<int> Delete(object obj);
-        int Create(List<T> objs);
         int Create(T obj);
+        int Create(List<T> objs);
         Task<List<T1>> Select<T1>(string sql);
         Task<int> Update(string sql, object param);
         Task<List<T1>> Select<T1>(string sql, object param);

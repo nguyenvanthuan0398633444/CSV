@@ -41,7 +41,6 @@ namespace ProjectTeamNET.Service.Implement
             dbThemes = dbContext.Set<Theme>();
             dbManhours = dbContext.Set<Manhour>();
             dbWorkContents = dbContext.Set<WorkContents>();
-            this.dbContext = dbContext;
             this.userscreenRepository = userscreenRepository;
         }
 
@@ -134,17 +133,17 @@ namespace ProjectTeamNET.Service.Implement
                 }
                 for(var user = 1; user < users.Length; user++)
                 {
-                    for(var workContentD = 0; workContentD < workContentDetails.Length; workContentD++)
+                    for(var workContentD = 0; workContentD < workContentCodes.Length; workContentD++)
                     {
                         if (!string.IsNullOrEmpty(users[user]))
                         {
                             AddList.Add("Group_User");
                         }
-                        if (!string.IsNullOrEmpty(workContentDetails[workContentD]))
+                        if (workContentDetails.Length>0)
                         {
                             AddList.Add("Theme_WorkContent");
                         }
-                        else if (string.IsNullOrEmpty(workContentDetails[workContentD]))
+                        else
                         {
                             AddList.Add("Theme_WorkContent_nodetail");
                         }
@@ -158,8 +157,9 @@ namespace ProjectTeamNET.Service.Implement
                             toMonth = toDate.Month,
                             fromMonth = fromDate.Month,
                             user = users[user],
-                            groupCode= groups[countGroup],
-                            workThemeContent = string.Concat(themes[workContentD].Split("[")[0], workContentCodes[workContentD], workContentDetails[workContentD])
+                            groupCode = groups[countGroup],
+                            workThemeContent = workContentDetails.Length > 0 ? string.Concat(themes[workContentD].Split("[")[0], workContentCodes[workContentD], workContentDetails[workContentD]) :
+                                                        string.Concat(themes[workContentD].Split("[")[0], workContentCodes[workContentD])
                         };
                         List<ManhourReport> manhouReport = await userscreenRepository.Select<ManhourReport>(query, param);
                         if(manhouReport.Count >0)
@@ -198,11 +198,16 @@ namespace ProjectTeamNET.Service.Implement
             messagers.Add("dateCalculate", "");
             messagers.Add("theme", "");
             messagers.Add("user", "");
+            messagers.Add("headerItems", "");
             try
             {
                 if (data.numberUser.Split(",").Contains("0"))
                 {
                     messagers["user"] = "グループユーザーは空にすることはできません";
+                }
+                if (string.IsNullOrEmpty(data.selectedHeaderItems))
+                {
+                    messagers["headerItems"] = "headerItemsが必要です";
                 }
                 if (string.IsNullOrEmpty(data.themeNos))
                 {
@@ -241,16 +246,19 @@ namespace ProjectTeamNET.Service.Implement
                         {
                             messagers["date"] = Messages.ERR_012;
                         }
-                        if (data.selectedHeaderItems.Contains("dailytotal"))
+                        if (!string.IsNullOrEmpty(data.selectedHeaderItems))
                         {
-                            if((toDate - fromDate).TotalDays > 31)
+                            if (data.selectedHeaderItems.Contains("dailytotal"))
                             {
-                                messagers["dateCalculate"] = Messages.ERR_013;
+                                if ((toDate - fromDate).TotalDays > 31)
+                                {
+                                    messagers["dateCalculate"] = Messages.ERR_013;
+                                }
                             }
-                        }
+                        }                        
                     }
                 }
-                if (string.Concat(messagers["fromDate"],messagers["toDate"],
+                if (string.Concat(messagers["fromDate"],messagers["toDate"], messagers["headerItems"],
                     messagers["date"],messagers["dateCalculate"], messagers["user"], messagers["theme"]) != "")
                     return messagers;
                 return new Dictionary<string, string>() { };
@@ -881,7 +889,7 @@ namespace ProjectTeamNET.Service.Implement
                             }
                         }
                     }
-                    //check typeDeleiter to add
+                    //check typeDelimiter to add
                     if (data.typeDelimiter == "1")
                     {
                         if (data.isSingleQuote == "1")

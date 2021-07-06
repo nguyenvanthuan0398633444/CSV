@@ -23,7 +23,7 @@ namespace ProjectTeamNET.Service.Implement
 
         const string FORMATDATE = "yyyy/MM/dd";
         const string HEADER = "年,月,ユーザNo,ユーザ名,テーマＮｏ,テーマ名,内容コード,内容名,内容詳細コード,合計," +
-                       "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31";
+                       "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,Fix_Date";
         private readonly IBaseRepository<Manhour> manhourRepository;
         private readonly IBaseRepository<SalesObject> saleRepository;
         private readonly IBaseRepository<UserScreenItem> screenRepository;
@@ -356,15 +356,6 @@ namespace ProjectTeamNET.Service.Implement
         public async Task<bool> Save(SaveData saveDatas, UserInfo user)
         {
             var result = 0;
-            //Delete in list delete
-            if (saveDatas.Delete.Count != 0)
-            {
-                result = await DeleteManhours(saveDatas.Delete);
-                if (result < 0)
-                {
-                    return false;
-                }
-            }
             //Insert new record in save list 
             if (saveDatas.Insert.Count != 0)
             {
@@ -392,7 +383,7 @@ namespace ProjectTeamNET.Service.Implement
             //Delete in list delete
             if (saveDatas.Delete.Count != 0)
             {
-                result = await DeleteManhours(saveDatas.Delete);
+                result = await DeleteManhours(saveDatas.Delete,user.User_no);
                 if (result < 0)
                 {
                     return false;
@@ -486,7 +477,7 @@ namespace ProjectTeamNET.Service.Implement
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        public async Task<int> DeleteManhours(List<Manhour> manhours)
+        public async Task<int> DeleteManhours(List<Manhour> manhours, string user_no)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "DeleteManhour");
@@ -498,7 +489,7 @@ namespace ProjectTeamNET.Service.Implement
                 {
                     mh.Year,
                     mh.Month,
-                    mh.User_no,
+                    User_no = user_no,
                     mh.Theme_no,
                     mh.Work_contents_class,
                     mh.Work_contents_code,
@@ -598,7 +589,7 @@ namespace ProjectTeamNET.Service.Implement
         /// get list workcontent by class code
         /// </summary>
         /// <param name="classCode"></param>
-        /// <returns></returns>
+        /// <returns></returns>2
         public async Task<List<WorkContents>> GetWorkContentsByClass(string classCode)
         {
             var query = QueryLoader.GetQuery("ManhourInput", "SelectByWorkClass");
@@ -626,17 +617,17 @@ namespace ProjectTeamNET.Service.Implement
             {
                 buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no}, {item.User_name}, {item.Theme_no}, {item.Theme_name1}, " +
                                    $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail}, " +
-                                   $"{item.Total.ToString("0.0")},{item.Day1.ToString("0.0")}, {item.Day2.ToString("0.0")}, " +
-                                   $"{item.Day2.ToString("0.0")}, {item.Day3.ToString("0.0")},{item.Day4.ToString("0.0")}, " +
-                                   $"{item.Day5.ToString("0.0")}, {item.Day6.ToString("0.0")}, {item.Day7.ToString("0.0")}, " +
-                                   $"{item.Day8.ToString("0.0")}, {item.Day9.ToString("0.0")}, {item.Day10.ToString("0.0")}, " +
-                                   $"{item.Day11.ToString("0.0")}, {item.Day12.ToString("0.0")}, {item.Day13.ToString("0.0")}," +
-                                   $"{item.Day14.ToString("0.0")}, {item.Day15.ToString("0.0")}, {item.Day16.ToString("0.0")}, " +
-                                   $"{item.Day17.ToString("0.0")}, {item.Day18.ToString("0.0")}, {item.Day19.ToString("0.0")}," +
-                                   $"{item.Day20.ToString("0.0")}, {item.Day21.ToString("0.0")}, {item.Day22.ToString("0.0")}," +
-                                   $"{item.Day23.ToString("0.0")},{item.Day24.ToString("0.0")}, {item.Day25.ToString("0.0")}," +
-                                   $"{item.Day26.ToString("0.0")}, {item.Day27.ToString("0.0")}, {item.Day28.ToString("0.0")}," +
-                                   $"{item.Day29.ToString("0.0")}, {item.Day30.ToString("0.0")}, {item.Day31.ToString("0.0")}");
+                                   $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, " +
+                                   $"{item.Day3:0.0},{item.Day4:0.0}, " +
+                                   $"{item.Day5:0.0}, {item.Day6:0.0}, {item.Day7:0.0}, " +
+                                   $"{item.Day8:0.0}, {item.Day9:0.0}, {item.Day10:0.0}, " +
+                                   $"{item.Day11:0.0}, {item.Day12:0.0}, {item.Day13:0.0}," +
+                                   $"{item.Day14:0.0}, {item.Day15:0.0}, {item.Day16:0.0}, " +
+                                   $"{item.Day17:0.0}, {item.Day18:0.0}, {item.Day19:0.0}," +
+                                   $"{item.Day20:0.0}, {item.Day21:0.0}, {item.Day22:0.0}," +
+                                   $"{item.Day23:0.0},{item.Day24:0.0}, {item.Day25:0.0}," +
+                                   $"{item.Day26:0.0}, {item.Day27:0.0}, {item.Day28:0.0}," +
+                                   $"{item.Day29:0.0}, {item.Day30:0.0}, {item.Day31:0.0},{item.Fix_date}");
             }
 
             exportModel.builder = buider;

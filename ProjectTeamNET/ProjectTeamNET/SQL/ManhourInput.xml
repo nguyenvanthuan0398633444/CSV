@@ -26,6 +26,8 @@
 				<addif key="User_no" > 
 					 AND t1.user_no = :User_no
 				</addif>
+		ORDER BY
+				t1.theme_no
 	</query>
 
 	<query id="SelectManhour">

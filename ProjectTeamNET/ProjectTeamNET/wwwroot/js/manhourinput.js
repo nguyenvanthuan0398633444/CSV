@@ -1,6 +1,15 @@
-﻿const ERR_001 = "メッセージエリア表示";
-const ERR_002 = "メッセージエリア表示";
-const ERR_005 = "メッセージエリア表示";
+﻿const ERR_001 = "の対象を選択してください";
+const ERR_002 = "出力結果が 1000 件を超えています。検索条件を絞り込んでください";
+const ERR_005 = "該当データが存在しません";
+const ERR_018 = "１日の工数合計が２４ｈを超えることはできません";
+const WAR_003 = "合計工数が８ｈ末満です";
+const WAR_007 = "保存前ですが処理を続行しますか？";
+const WAR_008 = "テーマが存在します";
+const WAR_009 = "未入力のデータが存在します!";
+const WAR_010 = "必須フィールドは空ではありません!";
+const WAR_ALERT = 'alert-warning d-block';
+const SUCCESS = 'alert-success d-block';
+const DANGER = 'alert-danger d-block';
 
 let namePageLoad = $('#pageHistory').val();
 let dateTitle = new Date(getDateTitle());
@@ -13,45 +22,43 @@ let listInserted = new Array();
 let listNeedUpdate = new Array();
 let listForUpdate = new Array();
 let holidayArr = new Array();
+let dayGetOfWeek = new Array();
+let sumByDay = new Array();
+let subByDay = new Array();
 
+//load init data
 $(document).ready(function () {
     loadInit();
 });
 
-//render month table and save user screen item
-function loadMonth(el) {
+//render month table and save user screen item when click month button 
+function loadMonth() {
+    if (!listDeleted || !listNeedUpdate || !listInserted) {
 
-    let pageName = $(el).attr("name");
-    savePageHistory(pageName);
+    }
+    savePageHistory("Month");
     loadMonthTable();
 }
 
-//render day table and save user screen item
-function loadDay(el) {
-
-    let pageName = $(el).attr("name");
-    savePageHistory(pageName);
+//render day table and save user screen item when click Day button 
+function loadDay() {
+    savePageHistory("Day");
     loadDayTable();
 }
-//render week table and save user screen item
-function loadWeek(el) {
-
-    let pageName = $(el).attr("name");
-    savePageHistory(pageName);
+//render week table and save user screen item when click week button 
+function loadWeek() {
+    savePageHistory("Week");
     loadWeekTable();
-
 }
 
-//load init data form database
+//load init data from database
 function loadInit() {
 
     let daypageLoad = getDateTitle();
     if (namePageLoad == "Month") {
-
         loadMonthTable(daypageLoad);
 
     } else if (namePageLoad == "Week") {
-
         loadWeekTable(daypageLoad);
 
     } else {
@@ -113,93 +120,129 @@ function displayLoad(dateStr) {
 // Change theme selected
 function changeTheme(el) {
 
-    if (confirm("Do you want to change this theme?") == true) {
-        $("#modalThemeNo").val($(el).closest("tr").find(".ThemeNo").text());
-        $("#modalThemeName").val($(el).closest("tr").find(".ThemeName").text());
-        $("#modalWC").val($(el).closest("tr").find(".WContent").text());
-        $("#modalDetail").val($(el).closest("tr").find(".Detail").text());
-        $("#modal3").modal('show');
-
-        $('#btnChange').on('click', function () {
-
-            let workContentCode = $(`#workContentCode2 :selected`).val();
-            let workContentDetail = $(`#detailCode2`).val();
-            let year = parseInt($(el).closest('tr').find(".Year").val());
-            let month = parseInt($(el).closest("tr").find(".Month").val());
-            let userNo = $(el).closest("tr").find(".User_No").val();
-            if (!themeNo || !themeName || !workContentClass) {
-                alert("Please choice theme!");
-                return;
-            }
-            if (!workContentDetail) {
-                alert("Please choice work contents!");
-                return;
-            }
-            if (!workContentCode) {
-                alert("Please choice work content code!");
-                return;
-            }
-            let obj = {};
-            obj.Theme_no = themeNo;
-            obj.Year = year;
-            obj.Month = month;
-            obj.Work_contents_class = workContentClass;
-            obj.Work_contents_code = workContentCode;
-            obj.Work_contents_detail = workContentDetail;
-
-            $.ajax({
-                url: `/ManhourInput/CheckExistTheme`,
-                method: "POST",
-                data: obj,
-                success: function (result) {
-                    console.log(result);
-                    if (result == false) {
-                        let obj = {};
-                        obj.Year = year;
-                        obj.Month = month;
-                        obj.User_no = userNo;
-                        obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
-                        obj.Work_contents_class = $(el).closest("tr").find(".WC_Class").val();
-                        obj.Work_contents_code = $(el).closest("tr").find(".WC_Code").val();
-                        obj.Work_contents_detail = $(el).closest("tr").find(".WC_Detail").val();
-
-                        listNeedUpdate.push(obj);
-                        console.log(listNeedUpdate);
-
-                        obj = {};
-                        obj.Theme_no = themeNo;
-                        obj.Work_contents_class = workContentClass;
-                        obj.Work_contents_code = workContentCode;
-                        obj.Work_contents_detail = workContentDetail;
-
-                        listForUpdate.push(obj);
-                        console.log(listForUpdate);
-                        $('#modal3').modal('hide');
-                        //Change information row changed
-                        $(el).closest("tr").find(".ThemeName").text(themeName);
-                        $(el).closest("tr").find(".ThemeNo").text(themeNo);
-                        $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).text());
-                        $(el).closest("tr").find(".Detail").text(workContentDetail);
-
-                        //set default data 
-                        $(`#themeSelected1`).val('');
-                        $(`#themeSelected2`).val('');
-                        $(`#workContentCode1`).html('');
-                        $(`#detailCode1`).val('');
-                        $(`#workContentCode1`).html('<option value=" ">Please choice theme...</option>');
-                        $(`#workContentCode2`).html('<option value=" ">Please choice theme...</option>');
-                        themeNo = null; themeName = null; workContentClass = null;
-
-                    } else {
-                        alert('Theme is existed!');
-                    }
-                }
-            });
-        });
-
+    if (confirm("選択中行のテーマを変更します。よろしいですか？")) {
+        let obj = {};
+        obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
+        obj.Work_contents_class = $(el).closest("tr").find(".WC_Class").val();
+        obj.Work_contents_code = $(el).closest("tr").find(".WC_Code").val();
+        obj.Work_contents_detail = $(el).closest("tr").find(".WC_Detail").val();
+        obj.Year = parseInt($(el).closest('tr').find(".Year").val());
+        obj.Month = parseInt($(el).closest("tr").find(".Month").val());
+        obj.Theme_name = $(el).closest("tr").find(".ThemeName").text();
+        handleDialogOK(obj, el);
     }
 
 }
+function handleDialogOK(obj, el) {
+
+    $("#modalThemeNo").val(obj.Theme_no);
+    $("#modalThemeName").val(obj.Theme_name);
+    $("#modalWC").val(obj.Work_contents_code);
+    $("#modalDetail").val(obj.Work_contents_detail);
+    let paramIn = {
+        1: obj,
+        2: el
+    };
+    $("#modal3").val(paramIn);
+    $("#modal3").modal('show');
+}
+
+//render  alert
+function renderAlert(type, contents) {
+    $("#alert").addClass(type);
+    $("#alert").html('<strong>アラート</strong> - ' + contents);
+    setTimeout(function () {
+        $("#alert").removeClass(type);
+        $("#alert").html('');
+    }, 2000);
+}
+
+
+//Change theme
+$('#btnChange').on('click', function () {
+
+    let isStop = false;
+    var arr = Object.values($("#modal3").val());
+    let _obj = arr[0];//old data    
+    let el = arr[1];
+    let workContentCode = $(`#workContentCode2 :selected`).val();
+    let workContentDetail = $(`#detailCode2`).val();
+
+    //check null value
+    if (!themeNo || !themeName || !workContentClass || !workContentDetail || !workContentCode) {
+        alert(WAR_010);
+        return;
+    }
+
+    //check exist in list insert
+    if (listInserted) {
+        listInserted.forEach(item => {
+            if (item.Theme_no == themeNo && item.Work_contents_class == workContentClass
+                && item.Work_contents_code == workContentCode && item.Work_contents_detail == workContentDetail) {
+                isStop = true;
+                return;
+            }
+        })
+    }
+    //check exist in list change
+    if (listForUpdate) {
+        listForUpdate.forEach(item => {
+            if (item.Theme_no == themeNo && item.Work_contents_class == workContentClass
+                && item.Work_contents_code == workContentCode && item.Work_contents_detail == workContentDetail) {
+                isStop = true;
+                return;
+            }
+        })
+    }
+
+    if (isStop) {
+        alert(WAR_008);
+        return;
+    }
+
+    //new data selected
+    let data = {};
+    data.year = _obj.Year;
+    data.month = _obj.Month;
+    data.Work_contents_class = workContentClass;
+    data.Work_contents_code = workContentCode;
+    data.Work_contents_detail = workContentDetail;
+    data.Theme_no = themeNo;
+    console.log(data);
+    ajaxPost(`/ManhourInput/CheckExistTheme`, data).done(function (result) {
+        console.log(result);
+        if (result == false) {
+
+                listNeedUpdate.push(_obj);
+                obj = {};
+                obj.Theme_no = themeNo;
+                obj.Work_contents_class = workContentClass;
+                obj.Work_contents_code = workContentCode;
+                obj.Work_contents_detail = workContentDetail;
+
+                listForUpdate.push(obj);
+                $('#modal3').modal('hide');
+
+                //Change information row changed
+                $(el).closest("tr").find(".ThemeName").text(themeName);
+                $(el).closest("tr").find(".ThemeNo").text(themeNo);
+                $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).text());
+                $(el).closest("tr").find(".Detail").text(workContentDetail);
+
+                //set default data 
+                $(`#themeSelected1`).val('');
+                $(`#themeSelected2`).val('');
+                $(`#detailCode1`).val('');
+                $(`#workContentCode1`).html('');
+                $(`#workContentCode2`).html('');
+                themeNo = null; themeName = null; workContentClass = null;
+            } else {
+
+                alert(WAR_008);
+                return;
+            }
+    });
+});
 
 // Delete this row clicked 
 function deleteTheme(el) {
@@ -226,93 +269,105 @@ function deleteTheme(el) {
 
 function save() {
 
-    let dayGet = 'day' + new Date(getDateTitle()).getDate();
-    let listData = new Array();
-    let saveData = {};
-    let isStop = false;
+    if (confirm(WAR_007)) {
 
-    //for each tr in table add to obj then add to list data need saved
-    $('#tbody tr').each(function () {
-        let obj = {};
+        let dayGet = 'day' + new Date(getDateTitle()).getDate();
+        let listData = new Array();
+        let saveData = {};
+        let isStop = false;
 
-        //value
-        obj.Year = parseInt($(this).find(".Year").val());
-        obj.Month = parseInt($(this).find(".Month").val());
-        obj.User_no = $(this).find(".User_No").val();
-        obj.Theme_no = $(this).find(".Theme_No").val();
-        obj.Work_contents_class = $(this).find(".WC_Class").val();
-        obj.Work_contents_code = $(this).find(".WC_Code").val();
-        obj.Work_contents_detail = $(this).find(".WC_Detail").val();
-        obj.pin_flg = $(this).find(".Pin_flg").val() == 'true' ? true : false;
-        obj.total = parseFloat($(this).find(".Total").val());
+        //for each tr in table add to obj then add to list data need saved
+        $('#tbody tr').each(function () {
+            let obj = {};
 
-        //convert 2021/06/23 => 20210623 for fixdate varchar(8)
-        obj.fix_date = formatDate(new Date()).split('/').join([]);
+            //value
+            obj.Year = parseInt($(this).find(".Year").val());
+            obj.Month = parseInt($(this).find(".Month").val());
+            obj.User_no = $(this).find(".User_No").val();
+            obj.Theme_no = $(this).find(".Theme_No").val();
+            obj.Work_contents_class = $(this).find(".WC_Class").val();
+            obj.Work_contents_code = $(this).find(".WC_Code").val();
+            obj.Work_contents_detail = $(this).find(".WC_Detail").val();
+            obj.pin_flg = $(this).find(".Pin_flg").val() == 'true' ? true : false;
+            obj.total = parseFloat($(this).find(".Total").val());
 
-        //get input hour for month
-        for (let i = 1; i <= numDayOfMonth; i++) {
-            let inputHour = parseFloat($(this).find(`.day${i}`).val());
-            if (inputHour < 0 || isNaN(inputHour)) { //valid input hour
-                isStop = true;
-                return false;
+            //convert 2021/06/23 => 20210623 for fixdate varchar(8)
+            obj.fix_date = formatDate(new Date()).split('/').join([]);
+
+            //get input hour for month
+            for (let i = 1; i <= numDayOfMonth; i++) {
+                let inputHour = parseFloat($(this).find(`.day${i}`).val());
+                if (inputHour < 0 || isNaN(inputHour)) { //valid input hour
+                    isStop = true;
+                    return false;
+                }
+                obj[`day${i}`] = inputHour;
+
             }
-            obj[`day${i}`] = inputHour;
 
-        }
-
-        //get input hour for day
-        if ($(this).find(".inputHour").val()) {
-            let inputHour = parseFloat($(this).find(".inputHour").val());
-            if (inputHour < 0 || isNaN(inputHour)) {//valid input hour
-                isStop = true;
-                return false;
-            }
-            obj[dayGet] = inputHour;
-        }
-
-        //get input hour for week
-        if (dayGetOfWeek.length > 0) {
-            dayGetOfWeek.forEach(date => {
-                let inputHour = parseFloat($(this).find(`.input${date}`).val());
+            //get input hour for day
+            if ($(this).find(".inputHour").val()) {
+                let inputHour = parseFloat($(this).find(".inputHour").val());
                 if (inputHour < 0 || isNaN(inputHour)) {//valid input hour
                     isStop = true;
                     return false;
                 }
-                obj[`${date}`] = inputHour;
-            })
+                obj[dayGet] = inputHour;
+            }
+
+            //get input hour for week
+            if (dayGetOfWeek.length > 0) {
+                dayGetOfWeek.forEach(date => {
+                    let inputHour = parseFloat($(this).find(`.input${date}`).val());
+                    if (inputHour < 0 || isNaN(inputHour)) {//valid input hour
+                        isStop = true;
+                        return false;
+                    }
+                    obj[`${date}`] = inputHour;
+                })
+            }
+            // Add to list data
+            listData.push(obj);
+
+        });
+
+        if (isStop) {
+            renderAlert(WAR_ALERT, WAR_009);
+            return;
         }
-        // Add to list data
-        listData.push(obj);
+        //list manhour change
+        saveData.Update = listData; listdata = [];
+        //list manhour deleted
+        saveData.Delete = listDeleted; listDeleted = [];
+        //list manhour insert
+        saveData.Insert = listInserted; listInserted = [];
+        //list manhour insert
+        saveData.NeedUpdate = listNeedUpdate; listNeedUpdate = [];
+        //list manhour insert
+        saveData.ForUpdate = listForUpdate; listNeedUpdate = [];
 
-    });
+        console.log(saveData);
 
-    if (isStop) {
-        return alert('input hour is not valid');
+        $.ajax({
+            url: "/ManhourInput/Save",
+            data: JSON.stringify(saveData),
+            type: "POST",
+            contentType: "application/json",
+            dataType: "json",
+            success: function (result) {
+
+                $("#alert").addClass(SUCCESS); 
+                $("#alert").html(result);
+
+                setTimeout(function () {
+                    $("#alert").removeClass(SUCCESS);
+                    $("#alert").html('');
+                }, 2000);
+
+                return;
+            }
+        });
     }
-    //list manhour change
-    saveData.Update = listData; listdata = [];
-    //list manhour deleted
-    saveData.Delete = listDeleted; listDeleted = [];
-    //list manhour insert
-    saveData.Insert = listInserted; listInserted = [];
-    //list manhour insert
-    saveData.NeedUpdate = listNeedUpdate; listNeedUpdate = [];
-    //list manhour insert
-    saveData.ForUpdate = listForUpdate; listNeedUpdate = [];
-
-    console.log(saveData);
-
-    $.ajax({
-        url: "/ManhourInput/Save",
-        data: JSON.stringify(saveData),
-        type: "POST",
-        contentType: "application/json",
-        dataType: "json",
-        success: function (result) {
-            return alert(result);
-        }
-
-    });
 }
 
 /* Handle select theme event*/
@@ -371,11 +426,12 @@ function searchTheme() {
     obj.SalesObjectCode = $('#comboxObject').val() == "" ? null : $('#comboxObject').val();
     obj.SoldFlg = soldFlg;
 
-    $.ajax({
-        url: `/ManhourInput/SearchThemes`,
-        method: "POST",
-        data: obj,
-        success: function (result) {
+    ajaxPost(`/ManhourInput/SearchThemes`, obj).done(function (result) {
+        if (result.themes.length != 0) {
+            if (result.themes.length >= 1000) {
+                alert(ERR_002);
+                return;
+            }
             let tbody = '';
             result.themes.forEach(data => {
                 tbody += `<tr>
@@ -393,8 +449,9 @@ function searchTheme() {
 
             });
             //render to table body
-            $('#slThemeBody').html(tbody);
-
+            $('#slThemeBody').html(tbody)
+        } else {
+            renderAlert(WAR_ALERT, WAR_008)
         }
     });
 }
@@ -431,38 +488,56 @@ function choiceTheme() {
             });
 
             $('#modal1').modal('hide');
-            $('#themeSelected1').val(themeNo + ' ' + themeName);
-            $('#themeSelected2').val(themeNo + ' ' + themeName);
+            $('#themeSelected1').val(themeNo + '[' + themeName + ']');
+            $('#themeSelected2').val(themeNo + '[' + themeName + ']');
         }
 
     });
 }
 /* Handle select theme evet*/
+function ajaxPost(url, sendData) {
 
+    var result = $.ajax({
+        type: 'POST',
+        url: url,
+        data: sendData,
+    });
+
+    return result;
+}
 //Add new theme to table
 function addTheme() {
-
+    let isStop = false;
     let workcontent = $(`#workContentCode1 :selected`).text();
     let workContentCode = $(`#workContentCode1 :selected`).val();
     let workContentDetail = $(`#detailCode1`).val();
-    //let userNo = 'BAOTQ';
     let dateTitle = new Date(getDateTitle());
     let dayGet = new Date(getDateTitle()).getDate();
     let year = dateTitle.getFullYear();
     let month = dateTitle.getMonth() + 1;
+
     //valid data 
-    if (!themeNo || !themeName || !workContentClass) {
-        alert("Please choice theme!");
+    if (!themeNo || !themeName || !workContentClass || !workContentDetail || !workContentCode) {
+        renderAlert(WAR_ALERT, WAR_010);
         return;
     }
-    if (!workContentDetail) {
-        alert("Please choice work contents!");
+
+    //check exist themes
+    if (listInserted){
+        listInserted.forEach(item => {
+            console.log(item);
+            if (item.Theme_no == themeNo && item.Work_contents_class == workContentClass
+                && item.Work_contents_code == workContentCode && item.Work_contents_detail == workContentDetail) {
+                isStop = true;
+                return;
+            }
+        })
+    }
+    if (isStop) {
+        renderAlert(WAR_ALERT, WAR_010);
         return;
     }
-    if (!workContentCode) {
-        alert("Please choice work content code!");
-        return;
-    }
+
     let obj = {};
     obj.Theme_no = themeNo;
     obj.Year = year;
@@ -471,16 +546,11 @@ function addTheme() {
     obj.Work_contents_code = workContentCode;
     obj.Work_contents_detail = workContentDetail;
 
-    $.ajax({
-        url: `/ManhourInput/CheckExistTheme`,
-        method: "POST",
-        data: obj,
-        success: function (result) {
-            console.log(result);
-            if (result == false) {
+    ajaxPost(`/ManhourInput/CheckExistTheme`, obj).done(function (result) {
+        if (result == false) {
 
-                var rowAdd = '';
-                rowAdd += `<tr>
+            var rowAdd = '';
+            rowAdd += `<tr>
                         <td>
                             <div class="text-center">
                                 <i class="fas fa-thumbtack" style="color: #D3D3D3;"></i>
@@ -494,15 +564,15 @@ function addTheme() {
                             <input type="hidden" class="WC_Detail"  name="WorkContentCode" value="${workContentDetail}"/>
                             <input type="hidden" class="pin_flg"    name="Pin_flg" value="${false}" />
                             <input type="hidden" class="Total"      name="Total" value="0.0" />`
-                for (let i = 1; i <= numDayOfMonth; i++) {
-                    rowAdd += `<input type="hidden" name="${'day' + i}" value="0.0" class="${'day' + i}">`
-                }
-                rowAdd += ` <td class="ThemeNo">${themeNo}</td>
+            for (let i = 1; i <= numDayOfMonth; i++) {
+                rowAdd += `<input type="hidden" name="${'day' + i}" value="0.0" class="${'day' + i}">`
+            }
+            rowAdd += ` <td class="ThemeNo">${themeNo}</td>
                                 <td class="ThemeName">${themeName}</td>`
-                let pageActive = $('#btnNow').text();
-                //add row for day table
-                if (pageActive == '今日') {
-                    rowAdd += `<td class="WContent">${workcontent}</td>
+            let pageActive = $('#btnNow').text();
+            //add row for day table
+            if (pageActive == '今日') {
+                rowAdd += `<td class="WContent">${workcontent}</td>
                             <td class="Detail">${workContentDetail}</td>
                             <td>
                                         <input type="text" onclick = "this.select();setOldVal(this,'${`inputHourday${dayGet}`}');"
@@ -521,23 +591,23 @@ function addTheme() {
                                  <div>       
                              </td>
                            </tr>`;
-                    $('#tbody').append(rowAdd);
-                }
-                //add row for week table 
-                if (pageActive == '今週') {
-                    rowAdd += `<td class="WContent">${workcontent}</td>
+                $('#tbody').append(rowAdd);
+            }
+            //add row for week table 
+            if (pageActive == '今週') {
+                rowAdd += `<td class="WContent">${workcontent}</td>
                                 <td class="Detail">${workContentDetail}</td>
                                 <td class="total">0.0</td>`;
-                    dayGetOfWeek.forEach(date => {
-                        rowAdd += `<td class="${getNumInStr(date)}" >
+                dayGetOfWeek.forEach(date => {
+                    rowAdd += `<td class="${getNumInStr(date)}" >
                                         <input onclick="this.select();setOldVal(this,'${'input' + date}');"
                                         onchange="onChangeValid(this,'input${date}')"
                                         onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122" type="text"
                                         value="0.0" class="form-control table-big-input input${date}">
                                    </td>`
-                    });
+                });
 
-                    rowAdd += `<td>
+                rowAdd += `<td>
                                     <button class="btn btn-sm mr-2" onclick="changeTheme(this)">
                                                 <i class="fas fa-exchange-alt"></i> 
                                     </button>
@@ -548,12 +618,12 @@ function addTheme() {
                                  <div>       
                              </td>
                            </tr>`;
-                    $('#tbody').append(rowAdd);
-                    setHolidayBackground(holidayArr);
-                }
-                //add row for month table
-                if (pageActive == '今月') {
-                    rowAdd = `<tr>
+                $('#tbody').append(rowAdd);
+                setHolidayBackground(holidayArr);
+            }
+            //add row for month table
+            if (pageActive == '今月') {
+                rowAdd = `<tr>
                         <td>
                             <div class="text-center">
                                 <i class="fas fa-thumbtack" style="color: #D3D3D3;"></i>
@@ -561,7 +631,6 @@ function addTheme() {
                         </td>
                             <input type="hidden" class="Year"       name="Year" value="${year}"/>
                             <input type="hidden" class="Month"      name="Month" value="${month}"/>
-                            <input type="hidden" class="User_No"    name="Month" value="${userNo}"/>
                             <input type="hidden" class="Theme_No"   name="ThemeNo" value="${themeNo}"/>
                             <input type="hidden" class="WC_Class"   name="WorkContentClass" value="${workContentClass}"/>
                             <input type="hidden" class="WC_Code"    name="WorkContentCode" value="${workContentCode}"/>
@@ -573,8 +642,8 @@ function addTheme() {
                         <td class="Detail">${workContentDetail}</td>
                         <td class="total">0.0</td>`;
 
-                    for (let i = 1; i <= numDayOfMonth; i++) {
-                        rowAdd += `<td class="${i}">
+                for (let i = 1; i <= numDayOfMonth; i++) {
+                    rowAdd += `<td class="${i}">
                                         <input  onclick="this.select();setOldVal(this,'${'day' + i}');" 
                                         onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 46 && event.charCode <= 122"
                                         onchange="onChangeValid(this,'${'day' + i}')"
@@ -582,38 +651,46 @@ function addTheme() {
                                         class="form-control table-input ${'day' + i}">
                                     </td>`
 
-                    }
-                    rowAdd += `   <td><i onclick="changeTheme(this)" class="fas fa-exchange-alt"></i></td>    
+                }
+                rowAdd += `   <td><i onclick="changeTheme(this)" class="fas fa-exchange-alt"></i></td>    
                                   <td><i onclick="deleteTheme(this)" class="far fa-trash-alt"></i></td>
                             </tr>`;
-                    $('#tbody').append(rowAdd);
-                    setHolidayBackground(holidayArr);
-                }
-
-                let obj = {};
-                obj.Year = parseInt(year);
-                obj.Month = parseInt(month);
-                obj.Theme_no = themeNo;
-                obj.User_no = 'BAOTQ';
-                obj.Work_contents_class = workContentClass;
-                obj.Work_contents_code = workContentCode;
-                obj.Work_contents_detail = workContentDetail;
-
-                listInserted.push(obj);
-                //set theme information to null and default option
-                $(`#themeSelected1`).val('');
-                $(`#themeSelected2`).val('');
-                $(`#workContentCode1`).html('<option value=" ">Please choice theme...</option>');
-                $(`#workContentCode2`).html('<option value=" ">Please choice theme...</option>');
-                $(`#detailCode1`).val('');
-                themeNo = null; themeName = null; workContentClass = null;
-            } else {
-                alert("This theme is exist!")
+                $('#tbody').append(rowAdd);
+                setHolidayBackground(holidayArr);
             }
+
+            let obj = {};
+            obj.Year = parseInt(year);
+            obj.Month = parseInt(month);
+            obj.Theme_no = themeNo;
+            obj.Work_contents_class = workContentClass;
+            obj.Work_contents_code = workContentCode;
+            obj.Work_contents_detail = workContentDetail;
+
+            listInserted.push(obj);
+            //set theme information to null and default option
+            $(`#themeSelected1`).val('');
+            $(`#themeSelected2`).val('');
+            $(`#workContentCode1`).html('');
+            $(`#workContentCode2`).html('');
+            $(`#detailCode1`).val('');
+            themeNo = null; themeName = null; workContentClass = null;
+        }
+        else {
+            $("#alert").addClass(WAR_ALERT);
+            $("#alert").html('<strong>アラート</strong> - 必要なエントリは空です');
+            setTimeout(function () {
+                $("#alert").removeClass(WAR_ALERT);
+                $("#alert").html('');
+            }, 2000);
+            $(`#themeSelected1`).val('');
+            $(`#themeSelected2`).val('');
+            $(`#workContentCode1`).html('');
+            $(`#workContentCode2`).html('');
+            $(`#detailCode1`).val('');
+            themeNo = null; themeName = null; workContentClass = null;
         }
     });
-
-
 }
 
 //Sum number in a class
@@ -677,20 +754,20 @@ function changeBtActive() {
     let titlePage = window.location.href.split("/")[4];
 
     if (titlePage.toLowerCase() == "day") {
-        $("#btDay").addClass("active");
-        $("#btWeek").removeClass("active");
-        $("#btMonth").removeClass("active");
+        $("#btDay").addClass("active not-allowed");
+        $("#btWeek").removeClass("active not-allowed");
+        $("#btMonth").removeClass("active not-allowed");
         return;
     }
     if (titlePage.toLowerCase() == "week") {
-        $("#btWeek").addClass("active");
-        $("#btDay").removeClass("active");
-        $("#btMonth").removeClass("active");
+        $("#btWeek").addClass("active not-allowed");
+        $("#btDay").removeClass("active not-allowed");
+        $("#btMonth").removeClass("active not-allowed");
         return;
     } else {
-        $("#btWeek").removeClass("active");
-        $("#btDay").removeClass("active");
-        $("#btMonth").addClass("active");
+        $("#btWeek").removeClass("active not-allowed");
+        $("#btDay").removeClass("active not-allowed");
+        $("#btMonth").addClass("active not-allowed");
         return;
     }
 
@@ -699,10 +776,13 @@ function changeBtActive() {
 /* Handle main table event*/
 //Render day table by ajax
 function loadDayTable(dateStr) {
-
+    //set empty list data to save when change time 
     dayGetOfWeek = [];
     listDeleted = [];
     listInserted = [];
+    listNeedUpdate = [];
+    listForUpdate = [];
+
     if (dateStr == null) {
         dateStr = getDateTitle();
     }
@@ -714,8 +794,10 @@ function loadDayTable(dateStr) {
         contentType: "application/json",
         dataType: "json",
         success: function (result) {
+
+            //set holiday in an array global
             holidayArr = result.horlidays;
-            //thead
+            //render thead
             var thead = `<tr>
                                 <th style="width:5%" ></th> 
                                 <th style="width:15%">テーマNo</th>
@@ -727,18 +809,11 @@ function loadDayTable(dateStr) {
                             </tr>`;
             $('#thead').html(thead);
 
-            //tbody
-
+            //render tbody
             let sum = 0;
             let dayGet = 'day' + new Date(result.dateSelect).getDate();
             let tbody = '';
             result.manhourDatas.forEach(data => {
-                //set san date title
-                $("#dateTitle").text(result.dateSelect + " (" + dayOfWeek(result.dateSelect) + ")");
-                window.history.pushState('page2', 'Title', '/ManhourInput/Day');
-                changeBtActive();
-                $("#btnNow").text('今日');
-
                 sum += data[dayGet];
                 tbody += `<tr> 
                                     <td>
@@ -768,16 +843,16 @@ function loadDayTable(dateStr) {
                                         value="${data[dayGet].toFixed(1)}" class="form-control table-big-input inputHour${dayGet}">
                                     </td>                                  
                                     <td>
-                                        <button class="btn btn-sm btn-outline-secondary mr-2 showchangeTheme" onclick="changeTheme(this)">
+                                        <button class="btn btn-sm btn-outline-secondary mr-2" onclick="changeTheme(this)">
                                         <i class="fas fa-exchange-alt"></i> テーマ変更</button>
-                                        <button class="btn btn-sm btn-outline-secondary mr-2 deleteTheme" onclick="deleteTheme(this)">
+                                        <button class="btn btn-sm btn-outline-secondary mr-2" onclick="deleteTheme(this)">
                                         <i class="far fa-trash-alt"></i> 削除</button>
                                     </td>
                             </tr>`;
             })
             $('#tbody').html(tbody);
 
-            //tfoot
+            //render tfoot
             var tfoot = `<tr>
                                 <td></td>
                                 <td></td>
@@ -803,7 +878,7 @@ function loadDayTable(dateStr) {
 
             }
             else
-                if (sum < 8 && numDayGet <= nowDate) { //is not normal working time
+                if (sum < 8 && numDayGet <= nowDate && index ===-1) { //is not normal working time and less than now date and not a holiday
 
                     tfoot += `<td class="${numDayGet}" id="TotalinputHourday${numDayGet}">
                                         <i class="fas fa-exclamation-circle text-warning"
@@ -826,21 +901,31 @@ function loadDayTable(dateStr) {
                                 <td></td>
                             </tr>`;
             $('#tfoot').html(tfoot);
+
+            //change 
+            $("#dateTitle").text(result.dateSelect + " (" + dayOfWeek(result.dateSelect) + ")");
+            window.history.pushState('page2', 'Title', '/ManhourInput/Day');
+            changeBtActive();
+            $("#btnNow").text('今日');
         },
         error: function (errormessage) {
             alert(errormessage.responseText);
         }
 
     });
+   
 }
 
-//render manhour week table
-let dayGetOfWeek = new Array();
-let sumByDay = new Array();
-let subByDay = new Array();
+
 function loadWeekTable(dateStr) {
+
+    //set empty list data to save when change time 
+    dayGetOfWeek = [];
     listDeleted = [];
     listInserted = [];
+    listNeedUpdate = [];
+    listForUpdate = [];
+
     if (!dateStr) {
         dateStr = getDateTitle();
     }
@@ -942,13 +1027,15 @@ function loadWeekTable(dateStr) {
             let tfoot = `<tr><td></td><td></td><td></td><td></td><td>合計</td><td id="totalHour">${$(`.Total`).sum()}</td>`;
 
             let x = 0;
+            let nowMonth = new Date().getMonth() + 1;
+            let month = new Date(getDateTitle()).getMonth() + 1;
             let nowDate = new Date().getDate();
             sumByDay.forEach(item => {
 
                 let numDayGet = getNumInStr(dayGetOfWeek[x]);
                 let index = isHoliday(result.horlidays, numDayGet);
                 if (item == 0) {
-                    if (index === -1 && numDayGet <= nowDate) { //is not a horliday
+                    if (index === -1 && numDayGet <= nowDate && month== nowMonth) { //is not a horliday
                         tfoot += `<td class="${numDayGet}" id="Totalinputday${numDayGet}">
                                         <i class="fas fa-exclamation-circle text-danger"
                                         data-toggle="tooltip" title="合計工数が8h未満です">
@@ -963,7 +1050,7 @@ function loadWeekTable(dateStr) {
 
                 }
                 else
-                    if (item < 8 && numDayGet <= nowDate) { //is not normal working time
+                    if (item < 8 && numDayGet <= nowDate && index===-1) { //is not normal working time
 
                         tfoot += `<td class="${numDayGet}" id="Totalinputday${numDayGet}">
                                         <i class="fas fa-exclamation-circle text-warning"
@@ -1012,10 +1099,13 @@ function isHoliday(holidayArr, num) {
 //render manhour month table
 function loadMonthTable(dateStr) {
 
+    //set empty list data to save when change time 
     dayGetOfWeek = [];
     listDeleted = [];
     listInserted = [];
-    dayGetOfWeek = [];
+    listNeedUpdate = [];
+    listForUpdate = [];
+
     if (!dateStr) {
         dateStr = getDateTitle();
     }
@@ -1028,15 +1118,15 @@ function loadMonthTable(dateStr) {
         success: function (result) {
 
             //Change layout information
+            let dateGet = new Date(result.dateSelect);
+            numDayOfMonth = getDaysInMonth(dateGet.getFullYear(), dateGet.getMonth() + 1);
             window.history.pushState('page2', 'Title', '/ManhourInput/Month');
             changeBtActive();
             $("#btnNow").text('今月');
             $("#dateTitle").text(result.dateSelect + "-" + numDayOfMonth);
 
+            
             holidayArr = result.horlidays;
-            let dateGet = new Date(result.dateSelect);
-            numDayOfMonth = getDaysInMonth(dateGet.getFullYear(), dateGet.getMonth() + 1);
-
             //Set thead for table
             let thead = `tr><th></th><th>テーマNo</th><th>テーマ名</th><th>内容</th><th>月計</th>`
             for (let i = 1; i <= numDayOfMonth; i++) {
@@ -1122,7 +1212,7 @@ function loadMonthTable(dateStr) {
                     }
 
                 } else
-                    if (item < 8 && x <= nowDate) { //is not a normal working time and less than date now
+                    if (item < 8 && x <= nowDate && index===-1) { //is not a normal working time and less than date now
 
                         tfoot += `<td class="${x}" id="Totalday${x}">
                                         <i class="fas fa-exclamation-circle fa-xs text-warning"
@@ -1172,6 +1262,7 @@ function setHolidayBackground(holidays) {
     }
 }
 
+//get number in string 
 function getNumInStr(str) {
     return str.replace(/^.*?(\d+).*/, '$1');
 }
@@ -1234,20 +1325,19 @@ function setOldVal(el, name) { //onclick to save old value
 //onchange valid value input hour
 function onChangeValid(el, name) {
 
-    let inputHour = parseInt($(el).closest('tr').find(`.${name}`).val());
+    let inputHour = parseFloat($(el).closest('tr').find(`.${name}`).val());
     let nowDate = new Date().getDate();
-    let nowMonth = new Date().getMonth();
     let dayGet = getNumInStr(name);
 
     if (inputHour < 0 || isNaN(inputHour)) {
-        alert('Input hour not valid!');
+        renderAlert(WAR_ALERT, WAR_009);
         $(el).closest('tr').find(`.${name}`).val(oldVal); oldVal = null;
         return;
     }
     let totalHourDay = $(`.${name}`).sum(); //sum hour value in class 
     if (totalHourDay > 24)  //sum hour value in class must less than 24h
     {
-        alert('Total hour of a day must be less than 24h!');
+        renderAlert(DANGER, ERR_018);
         $(el).closest('tr').find(`.${name}`).val(oldVal); oldVal = null;
         return;
     }
@@ -1290,7 +1380,7 @@ function onChangeValid(el, name) {
     //total hour by month
     let sumHourMonth = 0;
     for (let i = 1; i <= numDayOfMonth; i++) {
-        sumHourMonth += parseInt($(el).closest('tr').find(`.day${i}`).val());
+        sumHourMonth += parseFloat($(el).closest('tr').find(`.day${i}`).val());
     }
     //display total hour in month 
     $(el).closest('tr').find(`.total`).text(sumHourMonth.toFixed(1));

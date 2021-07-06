@@ -13,8 +13,11 @@
 <div class="container-fluid">
     <div class="row">
         <main role="main" class="container-fluid px-4">
-            <div class="alert alert-warning mb-2" role="alert" style="display:none;">
-                <strong>アラート</strong> - 合計工数が8h未満のデータが存在します！
+            <div id="warningDay">
+            </div>
+            <div id="warningCSV">
+            </div>
+            <div id="warningSave">
             </div>
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-1 pb-2 mb-3 border-bottom">
                 <div class="form-row align-items-center">
@@ -220,7 +223,6 @@
 </div>
 @section scripts{
     <script>
-        debugger;
         var userNo = '@HttpContextAccessor.HttpContext.Session.GetString("userNo")';
         var group = '@HttpContextAccessor.HttpContext.Session.GetString("groupCode")';
         var siteCode = '@HttpContextAccessor.HttpContext.Session.GetString("siteCode")';

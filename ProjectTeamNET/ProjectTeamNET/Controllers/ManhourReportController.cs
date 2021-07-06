@@ -23,7 +23,12 @@ namespace ProjectTeamNET.Controllers
         }
         public async Task<IActionResult> Index()
         {
-            var model = await manhourReportService.Init(HttpContext.Session.GetString("userNo").ToUpper());
+            string user = "";
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            {
+                user = HttpContext.Session.GetString("userNo").ToUpper();
+            }
+            var model = await manhourReportService.Init(user);
             return View(model);
         }
         [HttpGet("/ManhourReport/AddTheme/{count}")]
@@ -59,13 +64,23 @@ namespace ProjectTeamNET.Controllers
         [HttpPost("/ManhourReport/SaveScreen")]
         public async Task<IActionResult> SaveScreen(ManHourReportSearch data)
         {
-            var result = await manhourReportService.SaveScreen(data, HttpContext.Session.GetString("userName").ToUpper());
+            string user = "";
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            {
+                user = HttpContext.Session.GetString("userNo").ToUpper();
+            }
+            var result = await manhourReportService.SaveScreen(data, user);
             return Ok(result);
         }
         [HttpGet("/ManhourReport/GetsScreen")]
         public async Task<IActionResult> GetsScreen()
         {
-            var result = await manhourReportService.GetsScreen(HttpContext.Session.GetString("userName").ToUpper());
+            string user = "";
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            {
+                user = HttpContext.Session.GetString("userNo").ToUpper();
+            }
+            var result = await manhourReportService.GetsScreen(user);
             return Ok(result);
         }
 
@@ -74,7 +89,7 @@ namespace ProjectTeamNET.Controllers
         {
             var result = await manhourReportService.SetManhourReport(data);
             if(result.Count >0)
-                return Ok(new {data = result,messenge="" });
+                return Ok(new {data = result, messenge = "" });
             return Ok(new { messenge = Resources.Messages.ERR_005 });
         }
 
