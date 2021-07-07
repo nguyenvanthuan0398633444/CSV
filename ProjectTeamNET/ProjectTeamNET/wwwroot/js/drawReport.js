@@ -191,7 +191,7 @@ if (localStorage1[0].total == 1) {
 }
 
 $('#draw').append(`
-    <table class="table table-striped table-sm" style="width:100px; overflow-y: scroll;">
+    <table class="table table-striped table-bordered table-sm" style="width:100px; overflow-y: scroll;">
         <thead class="thead-light">
             <tr>
             

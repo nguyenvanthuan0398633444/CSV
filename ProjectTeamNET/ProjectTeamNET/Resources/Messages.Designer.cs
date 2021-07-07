@@ -268,6 +268,33 @@ namespace ProjectTeamNET.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0}が必要です.
+        /// </summary>
+        public static string ERR_024 {
+            get {
+                return ResourceManager.GetString("ERR_024", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to グループユーザーは空にすることはできません.
+        /// </summary>
+        public static string ERR_025 {
+            get {
+                return ResourceManager.GetString("ERR_025", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 名前の保存が必要で、&lt;= 40文字.
+        /// </summary>
+        public static string ERR_026 {
+            get {
+                return ResourceManager.GetString("ERR_026", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0}が正常終了しました.
         /// </summary>
         public static string INF_001 {

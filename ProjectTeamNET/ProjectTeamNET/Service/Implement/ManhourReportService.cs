@@ -23,12 +23,12 @@ namespace ProjectTeamNET.Service.Implement
     {
         private readonly IBaseRepository<UserScreenItem> userscreenRepository;
         private readonly ProjectDbContext dbContext;
-        private DbSet<UserScreenItem> dbUserScreenItems;
-        private DbSet<Models.Entity.Group> dbGroups;
-        private DbSet<User> dbUsers;
-        private DbSet<Theme> dbThemes;
-        private DbSet<Manhour> dbManhours;
-        private DbSet<WorkContents> dbWorkContents;
+        private readonly DbSet<UserScreenItem> dbUserScreenItems;
+        private readonly DbSet<Models.Entity.Group> dbGroups;
+        private readonly DbSet<User> dbUsers;
+        private readonly DbSet<Theme> dbThemes;
+        private readonly DbSet<Manhour> dbManhours;
+        private readonly DbSet<WorkContents> dbWorkContents;
 
         private const string MANHOURREPORT = "工数集計";
         private const string FILE = ".csv";
@@ -42,6 +42,7 @@ namespace ProjectTeamNET.Service.Implement
             dbManhours = dbContext.Set<Manhour>();
             dbWorkContents = dbContext.Set<WorkContents>();
             this.userscreenRepository = userscreenRepository;
+            this.dbContext = dbContext;
         }
 
         public async Task<int> Delete(string id)
@@ -68,20 +69,20 @@ namespace ProjectTeamNET.Service.Implement
 
         public async Task<List<GroupNames>> GetsGroupName()
         {
-            var result = (from Gr in dbGroups
+            var result = (from gr in dbGroups where gr.Del_flg == false
                           select ( new GroupNames()
                            {
-                               GroupName = Gr.Group_code + "[" + Gr.Group_name + "  "+ Gr.Accounting_group_name +"]",
-                               group_code = Gr.Group_code                           
+                               GroupName = gr.Group_code + "[" + gr.Group_name + "  "+ gr.Accounting_group_name +"]",
+                               group_code = gr.Group_code                           
                            }));
             return await result.ToListAsync();
         }
 
         //init has condition saved, theme and all group
-        public async Task<ManhourReportViewModel> Init(string userName)
+        public ManhourReportViewModel Init(string userName)
         {
             var model = new ManhourReportViewModel();
-            var Users = dbUserScreenItems.Where(e => e.Screen_url == "ManhourReport" && e.User_no == userName.ToUpper()).Select(s => new SelectListItem { Value = s.Surrogate_key.Remove(s.Surrogate_key.Length -3), Text = s.Save_name });
+            var Users = dbUserScreenItems.Where(e => e.Screen_url == SCREEN_URL && e.Save_name != "" && e.User_no == userName.ToUpper()).Select(s => new SelectListItem { Value = s.Surrogate_key.Remove(s.Surrogate_key.Length -3), Text = s.Save_name });
             model.Users = Users.AsEnumerable().GroupBy(x => x.Value).Select(x => x.First()).ToList();
             model.GroupName = (from th in dbGroups
                                select (new GroupNames()
@@ -167,7 +168,7 @@ namespace ProjectTeamNET.Service.Implement
                     }
                 }
             }
-            var result = manhourReports.GroupBy(x => x.GroupCode).Select(x => x.First()).ToList();
+            var result = manhourReports.GroupBy(x => x.GroupCode).Select(x => x.First()).OrderBy(e => e.GroupCode).ToList();
 
             //add columns monthly and daily
             foreach(var manhourScr in result)
@@ -203,36 +204,36 @@ namespace ProjectTeamNET.Service.Implement
             {
                 if (data.numberUser.Split(",").Contains("0"))
                 {
-                    messagers["user"] = "グループユーザーは空にすることはできません";
+                    messagers["user"] = Messages.ERR_025;
                 }
                 if (string.IsNullOrEmpty(data.selectedHeaderItems))
                 {
-                    messagers["headerItems"] = "headerItemsが必要です";
+                    messagers["headerItems"] = String.Format(Messages.ERR_024, "headerItems");
                 }
                 if (string.IsNullOrEmpty(data.themeNos))
                 {
-                    messagers["theme"] = "Themeが必要です";
+                    messagers["theme"] = String.Format(Messages.ERR_024, "Theme");
                 }
                 else if(data.themeNos.Split(",").Contains(""))
                 {
-                    messagers["theme"] = "Themeが必要です";
+                    messagers["theme"] = String.Format(Messages.ERR_024, "ThemeNo");
                 }
                 if (string.IsNullOrEmpty(data.fromDate))
                 {
-                    messagers["fromDate"] = "FromDateが必要です";
+                    messagers["fromDate"] = String.Format(Messages.ERR_024, "fromDate");
                 }
                 else if (!Regex.IsMatch(data.fromDate, @"^\d{4}/((0\d)|(1[012]))/(([012]\d)|3[01])$"))
                 {
-                    messagers["fromDate"] = String.Format(Messages.ERR_020,"fromDate");
+                    messagers["fromDate"] = String.Format(Messages.ERR_020, "fromDate");
                 }
 
                 if (string.IsNullOrEmpty(data.toDate))
                 {
-                    messagers["toDate"] = "ToDateが必要です";
+                    messagers["toDate"] = String.Format(Messages.ERR_024, "toDate");
                 }
                 else if (!Regex.IsMatch(data.toDate, @"^\d{4}/((0\d)|(1[012]))/(([012]\d)|3[01])$"))
                 {
-                    messagers["toDate"] = String.Format(Messages.ERR_020,"toDate");
+                    messagers["toDate"] = String.Format(Messages.ERR_020, "toDate");
                 }
 
                 //check fromDate - toDate has many Days and ToDate much bigger FromDate
@@ -255,7 +256,7 @@ namespace ProjectTeamNET.Service.Implement
                                     messagers["dateCalculate"] = Messages.ERR_013;
                                 }
                             }
-                        }                        
+                        }
                     }
                 }
                 if (string.Concat(messagers["fromDate"],messagers["toDate"], messagers["headerItems"],
@@ -263,7 +264,7 @@ namespace ProjectTeamNET.Service.Implement
                     return messagers;
                 return new Dictionary<string, string>() { };
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 messagers["Error"] = "Something wrong! Please try later";
                 return messagers;
@@ -289,24 +290,24 @@ namespace ProjectTeamNET.Service.Implement
             {
                 if (data.numberUser.Split(",").Contains("0"))
                 {
-                    messagers["user"] = "グループユーザーは空にすることはできません";
+                    messagers["user"] = Messages.ERR_025;
                 }
                 if (string.IsNullOrEmpty(data.themeNos))
                 {
-                    messagers["theme"] = "Themeが必要です";
+                    messagers["theme"] = String.Format(Messages.ERR_024, "Theme");
                 }
                 else if (data.themeNos.Split(",").Contains(""))
                 {
-                    messagers["theme"] = "Themeが必要です";
+                    messagers["theme"] = String.Format(Messages.ERR_024, "ThemeNo");
                 }
                 if (string.IsNullOrEmpty(data.Save) || data.Save.Length > 40)
                 {
-                    messagers["savename"] = "名前の保存が必要で、<= 40文字";
+                    messagers["savename"] = Messages.ERR_026;
                 }
 
                 if (string.IsNullOrEmpty(data.fromDate))
                 {
-                    messagers["fromDate"] = "FromDateが必要です";
+                    messagers["fromDate"] = String.Format(Messages.ERR_024, "fromDate");
                 }
                 else if (!Regex.IsMatch(data.fromDate, @"^\d{4}/((0\d)|(1[012]))/(([012]\d)|3[01])$"))
                 {
@@ -315,7 +316,7 @@ namespace ProjectTeamNET.Service.Implement
 
                 if (string.IsNullOrEmpty(data.toDate))
                 {
-                    messagers["toDate"] = "ToDateが必要です";
+                    messagers["toDate"] = String.Format(Messages.ERR_024, "toDate");
                 }
                 else if (!Regex.IsMatch(data.toDate, @"^\d{4}/((0\d)|(1[012]))/(([012]\d)|3[01])$"))
                 {
@@ -386,14 +387,13 @@ namespace ProjectTeamNET.Service.Implement
 
         public async Task<List<WorkContent>> GetsWorkContent(string ThemeNo)
         {
-            var result = (from t in dbThemes where t.Theme_no == ThemeNo
-                       join wc in dbWorkContents on t.Work_contents_class equals wc.Work_contents_class
-                       select (new WorkContent()
-                       {
-                           WorkCode = wc.Work_contents_code,
-                           Work_Content = wc.Work_contents_code +"["+ wc.Work_contents_code_name +"]"
-                       })
-                       );
+            var result = (from t in dbThemes where t.Theme_no == ThemeNo where t.Del_flg == false
+                          join wc in dbWorkContents on t.Work_contents_class equals wc.Work_contents_class
+                            select (new WorkContent()
+                            {
+                                WorkCode = wc.Work_contents_code,
+                                Work_Content = wc.Work_contents_code +"["+ wc.Work_contents_code_name +"]"
+                            }));
             return await result.ToListAsync();
         }
 
@@ -827,6 +827,7 @@ namespace ProjectTeamNET.Service.Implement
                     //add row Total
                     if(data.isTotal == "1")
                     {
+                        //add space ' '
                         for (var i = 1; i < numbertd; i++)
                         {
                             total.Add(null);
@@ -972,7 +973,7 @@ namespace ProjectTeamNET.Service.Implement
         /// </summary>
         /// <param name="data"></param>
         /// <returns>alert string</returns>
-        public async Task<string> SaveScreen(ManHourReportSearch data, string userName)
+        public string SaveScreen(ManHourReportSearch data, string userName)
         {
             try
             {
@@ -1053,9 +1054,9 @@ namespace ProjectTeamNET.Service.Implement
             count++;
         }
 
-        public async Task<List<SelectListItem>> GetsScreen(string userName)
+        public List<SelectListItem> GetsScreen(string userName)
         {
-            return dbUserScreenItems.Where(e => e.Screen_url == "ManhourReport" && e.User_no == userName.ToUpper()).Select(s => new SelectListItem { Value = s.Surrogate_key.Substring(0,18), Text = s.Save_name }).Distinct().ToList();
+            return dbUserScreenItems.Where(e => e.Screen_url == "ManhourReport" && e.Save_name != "" && e.User_no == userName.ToUpper()).Select(s => new SelectListItem { Value = s.Surrogate_key.Substring(0,18), Text = s.Save_name }).Distinct().ToList();
         }
     }
 }

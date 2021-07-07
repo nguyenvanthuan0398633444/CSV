@@ -62,8 +62,10 @@ td {
 }
 #warningSave{
     position:absolute;
+    top: 70px;
     z-index: 10;
-    width: 95%;
+    width: 96%;
 }
-
-
+.table-theme {
+    max-height: 300px;
+}

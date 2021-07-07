@@ -10,17 +10,17 @@ namespace ProjectTeamNET.Service.Interface
 {
     public interface IManhourUpdateService 
     {
-        Task<List<ManhourUpdateViewModel>> GetDataSearch(ManhourUpdateSearch keySearch);
-        Task<string> GetRole(string funtioncClass);
-        Task<List<UserScreenItem>> GetHistorySearch(string funtioncClass);
+        Task<List<ManhourUpdateViewModel>> GetDataSearchByKeySearch(ManhourUpdateSearch keySearch);
+        Task<string> GetFunctionClassByUserNo(string funtioncClass);
+        Task<List<UserScreenItem>> GetHistorySearchByUserNo(string funtioncClass);
         Task<ManhourUpdate> GetGroupAndUser(string userId);
         Task<ExportModel> ExportCSV(string user, string group);
-        Task<List<Manhour>> ImportCSV(IFormFile files);
-        ManhourUpdateUserSelectList GetUserInGroup(string groupId);   
-        Task<List<int>> GetHoliday(ManhourUpdateSearch keySearch);
+        Task<string> ImportCSV(IFormFile files);     
+        Task<List<int>> GetHolidayByKeySearch(ManhourUpdateSearch keySearch);
         Task<ManHourUpdateSearchModel> Search(ManhourUpdateSearch keySearch, string userId);
         Task<SelectThemeModel> SearchThemes(SearchThemeParam param, string user_no);
-        Task<bool> Save(ManhourUpdateSave saveData);
+        bool Save(ManhourUpdateSave saveData);
+        ManhourUpdateUserSelectList GetUserInGroup(string groupId);
 
     }
 }

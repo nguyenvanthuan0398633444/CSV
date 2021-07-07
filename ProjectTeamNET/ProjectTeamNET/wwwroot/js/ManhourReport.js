@@ -35,25 +35,26 @@ if ($('#userScreenName > option').length > 1) {
 
 function deleteUserScreenName() {
     var saveName = $('#userScreenName').val();
-    var r = confirm('削除します。よろしいですか？');
-    if (r == true) {
-        $.ajax({
-            url: `/ManhourReport/DeleteScreenUser/` + saveName,
-            method: 'Delete',
-            success: function (response) {
-                toastr.success(response)
-                GetScreen();
-                $('#SaveName').val("");
-                reset();
-            }
-        });
+    if (saveName != "") {
+        var r = confirm('削除します。よろしいですか？');
+        if (r == true) {
+            $.ajax({
+                url: `/ManhourReport/DeleteScreenUser/` + saveName,
+                method: 'Delete',
+                success: function (response) {
+                    toastr.success(response)
+                    GetScreen();
+                    $('#SaveName').val("");
+                    reset();
+                }
+            });
+        }
     }
 }
 
 //add 1 User follow GroupCode
 function addUser(id) {
     var GroupCode = $(`#GroupId${id}`).val();
-    console.log(`#GroupId${id}`)
     $.ajax({
         url: `/ManhourReport/GetsUserName/${GroupCode}`,
         method: 'Get',
@@ -194,18 +195,6 @@ function deleteTheme(id) {
         $('#buttonAddTheme').removeAttr('hidden');
     }
 }
-
-function WorkContent() {
-    $.ajax({
-        url: `/ManhourReport/GetsUserName/${GroupCode}`,
-        method: 'Get',
-        success: function (response) {
-            var tmp = '';
-            $.each(response, function (i, v) {
-            })
-        }
-    })
-};
 
 //add value option from unselected to selected
 function AddSelect() {
@@ -500,7 +489,7 @@ async function GetsUser(groupCount, group_code, UserNo, count_user) {
     $(`#addUser${count_user} > select`).val(UserNo);
 }
 
-// get list workcontents của 1 theme đã cho db
+// get list workcontents follow theme db
 async function save(id, workcontent) {
     await $.ajax({
         url: `/ManhourReport/WorkContents/${workcontent}`,
@@ -515,7 +504,8 @@ async function save(id, workcontent) {
         }
     })
 }
-//+ option theo db
+
+//+ option select theo db
 function AddSelect1() {
     var value = $('#NotSelect').val()[0]
     var text = $(`#NotSelect option:selected`).text();
@@ -523,10 +513,10 @@ function AddSelect1() {
     $(`#NotSelect option:selected`).remove();
 }
 
+//check validate and save sessionStorage
 function checkform() {
     $('#error').empty();
     var Obj = setObj();
-    //check validate or save localStorage
     $.ajax({
         url: '/ManhourReport/CheckReport',
         method: 'POST',
@@ -676,6 +666,7 @@ function setObj() {
     return Obj;
 }
 
+// out put CSV
 function outputCSV() {
     $('#error').empty();
     var Obj = setObj();
@@ -789,7 +780,7 @@ function saveUserScreenName() {
                     data: Obj,
                     success: function (response) {
                         if (response != "error") {
-                            $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
+                            $("#error").append(`<div class="alert alert-success mb-2" role="alert">
                                             <strong>アラート</strong> - ${response}
                                         </div>`);
                             GetScreen();
@@ -847,6 +838,7 @@ $('#datepicker2').datepicker({ format: "yyyy/mm/dd", language: "ja", autoclose: 
     $('#toDate').val(`${date.getFullYear()}/${date.getMonth() >= 9 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1)}/${date.getDate() >= 10 ? date.getDate(): "0" + date.getDate()}`);
 });
 
+// Get save name in current (db)
 function GetScreen() {
     $.ajax({
         url: '/ManhourReport/GetsScreen',

@@ -2,12 +2,9 @@
 using ProjectTeamNET.Models.Request;
 using ProjectTeamNET.Models.Response;
 using ProjectTeamNET.Service.Interface;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text;
-using ProjectTeamNET.Models.Entity;
 using Microsoft.AspNetCore.Http;
-using ProjectTeamNET.Resources;
 
 namespace ProjectTeamNET.Controllers
 {
@@ -68,17 +65,10 @@ namespace ProjectTeamNET.Controllers
             
             if (file.FileName.EndsWith(".csv"))
             {
-                List<Manhour> result = await manhourUpdateService.ImportCSV(file);
-                if(result.Count != 0)
-                {
-                    return Json(new { data = result ,messages =""});
-                }
-                else
-                {
-                    return Json(new { messages = "Header does not match" });
-                }
+                string result = await manhourUpdateService.ImportCSV(file);             
+                return Json(new { messages = result });               
             }
-            return Json(new { messages = "メッセージエリア表示" });
+            return Json(new { messages = "ファイルはCSV形式（拡張子csv）のみ可能です" });
 
         }
 

@@ -11,7 +11,7 @@ namespace ProjectTeamNET.Service.Interface
 {
     public interface IManhourReportService
     {
-        Task<ManhourReportViewModel> Init(string userName);
+        ManhourReportViewModel Init(string userName);
         Task<int> Delete(string id);
         Task<List<UserName>> GetsUserName(string groupCode);
         Task<string> GetsGroupName(string groupCode);
@@ -26,7 +26,7 @@ namespace ProjectTeamNET.Service.Interface
         List<double> ManhourReportMonthly(string group, string user, string theme, DateTime toDate, DateTime fromDate, string workContentCodes, string workContentDetails);
         List<double> ManhourReportDaily(string group, string user, string theme, DateTime toDate, DateTime fromDate, string workContentCodes, string workContentDetails);
         Task<ExportModel> GetDataReportCSV(ManHourReportSearch data);
-        Task<string> SaveScreen(ManHourReportSearch data,string userName);
-        Task<List<SelectListItem>> GetsScreen(string User);
+        string SaveScreen(ManHourReportSearch data,string userName);
+        List<SelectListItem> GetsScreen(string User);
     }
 }

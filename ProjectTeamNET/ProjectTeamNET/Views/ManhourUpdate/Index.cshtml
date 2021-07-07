@@ -108,14 +108,14 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             @Html.DropDownListFor(Model => Model.groupThemes,
-                                               new SelectList(Model.groupThemes, "Value", "Text"),
+                                               new SelectList(Model.groupThemes, "Value", "Text"), "部門選択...",
                                                new { @class = "form-control form-control-sm selectGroup" })
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             @Html.DropDownListFor(Model => Model.salesObject,
-                                               new SelectList(Model.salesObject, "Value", "Text"),
+                                               new SelectList(Model.salesObject, "Value", "Text"), "部門選択...",
                                                new { @class = "form-control form-control-sm selectGroup" })
                                         </div>
                                     </div>
@@ -143,7 +143,7 @@
                                     <button type="button" class="btn btn-primary mt-2 mb-2" id="searchTheme">検索</button>
                                 </div>
                                 <div class="row">
-                                    <div class="table-responsive">
+                                    <div class="table-responsive table-theme">
                                         <table class="table table-striped table-sm">
                                             <thead class="thead-light">
                                                 <tr>

@@ -12,9 +12,9 @@ using ProjectTeamNET.Models.Response;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.IO;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using ProjectTeamNET.Resources;
 
 namespace ProjectTeamNET.Service.Implement
 {
@@ -23,11 +23,11 @@ namespace ProjectTeamNET.Service.Implement
 
         private readonly IBaseRepository<Manhour> manhourRepository;
         private readonly IBaseRepository<Group> groupRepository;
-        private readonly IBaseRepository<SalesObject> saleRepository;
-        private readonly IBaseRepository<Theme> themeRepository;
+        private readonly IBaseRepository<SalesObject> saleRepository;        
         private readonly IBaseRepository<UserScreenItem> screenRepository;
-        
+        private readonly DbSet<WorkContents> dbWorkContents;
         private readonly DbSet<User> dbUsers;
+        private readonly DbSet<Theme> dbTheme;
         private readonly IBaseRepository<UserScreenItem> userScreenItemRepository;
         const string HEADER = "年,月,ユーザNo,ユーザ名,テーマＮｏ,テーマ名,内容コード,内容名,内容詳細コード,合計," +
                         "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31";
@@ -40,17 +40,18 @@ namespace ProjectTeamNET.Service.Implement
                                     IBaseRepository<UserScreenItem> screenRepository)
         {
             this.dbUsers = context.Set<User>();
+            this.dbWorkContents = context.Set<WorkContents>();
+            this.dbTheme = context.Set<Theme>();
             this.userScreenItemRepository = userScreenItemRepository;            
             this.manhourRepository = manhourRepository;
             this.groupRepository = groupRepository;
             this.saleRepository = saleRepository;
-            this.themeRepository = themeRepository;
             this.screenRepository = screenRepository;
         }
         public async Task<ManhourUpdate> GetGroupAndUser(string userId)
         {
             ManhourUpdate model = new ManhourUpdate();
-            string role = await GetRole(userId);
+            string role = await GetFunctionClassByUserNo(userId);
             if (role != "0")
             {
                 DateTime today = DateTime.Now;
@@ -58,7 +59,7 @@ namespace ProjectTeamNET.Service.Implement
                 // get group_code no history
                 string groupId = dbUsers.FirstOrDefault(e => e.User_no == userId).Group_code;
                 // get History
-                List<UserScreenItem> historySearch = await GetHistorySearch(userId);
+                List<UserScreenItem> historySearch = await GetHistorySearchByUserNo(userId);
                 List<Group> groups = await groupRepository.Gets();
                 List<SalesObject> salesObjects = await saleRepository.Gets();
                 List<WorkContents> workContents = await GetWorkContents();
@@ -172,20 +173,21 @@ namespace ProjectTeamNET.Service.Implement
             }
             return null;
         }
+
         public async Task<ManHourUpdateSearchModel> Search(ManhourUpdateSearch keySearch, string userId)
         {
-            List<UserScreenItem> history = await GetHistorySearch(userId);
+            List<UserScreenItem> history = await GetHistorySearchByUserNo(userId);
             if (history.Count != 0)
             {
                 foreach (var item in history)
                 {
                     if (item.Screen_item == "GROUP_CODE")
                     {
-                        UpdeteHistory("GROUP_CODE", keySearch.Group, userId);
+                        UpdateUserScreenItemByUserNo("GROUP_CODE", keySearch.Group, userId);
                     }
                     if (item.Screen_item == "USER_NO")
                     {
-                        UpdeteHistory("USER_NO", keySearch.User, userId);
+                        UpdateUserScreenItemByUserNo("USER_NO", keySearch.User, userId);
                     }
                 }
             }
@@ -194,10 +196,11 @@ namespace ProjectTeamNET.Service.Implement
                 InsertHistory(keySearch, userId);
             }
             ManHourUpdateSearchModel model = new ManHourUpdateSearchModel();
-            model.models = await GetDataSearch(keySearch);
-            model.holiday = await GetHoliday(keySearch);
+            model.models = await GetDataSearchByKeySearch(keySearch);
+            model.holiday = await GetHolidayByKeySearch(keySearch);
             return model;
         }
+
         public async Task<ExportModel> ExportCSV(string user, string group)
         {
             ExportModel exportModel = new ExportModel();
@@ -209,7 +212,7 @@ namespace ProjectTeamNET.Service.Implement
                 Group = group,
                 User = user
             };
-            List<ManhourUpdateViewModel> result = await GetDataSearch(key);
+            List<ManhourUpdateViewModel> result = await GetDataSearchByKeySearch(key);
             string name = "DL Manhour " + user + " " + today.ToString("yyyyMMddHHmmss") + ".csv";
             StringBuilder buider = new StringBuilder();
             buider.AppendLine(HEADER);
@@ -217,7 +220,7 @@ namespace ProjectTeamNET.Service.Implement
             {
                 buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no}, {item.User_name}, {item.Theme_no}, {item.Theme_name1}, " +
                                   $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail}, " +
-                                  $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, " + $"{item.Day2:0.0}, {item.Day3:0.0},{item.Day4:0.0}, " +
+                                  $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, {item.Day3:0.0},{item.Day4:0.0}, " +
                                   $"{item.Day5:0.0}, {item.Day6:0.0}, {item.Day7:0.0}, " + $"{item.Day8:0.0}, {item.Day9:0.0}, {item.Day10:0.0}, " +
                                   $"{item.Day11:0.0}, {item.Day12:0.0}, {item.Day13:0.0}," + $"{item.Day14:0.0}, {item.Day15:0.0}, {item.Day16:0.0}, " +
                                   $"{item.Day17:0.0}, {item.Day18:0.0}, {item.Day19:0.0}," + $"{item.Day20:0.0}, {item.Day21:0.0}, {item.Day22:0.0}," +
@@ -228,86 +231,137 @@ namespace ProjectTeamNET.Service.Implement
             exportModel.nameFile = name;
             return exportModel;
         }
-        public async Task<List<Manhour>> ImportCSV(IFormFile files)
-        {
+
+        public async Task<string> ImportCSV(IFormFile files)
+        {           
             List<Manhour> dataExport = new List<Manhour>();            
             using (var sreader = new StreamReader(files.OpenReadStream()))
             {
                 string headers = sreader.ReadLine();
-                bool checkHeader = CheckHeaderFileCSV(headers);
+                bool checkHeader = IsCheckHeaderFileCSV(headers);
                 if (checkHeader)
                 {
                     while (!sreader.EndOfStream)                          //get all the content in rows 
                     {
                         string[] dataCSV = sreader.ReadLine().Split(',');
-                        string WorkContentsClass = await GetWordConteClass(dataCSV[4]);
-                        if (WorkContentsClass == null)
+                        // check if key is empty
+                        if (IsCheckNumber(dataCSV[0].Trim()) == false)
                         {
-                            continue;
+                            return string.Format(Messages.ERR_004, "Year ");
                         }
+                        if (IsCheckNumber(dataCSV[1].Trim()) == false)
+                        {
+                            return string.Format(Messages.ERR_004, "Month ");
+                        }
+                        if (dbUsers.FirstOrDefault(e => e.User_no == dataCSV[2].Trim()) == null)
+                        {
+                            return string.Format(Messages.ERR_004, "User ");
+                        }                      
+                        string WorkContentsClass = await GetWordConteClass(dataCSV[4]);
+                        if (WorkContentsClass == null || WorkContentsClass.Length > 2)
+                        {
+                            return string.Format(Messages.ERR_004, "Work Contents ");
+                        }
+                        if (dbTheme.FirstOrDefault(e => e.Theme_no == dataCSV[4].Trim()) == null)
+                        {
+                            return string.Format(Messages.ERR_004, "Theme ");
+                        }
+                        if (dbWorkContents.FirstOrDefault(e => e.Work_contents_code == dataCSV[6].Trim()) == null)
+                        {
+                            return string.Format(Messages.ERR_004, "Work contents code ");
+                        }
+                        if(dataCSV[8].Trim().Length == 0 || dataCSV[8].Trim().Length > 2)
+                        {
+                            return string.Format(Messages.ERR_004, "Work contents detail ");
+                        }                    
                         Manhour CsvData = new Manhour();
                         CsvData.Year = Int16.Parse(dataCSV[0]);
-                        CsvData.Month = Int16.Parse(dataCSV[1]);
+                        CsvData.Month = Int16.Parse(dataCSV[1]);                      
                         CsvData.User_no = dataCSV[2].Trim();
                         CsvData.Theme_no = dataCSV[4].Trim();
                         CsvData.Work_contents_code = dataCSV[6].Trim();
                         CsvData.Work_contents_class = WorkContentsClass.Trim();
                         CsvData.Work_contents_detail = dataCSV[8].Trim();
-                        if (CheckNumber(dataCSV[9]))
+                        if (IsCheckNumber(dataCSV[9].Trim()) == false)
                         {
-                            CsvData.Total = Double.Parse(dataCSV[9]);
+                            return string.Format(Messages.ERR_004, "Total ");
                         }
+                        CsvData.Total = Double.Parse(dataCSV[9]);
                         for (var i = 1; i <= 31; i++)
                         {
                             int j = i + 9;
-                            if (CheckNumber(dataCSV[j]))
+                            //Check is Number
+                            if (IsCheckNumber(dataCSV[j]))
                             {
-                                CsvData.GetType().GetProperty("Day" + i).SetValue(CsvData, Double.Parse(dataCSV[j]));
+                                if (Double.Parse(dataCSV[j]) < 0 )
+                                {
+                                    string day = "day " + i.ToString();
+                                    return string.Format(Messages.ERR_004,day);
+                                }
+                                else if(Double.Parse(dataCSV[j]) > 24)
+                                {
+                                    return Messages.ERR_018;
+                                }
+                                else
+                                {
+                                    CsvData.GetType().GetProperty("Day" + i).SetValue(CsvData, Double.Parse(dataCSV[j]));
+                                }                               
                             }
-                        }
+                            else
+                            {                                
+                                return Messages.ERR_005;
+                            }
+                        }                       
                         User user = await GetUser(CsvData.User_no);
                         CsvData.Group_code = user.Group_code.Trim();
                         CsvData.Site_code = user.Site_code.Trim();
                         CsvData.Fix_date = DateTime.Now.ToString("yyyyMMdd");
                         CsvData.Pin_flg = false;
-                        bool check = CheckExist(CsvData);
+                        dataExport.Add(CsvData);
+                       
+                    }    
+                    // Update and Create if no error
+                    foreach(Manhour item in dataExport)
+                    {
+                        bool check = IsExistManhour(item);
                         if (check)
                         {
-                            await UpdateManhours(CsvData);
+                            UpdateManhours(item);
                         }
                         else
                         {
-                            manhourRepository.Create(CsvData);
-                        }
-                        dataExport.Add(CsvData);
+                            manhourRepository.Create(item);
+                        }                          
                     }
-                    return dataExport;
+                    return "CSVアップロードが正常終了しました";                    
                 }
+                //if header does not match
                 else
                 {
-                    dataExport = null;
-                    return dataExport;
+                    return Messages.ERR_005;
                 }
             }
             
         }
-        public bool CheckNumber(string day)
+
+        public bool IsCheckNumber(string day)
         {
             double price ;
             bool isDouble = Double.TryParse(day, out price);
             return isDouble;
         }
-        public async Task<bool> Save(ManhourUpdateSave saveData)
+
+        public bool Save(ManhourUpdateSave saveData)
         {
             var result = 0;
             if (saveData.save.Count != 0)
             {
                 foreach (Manhour mh in saveData.save)
                 {                  
-                    bool check = CheckExist(mh);
+                    bool check = IsExistManhour(mh);
                     if (check)
                     {
-                        await UpdateManhours(mh);                       
+                       UpdateManhours(mh);                       
                     }
                     else
                     {
@@ -319,17 +373,32 @@ namespace ProjectTeamNET.Service.Implement
             //Delete list record rest from DB
             if (saveData.delete.Count != 0)
             {
-                result = await DeleteManhours(saveData.delete);
+                result = DeleteManhours(saveData.delete);
             }
             return result > 0;
         }
-        public async Task<string> GetRole(string userId)
+
+        public ManhourUpdateUserSelectList GetUserInGroup(string groupId)
+        {
+            ManhourUpdateUserSelectList resultUser = new ManhourUpdateUserSelectList();
+            List<User> listUsers = (List<User>)dbUsers.Where(e => e.Group_code == groupId).ToList();
+            List<SelectListItem> userSelectList = new List<SelectListItem>();
+            foreach (var item in listUsers)
+            {
+                userSelectList.Add(new SelectListItem() { Value = item.User_no, Text = item.User_no + "[" + item.User_name + "]" });
+            }
+            resultUser.listUser = userSelectList;
+            return resultUser;
+        }
+
+        public async Task<string> GetFunctionClassByUserNo(string userId)
         {
             var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectRole");
             List<string> functionClass = await manhourRepository.Search<string>(query, new { user_no = userId });
             return functionClass.FirstOrDefault();
         }
-        public async Task<List<int>> GetHoliday(ManhourUpdateSearch keySearch)
+
+        public async Task<List<int>> GetHolidayByKeySearch(ManhourUpdateSearch keySearch)
         {
             List<string> list = new List<string>();
             if (!string.IsNullOrEmpty(keySearch.Year.ToString()))
@@ -364,7 +433,8 @@ namespace ProjectTeamNET.Service.Implement
             List<int> resultSearch = await manhourRepository.Search<int>(query, param);
             return resultSearch;
         }
-        public async Task<List<ManhourUpdateViewModel>> GetDataSearch(ManhourUpdateSearch keySearch)
+
+        public async Task<List<ManhourUpdateViewModel>> GetDataSearchByKeySearch(ManhourUpdateSearch keySearch)
         {
             List<string> list = new List<string>();
             if (!string.IsNullOrEmpty(keySearch.Year.ToString()))
@@ -405,7 +475,8 @@ namespace ProjectTeamNET.Service.Implement
             }
             return resultSearch;
         }
-        public void UpdeteHistory(string screenItem, string screenInput, string userNo)
+
+        public void UpdateUserScreenItemByUserNo(string screenItem, string screenInput, string userNo)
         {
             var param = new
             {
@@ -416,6 +487,7 @@ namespace ProjectTeamNET.Service.Implement
             var query = QueryLoader.GetQuery("ManhourUpdateQuery", "UpdateUserScreenItems");
             manhourRepository.Update<UserScreenItem>(query, param);          
         }
+
         public void InsertHistory(ManhourUpdateSearch keySearch, string userId)
         {
             DateTime today = DateTime.Now;
@@ -448,45 +520,19 @@ namespace ProjectTeamNET.Service.Implement
             }
            
         }      
+
         //Get History search
-        public async Task<List<UserScreenItem>> GetHistorySearch(string userId)
+        public async Task<List<UserScreenItem>> GetHistorySearchByUserNo(string userId)
         {
             var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectHistory");
            
             List<UserScreenItem> userScreenItems = await manhourRepository.Search<UserScreenItem>(query, new { user_no = userId });            
             
             return userScreenItems;
-        }
+        }                  
 
-        // get user in group
-        public ManhourUpdateUserSelectList GetUserInGroup(string groupId)
-        {
-            ManhourUpdateUserSelectList resultUser = new ManhourUpdateUserSelectList();
-            List<User> listUsers = (List<User>)dbUsers.Where(e => e.Group_code == groupId).ToList();         
-            List<SelectListItem> userSelectList = new List<SelectListItem>();
-            foreach (var item in listUsers)
-            {
-                userSelectList.Add(new SelectListItem() { Value = item.User_no, Text = item.User_no + "[" + item.User_name + "]" });
-            }
-            resultUser.listUser = userSelectList;
-            return resultUser ;
-        }            
-        // check file exists and file = csv 
-        public bool CheckFileCSV(string fileName)
-        {
-            var fileExt = Path.GetExtension(fileName).Substring(1).ToLower();
-            if (!File.Exists(fileName))
-            {
-                return false;
-            }
-            else if(fileExt != "csv")
-            {
-                return false;
-            }
-            return true;
-        }
         // check header file csv duplicate header data
-        public bool CheckHeaderFileCSV(string header)
+        public bool IsCheckHeaderFileCSV(string header)
         {
             string[] listHeaderCSV = header.Split(",");
             string[] listHeader = HEADER.Split(",");
@@ -503,7 +549,8 @@ namespace ProjectTeamNET.Service.Implement
             }
             return true;
         }      
-        public async Task<int> UpdateManhours(Manhour manhours)
+
+        public int UpdateManhours(Manhour manhours)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "UpdateManhour");
@@ -556,7 +603,8 @@ namespace ProjectTeamNET.Service.Implement
           
             return result;
         }
-        public async Task<int> DeleteManhours(List<ManhourUpdateKey> manhours)
+
+        public int DeleteManhours(List<ManhourUpdateKey> manhours)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "DeleteManhour");
@@ -577,30 +625,9 @@ namespace ProjectTeamNET.Service.Implement
                 result =  manhourRepository.Update<Manhour>(query, keys);
             }
             return result;
-        }
-        public bool CheckImport(ManhourUpdateViewModel manhour)
-        {
-
-            List<string> list = new List<string>();
-            var keys = new
-            {
-                Year = manhour.Year,
-                Month = manhour.Month,
-                User_no = manhour.User_no.Trim(),
-                Theme_no = manhour.Theme_no.Trim(),
-                Work_contents_code = manhour.Work_contents_code.Trim(),
-                Work_contents_detail = manhour.Work_contents_detail.Trim()
-
-            };
-            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "CheckImport");
-            int result = manhourRepository.Select<ManhourUpdate>(query, keys).Result.Count;
-            if (result != 0)
-            {
-                return true;
-            }
-            return false;
         }       
-        public bool CheckExist(Manhour manhour)
+
+        public bool IsExistManhour(Manhour manhour)
         {
           
             List<string> list = new List<string>();
@@ -623,6 +650,7 @@ namespace ProjectTeamNET.Service.Implement
             }
             return false;
         }
+
         public async Task<SelectThemeModel> SearchThemes(SearchThemeParam param, string user_no)
         {
             var addListTheme = new List<string>();
@@ -695,18 +723,20 @@ namespace ProjectTeamNET.Service.Implement
             };
 
             SelectThemeModel model = new SelectThemeModel();
-            model.Themes = await themeRepository.Select<Theme>(query, paramQuery);
+            model.Themes = await manhourRepository.Select<Theme>(query, paramQuery);
             // set history input to return view 
             model.HistoryInput = param;
 
             return model;
         }
+
         public async Task<List<WorkContents>> GetWorkContents()
         {
             var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectWorkContent");
             List<WorkContents> result = await groupRepository.Select<WorkContents>(query);
             return result;
         }
+
         public async Task<string> GetWordConteClass(string themeNo)
         {
             var key = new
@@ -721,6 +751,7 @@ namespace ProjectTeamNET.Service.Implement
             }
             return result[0];
         }
+
         public async Task<User> GetUser(string userNo)
         {
             var key = new

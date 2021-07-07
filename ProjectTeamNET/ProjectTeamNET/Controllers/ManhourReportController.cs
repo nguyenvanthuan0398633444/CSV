@@ -17,18 +17,18 @@ namespace ProjectTeamNET.Controllers
     {
         private readonly IManhourReportService manhourReportService;
 
+        private string user = "";
         public ManhourReportController(IManhourReportService manhourReportService)
         {
             this.manhourReportService = manhourReportService;
         }
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            string user = "";
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
             }
-            var model = await manhourReportService.Init(user);
+            var model = manhourReportService.Init(user);
             return View(model);
         }
         [HttpGet("/ManhourReport/AddTheme/{count}")]
@@ -54,6 +54,10 @@ namespace ProjectTeamNET.Controllers
         [HttpPost("/ManhourReport/GetDataCSV")]
         public async Task<IActionResult> GetDataCSV(ManHourReportSearch data)
         {
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            {
+                user = HttpContext.Session.GetString("userNo").ToUpper();
+            }
             var exportModel = await manhourReportService.GetDataReportCSV(data);
             if (exportModel.nameFile == "")
             {
@@ -62,25 +66,23 @@ namespace ProjectTeamNET.Controllers
             return Ok(new { data = exportModel.builder.ToString(), fileName = exportModel.nameFile, messenge = ""});
         }
         [HttpPost("/ManhourReport/SaveScreen")]
-        public async Task<IActionResult> SaveScreen(ManHourReportSearch data)
+        public IActionResult SaveScreen(ManHourReportSearch data)
         {
-            string user = "";
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
             }
-            var result = await manhourReportService.SaveScreen(data, user);
+            var result = manhourReportService.SaveScreen(data, user);
             return Ok(result);
         }
         [HttpGet("/ManhourReport/GetsScreen")]
-        public async Task<IActionResult> GetsScreen()
+        public IActionResult GetsScreen()
         {
-            string user = "";
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
             }
-            var result = await manhourReportService.GetsScreen(user);
+            var result = manhourReportService.GetsScreen(user);
             return Ok(result);
         }
 

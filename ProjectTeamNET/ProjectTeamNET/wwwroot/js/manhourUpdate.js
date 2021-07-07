@@ -166,21 +166,16 @@ $("#fileCSVimport").on('change', function () {
         processData: false,
         success: async function (result) {
             $('#warningCSV').empty();
-            if (result.messages == "メッセージエリア表示") {
-                
-                $('#warningCSV').append(`<div class="alert alert-warning mb-2"  role="alert">
-                                            <strong> アラート</strong > メッセージエリア表示 </div >`);                      
-            }
-            else if (result.messages == "Header does not match") {
-                $('#warningCSV').append(`<div class="alert alert-warning mb-2"  role="alert">
-                                            <strong> アラート</strong > タイトルが一致しません </div >`);               
-            }
-            else {  
+            if (result.messages == "CSVアップロードが正常終了しました")
+            {                
                 await search();
                 $('#warningCSV').append(`<div class="alert alert-primary mb-2"  role="alert">
                                             <strong> アラート</strong > - セーブに成功！</div >`);
-                
-            }          
+            }
+            else {
+                $('#warningCSV').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > ${result.messages} >`);               
+            }                
         },
         error: function () {
             alert("Error occurs");
@@ -299,6 +294,13 @@ $("#choiceTheme").on("click", function addTheme() {
         $("#theme").val(theme);
     });
 /* Handle select theme evet*/
+$('#workContentDetail').on("change", function () {
+    var workDetail = $('#workContentDetail').val();
+    if (workDetail.match(/[a-z]/gi) || workDetail.length > 2) {
+        $('#workContentDetail').val("");
+        return alert("その他の入力値00-99");
+    }
+});
 $("#addTheme").on("click",
     function () {
         let workContentCode = $('#wordContents').val();
@@ -359,6 +361,7 @@ $("#addTheme").on("click",
         $(`.${start.getDate()}`).css("background-color", "#bee5eb");       
         //set theme information to null
         themeNo = null; themeName = null; workContentClass = null;
+        $('#theme').val("");
     });
 
 $("#tbody").on("click", ".delete-Theme", function () {

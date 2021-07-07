@@ -186,6 +186,15 @@
   <data name="ERR_023" xml:space="preserve">
     <value>内外販区分が正しくありません</value>
   </data>
+  <data name="ERR_024" xml:space="preserve">
+    <value>{0}が必要です</value>
+  </data>
+  <data name="ERR_025" xml:space="preserve">
+    <value>グループユーザーは空にすることはできません</value>
+  </data>
+  <data name="ERR_026" xml:space="preserve">
+    <value>名前の保存が必要で、&lt;= 40文字</value>
+  </data>
   <data name="INF_001" xml:space="preserve">
     <value>{0}が正常終了しました</value>
   </data>
