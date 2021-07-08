@@ -36,7 +36,6 @@ namespace ProjectTeamNET.Service.Implement
                                     IBaseRepository<Manhour> manhourRepository,
                                     IBaseRepository<Group> groupRepository,
                                     IBaseRepository<SalesObject> saleRepository,
-                                    IBaseRepository<Theme> themeRepository,
                                     IBaseRepository<UserScreenItem> screenRepository)
         {
             this.dbUsers = context.Set<User>();
@@ -51,8 +50,8 @@ namespace ProjectTeamNET.Service.Implement
         public async Task<ManhourUpdate> GetGroupAndUser(string userId)
         {
             ManhourUpdate model = new ManhourUpdate();
-            string role = await GetFunctionClassByUserNo(userId);
-            if (role != "0")
+            string functionClass = await GetFunctionClassByUserNo(userId);
+            if (functionClass != "0")
             {
                 DateTime today = DateTime.Now;
                 model.today = today.ToString("yyyy/MM/dd").Substring(0, 7);              
@@ -69,7 +68,7 @@ namespace ProjectTeamNET.Service.Implement
                 List<SelectListItem> saleObjSelectlist = new List<SelectListItem>();
                 List<SelectListItem> groupSelectListTheme = new List<SelectListItem>();
                 List<SelectListItem> wordContentSelectList = new List<SelectListItem>();
-                if(role == "2")
+                if(functionClass == "2")
                 {
                     foreach (var item in groups)
                     { 
@@ -174,26 +173,32 @@ namespace ProjectTeamNET.Service.Implement
             return null;
         }
 
-        public async Task<ManHourUpdateSearchModel> Search(ManhourUpdateSearch keySearch, string userId)
+        public async Task<ManHourUpdateSearchModel> Search(ManhourUpdateSearch keySearch, string userId, string siteCode)
         {
+            string[] screenItem = { "GROUP_CODE", "USER_NO", "SITE_CODE", "YEAR", "MONTH" };
+            string[] screenInput = { keySearch.Group, keySearch.User, siteCode, keySearch.Year, keySearch.Month };
+            DateTime today = DateTime.Now;
+            string surrogateUserKey = userId + today.ToString("yyyyMMddHHmmss") + "00";
             List<UserScreenItem> history = await GetHistorySearchByUserNo(userId);
             if (history.Count != 0)
-            {
+            {                
                 foreach (var item in history)
                 {
-                    if (item.Screen_item == "GROUP_CODE")
-                    {
-                        UpdateUserScreenItemByUserNo("GROUP_CODE", keySearch.Group, userId);
-                    }
-                    if (item.Screen_item == "USER_NO")
-                    {
-                        UpdateUserScreenItemByUserNo("USER_NO", keySearch.User, userId);
-                    }
-                }
+                    await screenRepository.Delete(item.Surrogate_key);
+                }                               
             }
-            else
+            for (int i = 0; i < 5; i++)
             {
-                InsertHistory(keySearch, userId);
+                UserScreenItem userScreenItem = new UserScreenItem()
+                {
+                    Surrogate_key = surrogateUserKey + i.ToString(),
+                    User_no = userId,
+                    Screen_url = "ManhourUpdate",
+                    Screen_item = screenItem[i],
+                    Screen_input = screenInput[i],
+                    Save_name = ""
+                };
+                screenRepository.Create(userScreenItem);
             }
             ManHourUpdateSearchModel model = new ManHourUpdateSearchModel();
             model.models = await GetDataSearchByKeySearch(keySearch);
@@ -393,7 +398,7 @@ namespace ProjectTeamNET.Service.Implement
 
         public async Task<string> GetFunctionClassByUserNo(string userId)
         {
-            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectRole");
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectFunctionClass");
             List<string> functionClass = await manhourRepository.Search<string>(query, new { user_no = userId });
             return functionClass.FirstOrDefault();
         }
@@ -476,55 +481,10 @@ namespace ProjectTeamNET.Service.Implement
             return resultSearch;
         }
 
-        public void UpdateUserScreenItemByUserNo(string screenItem, string screenInput, string userNo)
-        {
-            var param = new
-            {
-                screenItem = screenItem,
-                screenInput = screenInput,
-                userNo = userNo,               
-            };
-            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "UpdateUserScreenItems");
-            manhourRepository.Update<UserScreenItem>(query, param);          
-        }
-
-        public void InsertHistory(ManhourUpdateSearch keySearch, string userId)
-        {
-            DateTime today = DateTime.Now;
-            if (keySearch.User != null)
-            {
-                string surrogateUserKey = userId + today.ToString("yyyyMMddHHmmss") + "001";
-                UserScreenItem historyGroup = new UserScreenItem()
-                {
-                    Surrogate_key = surrogateUserKey,
-                    User_no = userId,
-                    Screen_url = "Manhourupdate",
-                    Screen_item = "USER_NO",
-                    Screen_input = keySearch.User,
-                    Save_name = ""
-                };
-                userScreenItemRepository.Create(historyGroup);
-            }
-            if (keySearch.Group != null)
-            {              
-                string surrogateGroupKey = userId + today.ToString("yyyyMMddHHmmss") + "000";
-                UserScreenItem historyGroup = new UserScreenItem() {
-                    Surrogate_key = surrogateGroupKey,
-                    User_no = userId,
-                    Screen_url = "Manhourupdate",
-                    Screen_item = "GROUP_CODE",
-                    Screen_input = keySearch.Group,
-                    Save_name = ""
-                };
-                userScreenItemRepository.Create(historyGroup);
-            }
-           
-        }      
-
         //Get History search
         public async Task<List<UserScreenItem>> GetHistorySearchByUserNo(string userId)
         {
-            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectHistory");
+            var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectHistoryManhourUpdate");
            
             List<UserScreenItem> userScreenItems = await manhourRepository.Search<UserScreenItem>(query, new { user_no = userId });            
             
@@ -656,7 +616,7 @@ namespace ProjectTeamNET.Service.Implement
             var addListTheme = new List<string>();
 
             //update screen item
-            var updateScreenItem = QueryLoader.GetQuery("ManhourUpdateQuery", "UpdateUserScreenItem");
+            var updateScreenItem = QueryLoader.GetQuery("ManhourUpdateQuery", "UpdateUserScreenItemTheme");
 
             List<string> items = new List<string>
             {
@@ -704,7 +664,6 @@ namespace ProjectTeamNET.Service.Implement
             {
                 addListTheme.Add("SoldFlg");
             }
-
             var query = QueryLoader.GetQuery("ManhourUpdateQuery", "SelectHistoryThemeSelected", addListTheme);
 
             //if sold flag is null or empty set default value is empty

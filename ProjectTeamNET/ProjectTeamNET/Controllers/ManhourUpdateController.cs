@@ -35,12 +35,14 @@ namespace ProjectTeamNET.Controllers
         [HttpPost("/ManhourUpdate/Search")]
         public async Task<JsonResult> Search(ManhourUpdateSearch keySearch)
         {
+            string siteCode = "";
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
+                siteCode = HttpContext.Session.GetString("siteCode").ToUpper();
             }
             ManHourUpdateSearchModel result = new ManHourUpdateSearchModel();
-            result = await manhourUpdateService.Search(keySearch,user);
+            result = await manhourUpdateService.Search(keySearch,user,siteCode);
             return Json(new { data = result });
         }
 
@@ -75,6 +77,10 @@ namespace ProjectTeamNET.Controllers
         [HttpPost]
         public async Task<JsonResult> SearchThemes(SearchThemeParam param)
         {
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            {
+                user = HttpContext.Session.GetString("userNo").ToUpper();
+            }
             SelectThemeModel data = await manhourUpdateService.SearchThemes(param, user);
             if (data.Themes.Count >= 1000)
             {

@@ -32,7 +32,7 @@
 								and t1.user_no = :User
 						</addif>
   </query>
-	<query id="SelectRole">
+	<query id="SelectFunctionClass">
     select distinct(u2.function_class ), u2.screen_url
 		from m_user as u1 
 				inner join m_role as u2 on u1.role_code = u2.role_code
@@ -42,14 +42,15 @@
 			</addif>		
   </query>
   
-  <query id="SelectHistory">
-			select * from m_user_screen_item as u
-			where 1=1
-			and (u.screen_item ='GROUP_CODE' or u.screen_item = 'USER_NO')	
-			<addif key ="user_no">
+  <query id="SelectHistoryManhourUpdate">
+    select * 
+    from m_user_screen_item as u 
+    where
+    screen_url = 'ManhourUpdate' 
+    <addif key ="user_no">
 					and u.user_no = :user_no
-			</addif>
-			order by u.screen_item 
+		</addif>
+    order by u.screen_item
   </query>
 	<query id="SelectHoliday">
 		SELECT
@@ -85,21 +86,6 @@
 						and tem.user_no = :User
 				</addif>
 	</query>
-	<query id="UpdateUserScreenItems">
-    update public.m_user_screen_item as item
-        set
-						<addif key ="screenInput">
-							screen_input = :screenInput
-						</addif>
-        where 
-						1=1
-						<addif key ="screenItem">
-							and screen_item = :screenItem
-						</addif>          
-            <addif key ="userNo">
-							and item.user_no = :userNo
-						</addif>
-  </query>
   <query id ="InsertUserScreenItems">
     INSERT
     INTO public.m_user_screen_item(
@@ -136,7 +122,7 @@
 			AND
 				work_contents_detail = :Work_contents_detail
 	</query>
-  <query id="UpdateUserScreenItem">
+  <query id="UpdateUserScreenItemTheme">
 
     UPDATE  m_user_screen_item
     SET     screen_input =:ScreenInput
@@ -230,15 +216,7 @@
       and work_contents_detail = :Work_contents_detail
     </addif>	
   </query>
-  
-  <query id="SelectWorkContent">
-
-		SELECT DISTINCT work_contents_code, work_contents_code_name  
-		FROM			m_work_contents
-		ORDER BY		work_contents_code
-
-	</query>
-  
+   
   <query id="SelectUser">
     select * 
     from m_user
@@ -256,49 +234,4 @@
         theme_no = :themeNo
       </addif>   
   </query>
-  <query id="UpdateUserScreenItem">
-
-    UPDATE  m_user_screen_item
-    SET     screen_input =:ScreenInput
-    WHERE
-    screen_url =:ScreenUrl
-    AND
-    user_no =:UserNo
-    AND
-    screen_item = :ScreenItem
-  </query>
-  <query id="SelectHistoryThemeSelected">
-
-    SELECT
-    *
-    FROM
-    m_theme
-    WHERE
-    1=1
-    <addif key="ThemeNo" >
-      AND  theme_no = :ThemeNo
-    </addif>
-    <addif key="ThemeName" >
-      AND theme_name1 like :ThemeName OR theme_name2 like :ThemeName
-    </addif>
-    <addif key="SoldFlg" >
-      AND  sold_flg = :SoldFlg
-    </addif>
-    <addif key="GroupCode" >
-      AND accounting_group_code = :GroupCode
-    </addif>
-    <addif key="ObjectCode" >
-      AND sales_object_code = :ObjectCode
-    </addif>
-
-  </query>
-  <query id="SelectWorkContent">
-
-    SELECT DISTINCT work_contents_code, work_contents_code_name
-    FROM			m_work_contents
-    ORDER BY		work_contents_code
-
-  </query>
-
-
 </root>

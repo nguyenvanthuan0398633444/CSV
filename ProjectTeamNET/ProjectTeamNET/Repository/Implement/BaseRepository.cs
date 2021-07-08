@@ -162,7 +162,7 @@ namespace ProjectTeamNET.Repository.Implement
             }
             catch(Exception e)
             {
-                _ = e.Message;
+                _ = e.Message; 
                 return 0;
             }
             return 1;

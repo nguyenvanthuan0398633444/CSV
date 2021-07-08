@@ -5,10 +5,14 @@ let row = 1;
 let listForUpdate = new Array();
 let listNeedUpdate = new Array();
 const HEADER = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+let tooltipWarning = '<i class="fas fa-exclamation-circle text-warning error" data-toggle="tooltip" title="合計工数が8h未満です"></i>';
+let tooltipDanger = '<i class="fas fa-exclamation-circle text-danger hour-max" data-toggle="tooltip" title="労働時間の合計が24hを超えることはできません。"></i> ';
+
 //format date return string date 2021/06/18
 formatDate = function (date) {
     return date.toISOString().slice(0, 10).replace(/-/g, "/");
 }
+
 // get user
 $("#groups").change(function users() {
     var group = $("#groups").val();
@@ -26,6 +30,7 @@ $("#groups").change(function users() {
         }
         });
 })
+
 // search
 async function search() {
     $('#tbody').empty();
@@ -96,26 +101,12 @@ async function search() {
                         <td></td>
                         <td>合計</td>
                         <td></td>`        
-            let day = 0;                               
+            let day = 0;   
+            // sum day
             for (var item in tmp) {
-
-                if (tmp[item] == 8 || holiday.find(element => element == day) != undefined || item == 0 || item > today.getDate()) {
-                    tfoot += `<td class="${day} ${'sumday' + day++}">
-                                ${tmp[item].toFixed(1)} <i class="error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
-                             </td>`
-                }
-                else {
-                    if (tmp[item] == 0) {
-                        tfoot += `<td class="${day} ${'sumday' + day++}">
-                                    ${tmp[item].toFixed(1)} <i class="fas fa-exclamation-circle text-danger error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
-                                 </td>`                      
-                    }
-                    else {
-                        tfoot += `<td class="${day} ${'sumday' + day++}">
-                                      ${tmp[item].toFixed(1)}<i class="fas fa-exclamation-circle text-warning error" data-toggle="tooltip" title="合計工数が8h未満です"></i> 
-                                  </td>`
-                    }
-                }               
+                var sum = setSumAndTooltip(tmp[item],day);
+                tfoot += `<td class="${day} ${'sumday' + day}">${sum}</td>`;
+                day++;
             }
             tfoot +=` </tr> 
                       <tr>
@@ -140,10 +131,12 @@ async function search() {
             // color today
             $(`.${today.getDate()}`).css("background-color", "#bee5eb");       
             $('#warningCSV').empty();
+            // alert <8h 
             checkTotalHours();
         }
     });
 }
+
 // Export file CSV
 $('#ExportCsv').click(function () {
     var _group = $('#groups').val();
@@ -151,6 +144,7 @@ $('#ExportCsv').click(function () {
     var url = "/ManhourUpdate/ExportCSV?user=" + _user + "&group=" + _group;
     $(location).attr('href', url);
 });
+
 // Import file CSV
 $("#fileCSVimport").on('change', function () {
     var files = $('#fileCSVimport').prop("files");
@@ -182,6 +176,7 @@ $("#fileCSVimport").on('change', function () {
         }
     });
 }); 
+
 //save information into DB
 $("#btSave").on("click",function () {
     let dayGet = 'day' + new Date().getDate();
@@ -273,6 +268,7 @@ $("#searchTheme").on("click",
             }
         });
     });
+
 //get information when onclick add theme form checked row
 let themeNo = null;
 let themeName = null;
@@ -292,13 +288,18 @@ $("#choiceTheme").on("click", function addTheme() {
         $('#modal1').modal('hide');
         $('#themeSelected2').val(theme);
         $("#theme").val(theme);
-    });
+});
+
 /* Handle select theme evet*/
 $('#workContentDetail').on("change", function () {
     var workDetail = $('#workContentDetail').val();
     if (workDetail.match(/[a-z]/gi) || workDetail.length > 2) {
         $('#workContentDetail').val("");
-        return alert("その他の入力値00-99");
+        $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > - その他の入力値00-99！</div >`)
+        return setTimeout(function () {
+            $('#warningSave').empty();
+        }, 1000);
     }
 });
 $("#addTheme").on("click",
@@ -306,16 +307,27 @@ $("#addTheme").on("click",
         let workContentCode = $('#wordContents').val();
         let workContentDetail = $('#workContentDetail').val();
         if (!themeNo || !themeName || !workContentClass) {
-            alert("please choice theme!");
-            return;
+            $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > - please choice theme! </div >`);
+            return setTimeout(function () {
+                $('#warningSave').empty();
+            }, 1000);
         }
         if (!workContentDetail) {
-            alert("please choice work contents!");
-            return;
+          
+            $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > - please choice work contents! </div >`);
+            return setTimeout(function () {
+                $('#warningSave').empty();
+            }, 1000);
         }
         if (!workContentCode) {
-            alert("please choice work content code!");
-            return;
+           
+            $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
+                                            <strong> アラート</strong > - please choice work content code!！</div >`);
+            return setTimeout(function () {
+                $('#warningSave').empty();
+            }, 1000);
         }
 
         var rowAdd = '';
@@ -363,7 +375,7 @@ $("#addTheme").on("click",
         themeNo = null; themeName = null; workContentClass = null;
         $('#theme').val("");
     });
-
+// delete 1 row
 $("#tbody").on("click", ".delete-Theme", function () {
     var obj = {};
     if (confirm('Do you want to delete this row?')) {
@@ -384,11 +396,20 @@ $("#tbody").on("click", ".delete-Theme", function () {
                 sumValueRow += parseFloat($(this).val());
             });
             sum += sumValueRow;
-            $('.sum' + addressRow).html(sumValueRow.toFixed(1));
+            var sumAndtooltip = setSumAndTooltip(sumValueRow,i);
+            $('.sum' + addressRow).html(sumAndtooltip);
+
+            if (8 - sumValueRow <= 0 || i > today.getDate() || holiday.find(element => element == i) != undefined) {
+                $('.missing' + addressRow).html('');
+            } else {
+                $('.missing' + addressRow).html((8 - sumValueRow).toFixed(1));
+                
+            }
         }
         $('.sumday0').html(sum.toFixed(1));
     }
 });
+
 function loadSelectTheme() {
     $('#slThemeBody').html('');
     $.ajax({
@@ -628,6 +649,7 @@ function changeTheme(el) {
         });
     });
 }
+// alert <8h 
 function checkTotalHours() {
     $('#warningDay').empty();
     for (var i = 1; i <= 31; i++) {
@@ -644,4 +666,24 @@ function checkTotalHours() {
         }
        
     }
+}
+
+function setSumAndTooltip(sum,day) { 
+    var sumAndtooltip = "";
+    if (day == 0) {
+        sumAndtooltip = ` ${sum.toFixed(1)} <i class="error" data-toggle="tooltip" title=""></i>`
+    }
+    else if (sum > 24) {
+        sumAndtooltip = ` ${sum.toFixed(1)} ${tooltipDanger}`
+    }
+    else if (sum == 8 || holiday.find(element => element == day) != undefined || day > today.getDate()) {
+        sumAndtooltip = ` ${sum.toFixed(1)} <i class="error" data-toggle="tooltip" title=""></i>`
+    }
+    else if (sum == 0) {
+        sumAndtooltip = ` ${sum.toFixed(1)} ${tooltipDanger} `
+    }
+    else {
+        sumAndtooltip = `${sum.toFixed(1)}${tooltipWarning} `
+    }
+    return sumAndtooltip;
 }
