@@ -194,7 +194,6 @@ $('#draw').append(`
     <table class="table table-striped table-bordered table-sm" style="width:100px; overflow-y: scroll;">
         <thead class="thead-light">
             <tr>
-            
                 ${thead}
             </tr>
         </thead>

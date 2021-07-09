@@ -13,6 +13,7 @@ namespace ProjectTeamNET.Models.Response
 
         public string Theme_name1 { get; set; }
         public string Work_contents_code_name { get; set; }
+        public string Theme_name2 { get; set; }
         List<int> Holiday { get; set; }
     }
 }

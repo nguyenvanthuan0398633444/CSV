@@ -14,11 +14,5 @@ namespace ProjectTeamNET.Models.Request
         public string User_no { get; set; }
  
         public string Theme_no { get; set; }
-
-        public string Work_contents_class { get; set; }
-
-        public string Work_contents_code { get; set; }
-
-        public string Work_contents_detail { get; set; }
     }
 }

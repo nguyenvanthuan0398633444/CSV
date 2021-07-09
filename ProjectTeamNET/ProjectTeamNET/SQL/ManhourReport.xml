@@ -17,8 +17,8 @@
 	
 	<query id="queryManReport">
 		select
-           mh.year
-			, mh.month
+           mh.year as Year
+			, mh.month as Month
 			, mh.user_no as UserCode
 			, u.user_name as UserName
 			, mh.group_code as GroupCode 

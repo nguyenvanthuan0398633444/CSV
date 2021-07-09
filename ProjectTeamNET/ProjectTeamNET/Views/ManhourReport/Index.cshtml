@@ -63,7 +63,7 @@
             <div class="col-md-10">
                 <div class="row align-items-center" id="addFirst">
                     <div class="col-md-4 input-group pl-0" style="margin-bottom: auto;">
-                        <select class="form-control form-control-sm" id="GroupId1">
+                        <select class="form-control form-control-sm" id="GroupId1" onchange="GroupChange(1)">
                             <option></option>
                             @foreach (var item in Model.GroupName)
                             {
@@ -84,7 +84,6 @@
                 </div>
             </div>
         </div>
-        <div id="addUser2"></div>
 
         <div class="form-group row" id="btn_addUser" hidden>
             <div class="col-md-2"></div>
@@ -168,11 +167,11 @@
                     <div class="col-auto">
                         <p class="m-0">選択しない項目</p>
                         <select multiple style="height:200px; width:150px;" id="NotSelect">
+                            <option value="affiliation">所属</option>
                             <option value="user">ユーザ</option>
                             <option value="theme">テーマ</option>
                             <option value="workcontent">作業内容</option>
                             <option value="detailworkcontent">作業内容詳細</option>
-                            <option value="affiliation">所属</option>
                             <option value="overalltotal">全体合計</option>
                             <option value="monthlytotal">月別合計</option>
                             <option value="dailytotal">日別合計</option>

@@ -22,8 +22,9 @@ namespace ProjectTeamNET.Service.Implement
     {
 
         const string FORMATDATE = "yyyy/MM/dd";
-        const string HEADER = "年,月,ユーザNo,ユーザ名,テーマＮｏ,テーマ名,内容コード,内容名,内容詳細コード,合計," +
-                       "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,Fix_Date";
+        const string HEADER = "年,月,ユーザNo,所属コード,サイトコード,テーマNO,作業内容区分,作業内容コード,作業内容詳細,ピン止めフラグ,合計," +
+                              "1日,2日,3日,4日,5日,6日,7日,8日,9日,10日,11日,12日,13日,14日,15日,16日,17日,18日,19日," +
+                              "20日,21日,22日,23日,24日,25日,26日,27日,28日,29日,30日,31日,確定日付";
         private readonly IBaseRepository<Manhour> manhourRepository;
         private readonly IBaseRepository<SalesObject> saleRepository;
         private readonly IBaseRepository<UserScreenItem> screenRepository;
@@ -49,32 +50,13 @@ namespace ProjectTeamNET.Service.Implement
             model.Groups = await GetGroups();
             model.Objects = await saleRepository.Gets();
             model.DateSelect = date.ToString(FORMATDATE);
-
+            model.pageHistory = null;
             //Check screen item history button to return view Day/week/month
             List<UserScreenItem> pageHistory = await GetsScreenItemHistory(pModel.UserNo, "ManhourInput");
-
             if (pageHistory.Count != 0)
             {
                 model.pageHistory = pageHistory.FirstOrDefault().Screen_item;
             }
-            else
-            {
-                //Insert new a user screen item into database
-                string key =pModel.UserNo+DateTime.Now.ToString("yyyyMMddHHmmss");
-                key += 0.ToString("D3");
-                UserScreenItem user = new UserScreenItem
-                {
-                        Surrogate_key = key,
-                        User_no = pModel.UserNo,
-                        Screen_url = "ManhourInput",
-                        Screen_item = "ManhourInput",
-                        Screen_input = null,
-                        Save_name = null
-                };
-                screenRepository.Create(user);
-                model.pageHistory = null;
-            }
-            
             return model;
         }
         /// <summary>
@@ -95,7 +77,7 @@ namespace ProjectTeamNET.Service.Implement
             model.ManhourDatas   = await GetManhours(pModel);
             model.DateSelect     = date.ToString(FORMATDATE);
             model.ListDateOfWeek = GetListDayOfWeek(date);
-            model.Horlidays      = await GetHorliday(hparam);
+            model.Holidays      = await GetHoliday(hparam);
 
             //Check pin themes and insert if not exits in manhour
             List<ManhourInput> pinThemes = await GetPinTheme(pModel);
@@ -156,7 +138,7 @@ namespace ProjectTeamNET.Service.Implement
                             pinManhour.Work_contents_detail
                         };
 
-                        int result = await manhourRepository.Update(query, keys);
+                        int result =  manhourRepository.Update(query, keys);
                     }
                 }
 
@@ -300,7 +282,7 @@ namespace ProjectTeamNET.Service.Implement
                     ScreenInput = screenInput
                 };
 
-               await manhourRepository.Update(updateScreenItem, updateParam);
+                manhourRepository.Update(updateScreenItem, updateParam);
             }
                          
             // check condition for where to get data
@@ -353,14 +335,14 @@ namespace ProjectTeamNET.Service.Implement
         /// Handle save data form client to db
         /// </summary>
         /// <param name="screenItems"></param>
-        public async Task<bool> Save(SaveData saveDatas, UserInfo user)
+        public bool Save(SaveData saveDatas, UserInfo user)
         {
             var result = 0;
             //Insert new record in save list 
             if (saveDatas.Insert.Count != 0)
             {
                 result = Create(saveDatas.Insert,user);
-                if (result <= 0)
+                if (result < 0)
                 {
                     return false;
                 }
@@ -369,13 +351,13 @@ namespace ProjectTeamNET.Service.Implement
             //Update theme change
             if(saveDatas.NeedUpdate.Count !=0 && saveDatas.ForUpdate.Count != 0)
             {
-                result = await ChangeManhour(saveDatas.NeedUpdate, saveDatas.ForUpdate);
+                result =  ChangeManhour(saveDatas.NeedUpdate, saveDatas.ForUpdate, user.User_no);
             }
             //update information 
             if (saveDatas.Update.Count != 0)
             {
-                result = await UpdateManhours(saveDatas.Update,user.User_no);
-                if (result <= 0)
+                result =  UpdateManhours(saveDatas.Update,user.User_no);
+                if (result < 0)
                 {
                     return false;
                 }
@@ -383,13 +365,13 @@ namespace ProjectTeamNET.Service.Implement
             //Delete in list delete
             if (saveDatas.Delete.Count != 0)
             {
-                result = await DeleteManhours(saveDatas.Delete,user.User_no);
+                result =  DeleteManhours(saveDatas.Delete,user.User_no);
                 if (result < 0)
                 {
                     return false;
                 }
             }
-            return result > 0;
+            return result >= 0;
         }
         /// <summary>
         /// Return list dayofweek need get
@@ -451,7 +433,7 @@ namespace ProjectTeamNET.Service.Implement
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        public async Task<int> UpdateManhours(List<Manhour> manhours, string user_no)
+        public  int UpdateManhours(List<Manhour> manhours, string user_no)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "UpdateManhour");
@@ -468,7 +450,7 @@ namespace ProjectTeamNET.Service.Implement
                     mh.Day20,mh.Day21,mh.Day22,mh.Day23,mh.Day24,mh.Day25,mh.Day26,mh.Day27,mh.Day28,
                     mh.Day29,mh.Day30,mh.Day31,mh.Fix_date
                 };
-                result = await manhourRepository.Update(query, param);
+                result =  manhourRepository.Update(query, param);
             }
             return result;
         }
@@ -477,7 +459,7 @@ namespace ProjectTeamNET.Service.Implement
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        public async Task<int> DeleteManhours(List<Manhour> manhours, string user_no)
+        public int DeleteManhours(List<Manhour> manhours, string user_no)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "DeleteManhour");
@@ -495,7 +477,7 @@ namespace ProjectTeamNET.Service.Implement
                     mh.Work_contents_code,
                     mh.Work_contents_detail
                 };
-                result = await manhourRepository.Update(query, keys);
+                result =  manhourRepository.Update(query, keys);
             }
             return result;
         }
@@ -560,24 +542,43 @@ namespace ProjectTeamNET.Service.Implement
         /// Save screen item cliked
         /// </summary>
         /// <param name="pModel"></param>
-        public async void SavePageHistory(InputParamModel pModel)
+        public bool SavePageHistory(InputParamModel pModel)
         {
-            var updateScreenItem = QueryLoader.GetQuery("ManhourInput", "UpdatePage");
-            var updateParam = new
+            //delete user screen in database
+            var delScreenItem = QueryLoader.GetQuery("ManhourInput", "DeleteScreenItem");
+            var delParam = new
             {
-                ScreenItem = pModel.PageName,
                 ScreenUrl = "ManhourInput",
-                UserNo = pModel.UserNo,
+                pModel.UserNo,
             };
 
-            await screenRepository.Update(updateScreenItem, updateParam);
+            var result = screenRepository.Update(delScreenItem, delParam);
+            if (result < 0)
+            {
+                return false;
+            }
+            //Insert new a user screen item into database
+            string key = pModel.UserNo + DateTime.Now.ToString("yyyyMMddHHmmss");
+            key += 0.ToString("D3");
+            UserScreenItem user = new UserScreenItem
+            {
+                Surrogate_key = key,
+                User_no = pModel.UserNo,
+                Screen_url = "ManhourInput",
+                Screen_item = pModel.PageName,
+                Screen_input = null,
+                Save_name = null
+            };
+            result=screenRepository.Create(user);
+
+            return result >= 0;
         }
         /// <summary>
         /// get list holiday by sitecode month and year
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<List<int>> GetHorliday(HolidayParam param)
+        public async Task<List<int>> GetHoliday(HolidayParam param)
         {
 
             var query = QueryLoader.GetQuery("ManhourInput", "SelectHorliday");
@@ -615,8 +616,8 @@ namespace ProjectTeamNET.Service.Implement
 
             foreach (var item in result)
             {
-                buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no}, {item.User_name}, {item.Theme_no}, {item.Theme_name1}, " +
-                                   $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail}, " +
+                buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no},{item.Group_code},{item.Site_code}, {item.Theme_no}," +
+                                   $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail},{item.Pin_flg}, " +
                                    $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, " +
                                    $"{item.Day3:0.0},{item.Day4:0.0}, " +
                                    $"{item.Day5:0.0}, {item.Day6:0.0}, {item.Day7:0.0}, " +
@@ -657,15 +658,12 @@ namespace ProjectTeamNET.Service.Implement
                 keys.Month,
                 keys.User_no,
                 keys.Theme_no,
-                keys.Work_contents_class,
-                keys.Work_contents_code,
-                keys.Work_contents_detail
             };
             List<Manhour> result = await manhourRepository.Select<Manhour>(query, param);
             return result.Count > 0;
         }
 
-        public async Task<int> ChangeManhour(List<Manhour> oldData, List<Manhour> newData)
+        public int ChangeManhour(List<Manhour> oldData, List<Manhour> newData,string user_no)
         {
             var result = 0;
             var query = QueryLoader.GetQuery("ManhourInput", "ChangeManhour");
@@ -677,7 +675,7 @@ namespace ProjectTeamNET.Service.Implement
                 {
                     oldData[i].Year,
                     oldData[i].Month,
-                    oldData[i].User_no,
+                    User_no = user_no,
                     oldData[i].Theme_no,
                     oldData[i].Work_contents_class,
                     oldData[i].Work_contents_code,
@@ -687,7 +685,7 @@ namespace ProjectTeamNET.Service.Implement
                     Newwork_contents_code = newData[i].Work_contents_code,
                     NewWork_contents_detail = newData[i].Work_contents_detail,
                 };
-                result = await manhourRepository.Update(query, param);
+                result =  manhourRepository.Update(query, param);
             }
             return result;
         }

@@ -12,7 +12,10 @@
             </li>
             <li><span class="form-control-user">テスト太郎さん</span></li>
             <li class="nav-item text-nowrap">
-                <button type="button" class="btn btn-light">ログアウト <i class="fas fa-sign-out-alt"></i></button>
+                <button type="button" class="btn btn-light" 
+                        onclick="if (confirm('システムを終了しますか？')) {window.location = origin + '/Login/Logout';}">ログアウト 
+                        <i class="fas fa-sign-out-alt"></i>
+                </button>
             </li>
         </ul>
     </nav>

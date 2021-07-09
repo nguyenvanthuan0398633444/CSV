@@ -17,6 +17,10 @@ namespace ProjectTeamNET.Controllers
         public async Task<IActionResult> Index()
         {
             string userNo = HttpContext.Session.GetString("userNo");
+            if (userNo == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
             var result = await service.SendDataToController(userNo);
           
             return View(result);

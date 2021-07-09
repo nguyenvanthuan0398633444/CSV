@@ -52,25 +52,23 @@ namespace ProjectTeamNET.Repository.Implement
         public int Create(T obj)
         {
             int result = 0;
-
             using (IDbContextTransaction transaction = context.Database.BeginTransaction())
             {
                 try
                 {
                     dbset.Add(obj);
-                    result = context.SaveChanges();
-
                     transaction.Commit();
                 }
                 catch (Exception e)
                 {
                     _ = e.Message;
                     transaction.Rollback();
-                    result = 0;
+                    result = -1;
                 }
+                transaction.Dispose();
             }
-            context.SaveChanges();
-            result = 1;
+            
+            result = context.SaveChanges();
             return result;
         }
         public async Task<int> Update(T obj)
@@ -82,13 +80,14 @@ namespace ProjectTeamNET.Repository.Implement
                 {
                     dbset.Update(obj);
                     result = await context.SaveChangesAsync();
-
                     transaction.Commit();
                 }
                 catch (Exception)
                 {
                     transaction.Rollback();
+                    result = -1;
                 }
+                transaction.Dispose();
             }
 
             return result;
@@ -120,8 +119,6 @@ namespace ProjectTeamNET.Repository.Implement
             var query = await context.Database.GetDbConnection().QueryAsync<M>(sql, param);
             return query.FirstOrDefault();
         }
-
-
         public void Delete(T obj)
         {
             dbset.Remove(obj);
@@ -140,18 +137,25 @@ namespace ProjectTeamNET.Repository.Implement
           
             return rs;
         }
-        public async Task<int> Update(string sql, object param)
+        public int Update(string sql, object param)
         {
             var result = 0;
-            try
+            using (IDbContextTransaction transaction = context.Database.BeginTransaction())
             {
-                result = await context.Database.GetDbConnection().ExecuteAsync(sql, param);
+                try
+                {
+                    result = context.Database.GetDbConnection().Execute(sql, param);
+                    transaction.Commit();
+                }
+                catch (Exception e)
+                {
+                    _ = e.Message;
+                    transaction.Rollback();
+                    result = -1;
+                }
+                transaction.Dispose();
             }
-            catch(Exception e)
-            {
-                _ = e.Message;
-                result = 0;
-            }
+            result = context.SaveChanges();
             return result;
         }      
         public int Update<M>(string sql, object param)
@@ -179,8 +183,6 @@ namespace ProjectTeamNET.Repository.Implement
                 try
                 {
                     dbset.AddRange(objs);
-                    result = context.SaveChanges();
-
                     transaction.Commit();
                 }
                 catch (Exception)
@@ -188,7 +190,7 @@ namespace ProjectTeamNET.Repository.Implement
                     transaction.Rollback();
                 }
             }
-
+            result = context.SaveChanges();
             return result;
         }
     }

@@ -68,7 +68,7 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="saveDatas"></param>
         /// <returns></returns>
-        Task<bool> Save(SaveData saveDatas, UserInfo user);
+        bool Save(SaveData saveDatas, UserInfo user);
         /// <summary>
         /// Get list date of week 
         /// </summary>
@@ -80,26 +80,32 @@ namespace ProjectTeamNET.Service.Interface
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        Task<int> UpdateManhours(List<Manhour> manhours, string user_no);
-        Task<int> ChangeManhour(List<Manhour> oldData, List<Manhour> newData);
+        int UpdateManhours(List<Manhour> manhours, string user_no);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="oldData"></param>
+        /// <param name="newData"></param>
+        /// <returns></returns>
+        int ChangeManhour(List<Manhour> oldData, List<Manhour> newData,string user_no);
         /// <summary>
         /// delete data if it deleted in data form client
         /// </summary>
         /// <param name="manhours"></param>
         /// <returns></returns>
-        Task<int> DeleteManhours(List<Manhour> manhours, string user_no);
+        int DeleteManhours(List<Manhour> manhours, string user_no);
         int Create(List<Manhour> manhours, UserInfo user);
         /// <summary>
         /// Save page cliked history
         /// </summary>
         /// <param name="pModel"></param>
-        void SavePageHistory(InputParamModel pModel);
+        bool SavePageHistory(InputParamModel pModel);
         /// <summary>
         /// Get horliday in month of year by group code
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<List<int>> GetHorliday(HolidayParam param);
+        Task<List<int>> GetHoliday(HolidayParam param);
         /// <summary>
         /// get list work contents by class code
         /// </summary>

@@ -1,6 +1,6 @@
 ﻿var check = false;
 var countUser = 0;
-var GroupName = "";
+var GroupName = "<option></option>";
 var up = ['user', 'theme', 'workcontent', 'detailworkcontent', 'affiliation'];
 var down = ['monthlytotal', 'dailytotal', 'overalltotal'];
 var countGroup = 1;
@@ -15,14 +15,10 @@ $.ajax({
     }
 });
 
-$('#GroupId1').on("change", function () {
-    if ($('#GroupId1').val() != "") {
-        $('#UserAdd1').removeAttr("hidden");
-    }
-})
 //init get screenUserItem by userScreenName last action
 if ($('#userScreenName > option').length > 1) {
     var idUserScr = [];
+    var saveName = $('#userScreenName').val();
     var userScrSelect = $('#userScreenName > option')[1].value;
     var userScr = userScrSelect.substring(0, userScrSelect.length - 14);
     $.each($('#userScreenName > option'), function (index, value) {
@@ -35,17 +31,20 @@ if ($('#userScreenName > option').length > 1) {
 
 function deleteUserScreenName() {
     var saveName = $('#userScreenName').val();
-    if (saveName != "") {
+    if (saveName != "" && saveName != "保存名...") {
         var r = confirm('削除します。よろしいですか？');
         if (r == true) {
             $.ajax({
                 url: `/ManhourReport/DeleteScreenUser/` + saveName,
                 method: 'Delete',
                 success: function (response) {
-                    toastr.success(response)
-                    GetScreen();
-                    $('#SaveName').val("");
-                    reset();
+                    if (response != "error") {
+                        reset();
+                        $('#error').empty();
+                        $("#error").append(success(response));
+                        GetScreen();
+                        $('#SaveName').val("");
+                    }
                 }
             });
         }
@@ -55,35 +54,69 @@ function deleteUserScreenName() {
 //add 1 User follow GroupCode
 function addUser(id) {
     var GroupCode = $(`#GroupId${id}`).val();
-    $.ajax({
-        url: `/ManhourReport/GetsUserName/${GroupCode}`,
-        method: 'Get',
-        success: function (response) {
-            var options = '';
-            countUser++;
-            $.each(response, function (i, v) {
-                options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
-            });
-            $(`#addUserinGroup${id}`).append(`<div class="UserCount${id}" style="margin-bottom: 15px; height: 30px" id="addUser${countUser}"><select class="form-control form-control-sm" id="selectUser${countUser}">
+    if (GroupCode != "") {
+        $.ajax({
+            url: `/ManhourReport/GetsUserName/${GroupCode}`,
+            method: 'Get',
+            success: function (response) {
+                var options = '';
+                countUser++;
+                $.each(response, function (i, v) {
+                    options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
+                });
+                $(`#addUserinGroup${id}`).append(`<div class="UserCount${id}" style="margin-bottom: 15px; height: 30px" id="addUser${countUser}"><select class="form-control form-control-sm" id="selectUser${countUser}">
                                         ${options}
                                         </select></div>
                                     `);
-            $(`#trashUser${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}del"><i class="far fa-trash-alt" onclick="delUser(addUser${countUser},${id})"></i></div>
+                $(`#trashUser${id}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${countUser}del"><i class="far fa-trash-alt" onclick="delUser(addUser${countUser},${id})"></i></div>
                                         `);
+            }
+        });
+        if ($(`.UserCount${id}`).length >= 9) {
+            $(`#UserAdd${id}`).attr("hidden", true);
         }
-    });
-    if ($(`.UserCount${id}`).length >= 9) {
-        $(`#UserAdd${id}`).attr("hidden", true);
+    }
+}
+
+function GroupChange(index) {
+    var GroupCode = $(`#GroupId${index}`).val();
+    var options = '';
+    if (GroupCode != "") {
+        $.ajax({
+            url: `/ManhourReport/GetsUserName/${GroupCode}`,
+            method: 'Get',
+            success: function (response) {
+                $.each(response, function (i, v) {
+                    options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
+                });
+                var countuser = $(`.UserCount${index}`).length;
+                if (countuser == 0) {
+                    addUser(index);
+                }
+                for (let i = 0; i < countuser; i++) {
+                    $(`.UserCount${index} select`)[i].innerHTML = options;
+                }
+            }
+        });
+        $(`#UserAdd${index}`).removeAttr("hidden");
+    }
+    else {
+        $(`#trashUser${index}`).empty();
+        var countuser = $(`.UserCount${index}`).length;
+        for (let i = 0; i < countuser; i++) {
+            $(`.UserCount${index}`)[0].remove();
+        }
+        $(`#UserAdd${index}`).attr("hidden", true);
     }
 }
 
 //Delete 1 User
-function delUser(GroupCode, id) {
+function delUser(userId, id) {
     if ($(`.UserCount${id}`).length <= 10) {
         $(`#UserAdd${id}`).removeAttr("hidden");
     }
-    $(`#${GroupCode.id}`).remove();
-    $(`#${GroupCode.id}del`).remove();
+    $(`#${userId.id}`).remove();
+    $(`#${userId.id}del`).remove();
 }
 function delUserFirstGroup(GroupCode) {
     $(`#${GroupCode.id}`).remove();
@@ -98,14 +131,14 @@ function addGroup() {
             <div class="col-md-10">
                 <div class="row align-items-center" id="addFirst">
                     <div class="col-md-4 input-group pl-0" style="margin-bottom: auto;">
-                        <select class="form-control form-control-sm" id="GroupId${countGroup}">
+                        <select class="form-control form-control-sm" id="GroupId${countGroup}" onchange="GroupChange(${countGroup})">
                             ${GroupName}
                         </select>
                         <div class="col-md-1"><i class="far fa-trash-alt" onclick="deleteGroup('Group${countGroup}')"></i></div>
                     </div>
                     <div class="col-md-3 input-group pl-0">
                         <div class="countUser" id="addUserinGroup${countGroup}" style="width: 100%"></div>
-                        <div class="input-group pl-0 UserAdd" id="UserAdd${countGroup}">
+                        <div class="input-group pl-0 UserAdd" id="UserAdd${countGroup}" hidden>
                             <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUser(${countGroup})"><i class="fas fa-plus"></i> ユーザ追加</button>
                         </div>
                     </div>
@@ -218,7 +251,10 @@ function AddSelect() {
 
                         tmp += (`<option value="${v.value}">${v.text}</option>`);
                     }
-                })
+                });
+                if (check) {
+                    tmp += (`<option value="${value}">${text}</option>`);
+                }
                 $('#Select').empty();
                 $('#Select').append(tmp);
             }
@@ -331,22 +367,23 @@ function selectDown() {
 async function changeCall() {
     $('#error').empty();
     var surrogatekey = $('#userScreenName').val();
-    countUser = 0;
-    var numberGroup = 0;
-    var group_code = [];
-    var number_user_group_code = [];
-    var UserNames = [];
-    var numberTheme = 0;
-    var Themes = [];
-    var workContentCode = [];
-    var workContentDetail = [];
-    var selectedHeaderItems = [];
-    var isTotal = '';
-    var typeDelimiter = '';
-    var isSingleQuote = '';
-    var fromDate = '';
-    var toDate = '';
-    var saveName = '';
+    if (surrogatekey != "" && surrogatekey != "保存名...") {
+        countUser = 0;
+        var numberGroup = 0;
+        var group_code = [];
+        var number_user_group_code = [];
+        var UserNames = [];
+        var numberTheme = 0;
+        var Themes = [];
+        var workContentCode = [];
+        var workContentDetail = [];
+        var selectedHeaderItems = [];
+        var isTotal = 1;
+        var typeDelimiter = 1;
+        var isSingleQuote = 1;
+        var fromDate = '';
+        var toDate = '';
+        var saveName = '';
         await $.ajax({
             url: `/ManhourReport/GetManhourReport/${surrogatekey}`,
             method: 'Get',
@@ -398,73 +435,75 @@ async function changeCall() {
                 });
             }
         });
-    count = 1; countGroup++;
-    $('#addUserinGroup1').empty();
-    $('#trashUser1').empty();
-    $('#AddGroup').empty();
-    $('#AddTheme').empty();
-                                 
-    $('#fromDate').val(fromDate) ;
-    $('#toDate').val(toDate);
-    $('#SaveName').val(saveName);
-    $('#GroupId').val(group_code[0]);
-    
-    countGroup = 1;
-    //get users first group
-    for (let i = 0; i < number_user_group_code[0]; i++) {
-        countUser++;
-        await GetsUser(countGroup, group_code[0], UserNames[countUser-1], countUser);
-    }
-    // Get value group
-    $(`#GroupId1`).val(group_code[0]);
+        count = 1; countGroup++;
+        $('#addUserinGroup1').empty();
+        $('#trashUser1').empty();
+        $('#AddGroup').empty();
+        $('#AddTheme').empty();
 
-    // add value group Gets value group in db
-    if (numberGroup > 1) {
-        for (let i = 1; i < numberGroup; i++) {
-            addGroup();
-            $(`#GroupId${i+1}`).val(group_code[i]);
-            for (let j = 0; j < number_user_group_code[i]; j++) {
-                countUser++;
-                await GetsUser(countGroup, group_code[i], UserNames[countUser-1], countUser);
+        $('#fromDate').val(fromDate);
+        $('#toDate').val(toDate);
+        $('#SaveName').val(saveName);
+        $('#GroupId').val(group_code[0]);
+
+        countGroup = 1;
+        //get users first group
+        for (let i = 0; i < number_user_group_code[0]; i++) {
+            countUser++;
+            await GetsUser(countGroup, group_code[0], UserNames[countUser - 1], countUser);
+            $('#UserAdd1').removeAttr("hidden");
+        }
+        // Get value first group
+        $(`#GroupId1`).val(group_code[0]);
+
+        // add value group Gets value group in db
+        if (numberGroup > 1) {
+            for (let i = 1; i < numberGroup; i++) {
+                getGroup();
+                $(`#GroupId${i + 1}`).val(group_code[i]);
+                for (let j = 0; j < number_user_group_code[i]; j++) {
+                    countUser++;
+                    await GetsUser(countGroup, group_code[i], UserNames[countUser - 1], countUser);
+                }
             }
         }
-    }
-    // add theme and Gets value theme in db
-    for (let i = 0; i < numberTheme; i++) {
-        if(i > 0)
-            await addTheme();
-        await save(i + 1, Themes[i].substring(0,10))
-        $(`#theme_${i + 1}`).val(Themes[i]);
-        $(`#addWorkContent_${i + 1}`).val(workContentCode[i])
-        $(`#addWorkDetail_${i + 1}`).val(workContentDetail[i])
-    }
+        // add theme and Gets value theme in db
+        for (let i = 0; i < numberTheme; i++) {
+            if (i > 0)
+                await addTheme();
+            await save(i + 1, Themes[i].substring(0, 10))
+            $(`#theme_${i + 1}`).val(Themes[i]);
+            $(`#addWorkContent_${i + 1}`).val(workContentCode[i])
+            $(`#addWorkDetail_${i + 1}`).val(workContentDetail[i])
+        }
 
-    $('#Select').empty();
-    $('#NotSelect').empty();
-    $('#NotSelect').append(`<option value="user">ユーザ</option>
+        $('#Select').empty();
+        $('#NotSelect').empty();
+        $('#NotSelect').append(`<option value="affiliation">所属</option>
+                            <option value="user">ユーザ</option>
                             <option value="theme">テーマ</option>
                             <option value="workcontent">作業内容</option>
                             <option value="detailworkcontent">作業内容詳細</option>
-                            <option value="affiliation">所属</option>
+                            <option value="overalltotal">全体合計</option>
                             <option value="monthlytotal">月別合計</option>
                             <option value="dailytotal">日別合計</option>
-                            <option value="overalltotal">全体合計</option>
                             `);
-    $.each(selectedHeaderItems, function (i, v) {
-        $('#NotSelect').val(v);
-        AddSelect1();
-    });
-    if (isTotal == 0) {
-        $('#isTotal1').prop('checked', false);
-        $('#isTotal').prop('checked', true);
-    }
-    if (typeDelimiter == 0) {
-        $('#typeDelimiter1').prop('checked', false);
-        $('#typeDelimiter').prop('checked', true);
-    }
-    if (isSingleQuote == 0) {
-        $('#isSingleQuote1').prop('checked', false);
-        $('#isSingleQuote').prop('checked', true);
+        $.each(selectedHeaderItems, function (i, v) {
+            $('#NotSelect').val(v);
+            AddSelect1();
+        });
+        if (isTotal == 0) {
+            $('#isTotal1').prop('checked', false);
+            $('#isTotal').prop('checked', true);
+        }
+        if (typeDelimiter == 0) {
+            $('#typeDelimiter1').prop('checked', false);
+            $('#typeDelimiter').prop('checked', true);
+        }
+        if (isSingleQuote == 0) {
+            $('#isSingleQuote1').prop('checked', false);
+            $('#isSingleQuote').prop('checked', true);
+        }
     }
 }
 
@@ -478,7 +517,7 @@ async function GetsUser(groupCount, group_code, UserNo, count_user) {
             $.each(response, function (i, v) {
                 options += (`<option value="${v.userCode}">${v.userCode}[${v.user_Name}]</option>`);
             });
-            $(`#addUserinGroup${groupCount}`).append(`<div style="margin-bottom: 15px; height: 30px" id="addUser${count_user}"><select id="selectUser${countUser}" class="form-control form-control-sm">
+            $(`#addUserinGroup${groupCount}`).append(`<div class="UserCount${groupCount}" style="margin-bottom: 15px; height: 30px" id="addUser${count_user}"><select id="selectUser${countUser}" class="form-control form-control-sm">
                                         ${options}
                                         </select></div>
                                     `);
@@ -487,6 +526,37 @@ async function GetsUser(groupCount, group_code, UserNo, count_user) {
         }
     });
     $(`#addUser${count_user} > select`).val(UserNo);
+}
+
+//get group available in data
+function getGroup() {
+    countGroup++;
+    $('#AddGroup').append(`
+        <div class="form-group row addGroup" id="Group${countGroup}">
+            <label class="col-form-label col-md-2 text-right"></label>
+            <div class="col-md-10">
+                <div class="row align-items-center" id="addFirst">
+                    <div class="col-md-4 input-group pl-0" style="margin-bottom: auto;">
+                        <select class="form-control form-control-sm" id="GroupId${countGroup}" onchange="GroupChange(${countGroup})">
+                            ${GroupName}
+                        </select>
+                        <div class="col-md-1"><i class="far fa-trash-alt" onclick="deleteGroup('Group${countGroup}')"></i></div>
+                    </div>
+                    <div class="col-md-3 input-group pl-0">
+                        <div class="countUser" id="addUserinGroup${countGroup}" style="width: 100%"></div>
+                        <div class="input-group pl-0 UserAdd" id="UserAdd${countGroup}">
+                            <button class="btn btn-sm btn-outline-secondary mr-2" data-toggle="collapse" data-target="#collapseOne2" onclick="addUser(${countGroup})"><i class="fas fa-plus"></i> ユーザ追加</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4 pl-0" id="firstUser28002000000" style="margin-top:-15px">
+                        <div id="trashUser${countGroup}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>`);
+    if ($('.addGroup').length >= 9) {
+        $('#addGroup').attr("hidden", true);
+    }
 }
 
 // get list workcontents follow theme db
@@ -557,46 +627,32 @@ function checkform() {
                             window.open('/ManhourReport/ShowReport', '_blank');
                         }
                         else {
-                            toastr.warning(response.messenge);
+                            $("#error").append(error(response.messenge));
                         }
                     }
                 });
             }
             else {
                 if (response.toDate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.toDate}
-                                        </div>`);
+                    $("#error").append(error(response.toDate));
                 }
-                if (response.fromDate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.fromDate}
-                                        </div>`);
+                else if (response.fromDate != "") {
+                    $("#error").append(error(response.fromDate));
                 }
-                if (response.date != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.date}
-                                        </div>`);
+                else if (response.date != "") {
+                    $("#error").append(error(response.date));
                 }
-                if (response.dateCalculate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.dateCalculate}
-                                        </div>`);
+                else if (response.dateCalculate != "") {
+                    $("#error").append(error(response.dateCalculate));
                 }
-                if (response.theme != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.theme}
-                                        </div>`);
+                else if (response.user != "") {
+                    $("#error").append(error(response.user));
                 }
-                if (response.user != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.user}
-                                        </div>`);
+                else if (response.theme != "") {
+                    $("#error").append(error(response.theme));
                 }
-                if (response.headerItems != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.headerItems}
-                                        </div>`);
+                else if (response.headerItems != "") {
+                    $("#error").append(error(response.headerItems));
                 }
             }
         }
@@ -647,14 +703,20 @@ function setObj() {
         else
             Obj.workContentDetails += "," + $(`#addWorkDetail_${i + 1}`)[0].value;
     }
-    Obj.numberGroup = countGroup;
+    Obj.numberGroup = 0;
     Obj.Groups = "";
     Obj.Users = "";
     Obj.numberUser = "";
     var countGetUser = 0;
     for (let i = 0; i < $('select').length; i++) {
-        if ($('select')[i].id.includes("GroupId"))
+        if ($('select')[i].id.includes("GroupId")) {
             Obj.Groups += "," + $('select')[i].value;
+            if ($('select')[i].id != "GroupId1")
+                Obj.numberGroup = countGroup;
+            else if ($('#GroupId1').val != "") {
+                Obj.numberGroup = 1;
+            }
+        }
 
         else if ($('select')[i].id.includes("selectUser")) {
             Obj.Users += "," + $('select')[i].value;
@@ -692,47 +754,31 @@ function outputCSV() {
                             link.click();
                         }
                         else
-                            $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.messenge}
-                                        </div>`);
+                            $("#error").append(error(response.messenge));
                     }
                 });
             }
             else {
                 if (response.toDate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.toDate}
-                                        </div>`);
+                    $("#error").append(error(response.toDate));
                 }
-                if (response.fromDate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.fromDate}
-                                        </div>`);
+                else if (response.fromDate != "") {
+                    $("#error").append(error(response.fromDate));
                 }
-                if (response.date != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.date}
-                                        </div>`);
+                else if (response.date != "") {
+                    $("#error").append(error(response.date));
                 }
-                if (response.dateCalculate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.dateCalculate}
-                                        </div>`);
+                else if (response.dateCalculate != "") {
+                    $("#error").append(error(response.dateCalculate));
                 }
-                if (response.theme != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.theme}
-                                        </div>`);
+                else if (response.user != "") {
+                    $("#error").append(error(response.user));
                 }
-                if (response.user != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.user}
-                                        </div>`);
+                else if (response.theme != "") {
+                    $("#error").append(error(response.theme));
                 }
-                if (response.headerItems != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.headerItems}
-                                        </div>`);
+                else if (response.headerItems != "") {
+                    $("#error").append(error(response.headerItems));
                 }
             }
         }
@@ -747,22 +793,29 @@ function reset() {
     $('#addUserinGroup1').empty();
     $('#trashUser1').empty();
     $('#AddGroup').empty();
+    $('#GroupId1').val("");
     $('#AddTheme').empty();
     $('#addWorkDetail_1').val(null);
     $('#addWorkContent_1').empty();
     $('#theme_1').val(null);
     $('#Select').empty();
     $('#NotSelect').empty();
-    $('#NotSelect').append(`<option value="user">ユーザ</option>
+    $('#NotSelect').append(`<option value="affiliation">所属</option>
+                            <option value="user">ユーザ</option>
                             <option value="theme">テーマ</option>
                             <option value="workcontent">作業内容</option>
                             <option value="detailworkcontent">作業内容詳細</option>
+                            <option value="overalltotal">全体合計</option>
                             <option value="monthlytotal">月別合計</option>
                             <option value="dailytotal">日別合計</option>
                             `);
-    $('#Select').append(`<option value="affiliation">所属</option>
-                            <option value="overalltotal">全体合計</option>
-                            `);
+    $('#isTotal').prop('checked', false);
+    $('#isTotal1').prop('checked', true);
+    $('#typeDelimiter').prop('checked', false);
+    $('#typeDelimiter1').prop('checked', true);
+    $('#isSingleQuote').prop('checked', false);
+    $('#isSingleQuote1').prop('checked', true);
+    $('#UserAdd1').attr("hidden", true);
 }
 
 function saveUserScreenName() {
@@ -773,6 +826,7 @@ function saveUserScreenName() {
         method: 'POST',
         data: Obj,
         success: function (response) {
+            
             if (Object.keys(response).length < 1) {
                 $.ajax({
                     url: '/ManhourReport/SaveScreen',
@@ -780,49 +834,30 @@ function saveUserScreenName() {
                     data: Obj,
                     success: function (response) {
                         if (response != "error") {
-                            $("#error").append(`<div class="alert alert-success mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response}
-                                        </div>`);
+                            $("#error").append(success(response));
                             GetScreen();
                         }
                     }
                 });
             }
             else {
-                if (response.toDate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.toDate}
-                                        </div>`);
-                }
-                if (response.fromDate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.fromDate}
-                                        </div>`);
-                }
-                if (response.date != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.date}
-                                        </div>`);
-                }
-                if (response.dateCalculate != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.dateCalculate}
-                                        </div>`);
-                }
-                if (response.theme != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.theme}
-                                        </div>`);
-                }
-                if (response.user != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.user}
-                                        </div>`);
-                }
                 if (response.savename != "") {
-                    $("#error").append(`<div class="alert alert-warning mb-2" role="alert">
-                                            <strong>アラート</strong> - ${response.savename}
-                                        </div>`);
+                    $("#error").append(error(response.savename));
+                }
+                else if (response.toDate != "") {
+                    $("#error").append(error(response.toDate));
+                }
+                else if (response.fromDate != "") {
+                    $("#error").append(error(response.fromDate));
+                }
+                else if (response.date != "") {
+                    $("#error").append(error(response.date));
+                }
+                else if (response.dateCalculate != "") {
+                    $("#error").append(error(response.dateCalculate));
+                }
+                else if (response.headerItems != "") {
+                    $("#error").append(error(response.headerItems));
                 }
             }
         }
@@ -845,11 +880,20 @@ function GetScreen() {
         method: 'Get',
         success: function (response) {
             $('#userScreenName').empty();
-            var options = "";
+            var options = "<option>保存名...</option>";
             $.each(response, function (i, v) {
                 options += `<option value="${v.value}">${v.text}</option>`
             });
             $('#userScreenName').append(options);
         }
     });
+}
+function error(messeges) {
+    return `<div class="alert alert-danger mb-2" role="alert">
+                                            <strong>アラート</strong> - ${messeges}
+                                        </div>`;
+}function success(messeges) {
+    return `<div class="alert alert-success mb-2" role="alert">
+                                            ${messeges}
+                                        </div>`;
 }

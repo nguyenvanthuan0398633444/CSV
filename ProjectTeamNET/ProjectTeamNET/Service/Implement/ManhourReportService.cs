@@ -84,11 +84,11 @@ namespace ProjectTeamNET.Service.Implement
             var model = new ManhourReportViewModel();
             var Users = dbUserScreenItems.Where(e => e.Screen_url == SCREEN_URL && e.Save_name != "" && e.User_no == userName.ToUpper()).Select(s => new SelectListItem { Value = s.Surrogate_key.Remove(s.Surrogate_key.Length -3), Text = s.Save_name });
             model.Users = Users.AsEnumerable().GroupBy(x => x.Value).Select(x => x.First()).ToList();
-            model.GroupName = (from th in dbGroups
+            model.GroupName = (from gr in dbGroups where gr.Del_flg == false
                                select (new GroupNames()
                                {
-                                   group_code = th.Group_code,
-                                   GroupName = string.Concat(th.Group_code,"[",th.Group_name," ",th.Accounting_group_name,"]")
+                                   group_code = gr.Group_code,
+                                   GroupName = string.Concat(gr.Group_code,"[", gr.Group_name," ", gr.Accounting_group_name,"]")
                                })).ToList();
             model.Themes = dbThemes.Select(s => new SelectListItem { Value = s.Theme_no, Text =$"{s.Theme_no}[{s.Theme_name1}]"}).ToList();
             return model;
@@ -168,7 +168,8 @@ namespace ProjectTeamNET.Service.Implement
                     }
                 }
             }
-            var result = manhourReports.GroupBy(x => x.GroupCode).Select(x => x.First()).OrderBy(e => e.GroupCode).ToList();
+            var result = manhourReports.GroupBy(x => new { x.GroupCode, x.Month, x.Year, x.ThemeCode, x.WorkContentCode, 
+                        x.WorkContentCodeName, x,workContentDetails }).Select(x => x.First()).OrderBy(e => e.GroupCode).ToList();
 
             //add columns monthly and daily
             foreach(var manhourScr in result)
@@ -208,7 +209,36 @@ namespace ProjectTeamNET.Service.Implement
                 }
                 if (string.IsNullOrEmpty(data.selectedHeaderItems))
                 {
-                    messagers["headerItems"] = String.Format(Messages.ERR_024, "headerItems");
+                    messagers["headerItems"] = Messages.ERR_014;
+                }
+                else if (!string.IsNullOrEmpty(data.selectedHeaderItems))
+                {
+                    var itemUp = "user, theme, workcontent, detailworkcontent, affiliation";
+                    var itemDown = "monthlytotal, dailytotal, overalltotal";
+                    var selectItem = data.selectedHeaderItems.Split(",");
+                    var check = 1;
+                    foreach (var item in selectItem)
+                    {
+                        if (itemUp.Contains(item))
+                        {
+                            check = 2;
+                        }
+                    }
+                    if (check == 1)
+                    {
+                        messagers["headerItems"] = Messages.ERR_014;
+                    }
+                    foreach (var item in selectItem)
+                    {
+                        if (itemDown.Contains(item))
+                        {
+                            check = 3;
+                        }
+                    }
+                    if (check != 3)
+                    {
+                        messagers["headerItems"] = Messages.ERR_015;
+                    }
                 }
                 if (string.IsNullOrEmpty(data.themeNos))
                 {
@@ -284,21 +314,41 @@ namespace ProjectTeamNET.Service.Implement
             messagers.Add("savename", "");
             messagers.Add("date", "");
             messagers.Add("dateCalculate", "");
-            messagers.Add("theme", "");
-            messagers.Add("user", "");
+            messagers.Add("headerItems", "");
             try
             {
-                if (data.numberUser.Split(",").Contains("0"))
+                if (string.IsNullOrEmpty(data.selectedHeaderItems))
                 {
-                    messagers["user"] = Messages.ERR_025;
+                    messagers["headerItems"] = Messages.ERR_014;
                 }
-                if (string.IsNullOrEmpty(data.themeNos))
+                else if (!string.IsNullOrEmpty(data.selectedHeaderItems))
                 {
-                    messagers["theme"] = String.Format(Messages.ERR_024, "Theme");
-                }
-                else if (data.themeNos.Split(",").Contains(""))
-                {
-                    messagers["theme"] = String.Format(Messages.ERR_024, "ThemeNo");
+                    var itemUp = "user, theme, workcontent, detailworkcontent, affiliation";
+                    var itemDown = "monthlytotal, dailytotal, overalltotal";
+                    var selectItem = data.selectedHeaderItems.Split(",");
+                    var check = 1;
+                    foreach (var item in selectItem)
+                    {
+                        if (itemUp.Contains(item))
+                        {
+                            check = 2;
+                        }
+                    }
+                    if (check == 1)
+                    {
+                        messagers["headerItems"] = Messages.ERR_014;
+                    }
+                    foreach (var item in selectItem)
+                    {
+                        if (itemDown.Contains(item))
+                        {
+                            check = 3;
+                        }
+                    }
+                    if(check != 3)
+                    {
+                        messagers["headerItems"] = Messages.ERR_015;
+                    }
                 }
                 if (string.IsNullOrEmpty(data.Save) || data.Save.Length > 40)
                 {
@@ -334,17 +384,21 @@ namespace ProjectTeamNET.Service.Implement
                         {
                             messagers["date"] = Messages.ERR_012;
                         }
-                        if (data.selectedHeaderItems.Contains("dailytotal"))
+                        if (!string.IsNullOrEmpty(data.selectedHeaderItems))
                         {
-                            if ((toDate - fromDate).TotalDays > 31)
+                            if (data.selectedHeaderItems.Contains("dailytotal"))
                             {
-                                messagers["dateCalculate"] = Messages.ERR_013;
+                                if ((toDate - fromDate).TotalDays > 31)
+                                {
+                                    messagers["dateCalculate"] = Messages.ERR_013;
+                                }
                             }
                         }
+                        
                     }
                 }
                 if (string.Concat(messagers["fromDate"], messagers["toDate"], messagers["savename"],
-                    messagers["date"], messagers["dateCalculate"], messagers["user"], messagers["theme"]) != "")
+                    messagers["date"], messagers["dateCalculate"], messagers["headerItems"]) != "")
                     return messagers;
                 return new Dictionary<string, string>() { };
             }
@@ -380,16 +434,15 @@ namespace ProjectTeamNET.Service.Implement
                        {
                            UserCode = un.User_no,
                            User_Name = un.User_name
-                       })
-                       );
+                       }));
             return await result.ToListAsync();
         }
 
         public async Task<List<WorkContent>> GetsWorkContent(string ThemeNo)
         {
-            var result = (from t in dbThemes where t.Theme_no == ThemeNo where t.Del_flg == false
-                          join wc in dbWorkContents on t.Work_contents_class equals wc.Work_contents_class
-                            select (new WorkContent()
+            var result = (from t in dbThemes where t.Theme_no == ThemeNo
+                          join wc in dbWorkContents on t.Work_contents_class equals wc.Work_contents_class where wc.Del_flg == false
+                          select (new WorkContent()
                             {
                                 WorkCode = wc.Work_contents_code,
                                 Work_Content = wc.Work_contents_code +"["+ wc.Work_contents_code_name +"]"
@@ -824,72 +877,7 @@ namespace ProjectTeamNET.Service.Implement
                         }
                     }
 
-                    //add row Total
-                    if(data.isTotal == "1")
-                    {
-                        //add space ' '
-                        for (var i = 1; i < numbertd; i++)
-                        {
-                            total.Add(null);
-                        }
-                        foreach (var valueItems in data.selectedHeaderItems.Split(','))
-                        {
-                            if (valueItems == "overalltotal")
-                            {
-                                double overralltotal = 0;
-                                foreach (var manhourRp in result)
-                                {
-                                    overralltotal += manhourRp.Overalltotal;
-                                }
-                                total.Add(overralltotal);
-                            }
-                            if ((toDate - fromDate).TotalDays <= 31)
-                            {
-                                if (valueItems == "monthlytotal")
-                                {
-                                    for (var i = 0; i < manhourScr.Monthly.Count; i++)
-                                    {
-                                        double monthtotal = 0;
-                                        foreach (var manhourRp in result)
-                                        {
-                                            var monthly = manhourRp.Monthly.ToArray();
-                                            monthtotal += monthly[i];
-                                        }
-                                        total.Add(monthtotal);
-                                    }
-                                }
-                                else if (valueItems == "dailytotal")
-                                {
-                                    for (var i = 0; i < manhourScr.Daily.Count; i++)
-                                    {
-                                        double daytotal = 0;
-                                        foreach (var manhourRp in result)
-                                        {
-                                            var daily = manhourRp.Daily.ToArray();
-                                            daytotal += daily[i];
-                                        }
-                                        total.Add(daytotal);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (valueItems == "monthlytotal")
-                                {
-                                    for (var i = 0; i < manhourScr.Monthly.Count; i++)
-                                    {
-                                        double monthtotal = 0;
-                                        foreach (var manhourRp in result)
-                                        {
-                                            var monthly = manhourRp.Monthly.ToArray();
-                                            monthtotal += monthly[i];
-                                        }
-                                        total.Add(monthtotal);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    
                     //check typeDelimiter to add
                     if (data.typeDelimiter == "1")
                     {
@@ -915,6 +903,69 @@ namespace ProjectTeamNET.Service.Implement
                 //add istotal to add
                 if (data.isTotal == "1")
                 {
+                    //add row Total
+                    for (var i = 1; i < numbertd; i++)
+                    {
+                        total.Add(null);
+                    }
+                    foreach (var valueItems in data.selectedHeaderItems.Split(','))
+                    {
+                        if (valueItems == "overalltotal")
+                        {
+                            double overralltotal = 0;
+                            foreach (var manhourRp in result)
+                            {
+                                overralltotal += manhourRp.Overalltotal;
+                            }
+                            total.Add(overralltotal);
+                        }
+                        if ((toDate - fromDate).TotalDays <= 31)
+                        {
+                            if (valueItems == "monthlytotal")
+                            {
+                                for (var i = 0; i < result[0].Monthly.Count; i++)
+                                {
+                                    double monthtotal = 0;
+                                    foreach (var manhourRp in result)
+                                    {
+                                        var monthly = manhourRp.Monthly.ToArray();
+                                        monthtotal += monthly[i];
+                                    }
+                                    total.Add(monthtotal);
+                                }
+                            }
+                            else if (valueItems == "dailytotal")
+                            {
+                                for (var i = 0; i < result[0].Daily.Count; i++)
+                                {
+                                    double daytotal = 0;
+                                    foreach (var manhourRp in result)
+                                    {
+                                        var daily = manhourRp.Daily.ToArray();
+                                        daytotal += daily[i];
+                                    }
+                                    total.Add(daytotal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (valueItems == "monthlytotal")
+                            {
+                                for (var i = 0; i < result[0].Monthly.Count; i++)
+                                {
+                                    double monthtotal = 0;
+                                    foreach (var manhourRp in result)
+                                    {
+                                        var monthly = manhourRp.Monthly.ToArray();
+                                        monthtotal += monthly[i];
+                                    }
+                                    total.Add(monthtotal);
+                                }
+                            }
+                        }
+                    }
+                    //add space ' '
                     if (data.typeDelimiter == "1")
                     {
                         if (data.isSingleQuote == "1")
@@ -994,11 +1045,18 @@ namespace ProjectTeamNET.Service.Implement
                 CreateReport(userName, data.Save, data.toDate, "toDate", date, ref count);
                 CreateReport(userName, data.Save, data.numberTheme, "numberTheme", date, ref count);
 
-                var themes = data.themeNos.Split(",");
-                var workContentCodes = data.workContentCodes.Split(",");
-                var workContentDetails = new string[] {""};
-                if(data.workContentDetails=="")
+                var themes = new string[] { "" };
+                var workContentCodes = new string[] { "" };
+                if(Int32.Parse(data.numberTheme) > 0)
+                {
+                    workContentCodes = data.workContentCodes.Split(",");
+                    themes = data.themeNos.Split(",");
+                }
+                var workContentDetails = new string[] { "" };
+                if (!string.IsNullOrEmpty(data.workContentDetails))
+                {
                     workContentDetails = data.workContentDetails.Split(",");
+                }
 
                 for (var i = 0; i < Int32.Parse(data.numberTheme); i++)
                 {
@@ -1010,7 +1068,11 @@ namespace ProjectTeamNET.Service.Implement
                 CreateReport(userName, data.Save, data.numberGroup, "numberGroup", date, ref count);
 
                 var groups = data.Groups.Split(",");
-                var users = data.Users.Split(",");
+                var users = new string[] { };
+                if(!string.IsNullOrEmpty(data.Users))
+                {
+                    users = data.Users.Split(",");
+                }
                 var numberUsers = data.numberUser.Split(",");
                 int countUser = 1;
                 for (var i = 1; i <= Int32.Parse(data.numberGroup); i++)
@@ -1023,7 +1085,7 @@ namespace ProjectTeamNET.Service.Implement
                         countUser++;
                     }
                 }
-                return Messages.INF_001;
+                return string.Format(Messages.INF_001, data.Save);
             }
             catch (Exception)
             {

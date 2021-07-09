@@ -11,8 +11,7 @@ namespace ProjectTeamNET.Models.Response
         public List<ManhourInput> ManhourDatas { get; set; }
         public string DateSelect { get; set; }
         public List<string> ListDateOfWeek { get; set; }
-        public string ScreenOutput { get; set; }
-        public List<int> Horlidays { get; set; }
+        public List<int> Holidays { get; set; }
 
     }
 }

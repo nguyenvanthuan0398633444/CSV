@@ -9,6 +9,8 @@ namespace ProjectTeamNET.Models.Response
     {
         public string GroupCode { get; set; }
         public string GroupName { get; set; }
+        public string Year { get; set; }
+        public string Month { get; set; }
         public string UserCode { get; set; }
         public string UserName { get; set; }
         public string ThemeCode { get; set; }

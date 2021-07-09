@@ -7,7 +7,8 @@ let listNeedUpdate = new Array();
 const HEADER = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
 let tooltipWarning = '<i class="fas fa-exclamation-circle text-warning error" data-toggle="tooltip" title="合計工数が8h未満です"></i>';
 let tooltipDanger = '<i class="fas fa-exclamation-circle text-danger hour-max" data-toggle="tooltip" title="労働時間の合計が24hを超えることはできません。"></i> ';
-
+const ERR_018 = "１日の工数合計が２４ｈを超えることはできません";
+const WAR_010 = "必須フィールドは空ではありません!";// Required fields are not empty!
 //format date return string date 2021/06/18
 formatDate = function (date) {
     return date.toISOString().slice(0, 10).replace(/-/g, "/");
@@ -65,11 +66,12 @@ async function search() {
             $('.table-striped > #thead').append(thead);
             var tmp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             result.data.models.forEach(data => {
+                var themeName = data.theme_name1.length < 15 ? `<td class="ThemeName">${data.theme_name1}</td>` : `<td class="ThemeName" data-toggle="tooltip" title="${data.theme_name1}">${data.theme_name2}</td>`;
                 tbody += `<tr>
                                 <td><div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
-                                <td class="ThemeNo">${data.theme_no}</td>
-                                <td class="ThemeName">${data.theme_name1}</td>
-                                <td >${data.work_contents_code}</td>
+                                <td class="ThemeNo">${data.theme_no}</td>                               
+                                ${themeName}
+                                <td class="WContent">${data.work_contents_code}</td>
                                 <td class="sum${'row' + row} day0">${data.total.toFixed(1)}</td>
                                 <input type="hidden" class="Year"   name="Year" value="${data.year}" />
                                 <input type="hidden" class="Month"  name="Month" value="${data.month}" />
@@ -81,7 +83,7 @@ async function search() {
                                 <input type="hidden" class="WorkContentCode" name="WorkContentCode" value="${data.work_contents_code}" />
                                 <input type="hidden" class="WorkContentDetail" name="WorkContentDetail" value="${data.work_contents_detail}" />
                                 <input type="hidden" class="pin_flg" name="Pin_flg" value="${data.pin_flg}" />
-                                <input type="hidden" class="Total Total${'row' + row}" name="Total" value="${0}" />  `
+                                <input type="hidden" class="Total Total${'row' + row}" name="Total" value="${data.total}" />  `
                                 for (var i of HEADER) {
                                     tbody += `<td class = "${i}"><input type="text" value="${data['day' + i].toFixed(1)}" class="form-control table-input ${'day' + i} ${'row' + row}"></td>`
                 }
@@ -105,8 +107,8 @@ async function search() {
             // sum day
             for (var item in tmp) {
                 var sum = setSumAndTooltip(tmp[item],day);
-                tfoot += `<td class="${day} ${'sumday' + day}">${sum}</td>`;
-                day++;
+                tfoot += `<td class=" ${day} ${'sumday' + day}">${sum}</td>`;
+                day++;addTheme
             }
             tfoot +=` </tr> 
                       <tr>
@@ -164,11 +166,11 @@ $("#fileCSVimport").on('change', function () {
             {                
                 await search();
                 $('#warningCSV').append(`<div class="alert alert-primary mb-2"  role="alert">
-                                            <strong> アラート</strong > - セーブに成功！</div >`);
+                                             CSVアップロードが正常終了しました</div >`);
             }
             else {
                 $('#warningCSV').append(`<div class="alert alert-warning mb-2"  role="alert">
-                                            <strong> アラート</strong > ${result.messages} >`);               
+                                            <strong> アラート</strong > ${result.messages} `);               
             }                
         },
         error: function () {
@@ -181,6 +183,12 @@ $("#fileCSVimport").on('change', function () {
 $("#btSave").on("click",function () {
     let dayGet = 'day' + new Date().getDate();
     let listData = new Array();
+    for (var i = 1; i <= 31; i++) {
+        var sum = parseInt($('.sumday' + i)[0].innerText.trim());
+        if (sum > 24) {
+            return alertGeneral('danger', ERR_018);
+        }
+    }
     //for each tr in table add to obj then add to list data need saved
     $('#tbody tr').each(function () {
         let obj = {};
@@ -214,16 +222,13 @@ $("#btSave").on("click",function () {
         contentType: "application/json",
         dataType: "json",
         success: function (result) {
-                $('#warningSave').append(`<div class="alert alert-primary mb-2"  role="alert">
-                                            <strong> アラート</strong > - セーブに成功！</div >`);
-            setTimeout(function () {
-                $('#warningSave').empty();
-            }, 1000);
+            alertGeneral('primary', '- セーブに成功！');
         }
     });
 
 });
 
+//Search theme
 $("#searchTheme").on("click",
     function () {
         let soldFlg = "";
@@ -247,49 +252,76 @@ $("#searchTheme").on("click",
             method: "POST",
             data: obj,
             success: function (result) {
-                let tbody = '';
+                let tbody = '';            
                 result.themes.forEach(data => {
-                    tbody += `<tr>
+                    tbody +=
+                        `<tr>
                                     <td>
                                         <div class="form-check text-center">
-                                        <input class="form-check-input position-static radio" type="checkbox" id="Checkbox" value="option1" aria-label="..."/>                                         
+                                             <input class="form-check-input position-static radio" name="SelectTheme" type="checkbox" id="Checkbox" value="option1" aria-label="..."/>                                         
                                         </div>
                                     </td>   
                                     <input type="hidden" class ="WorkContentClass" name="WorkContentClass" value="${data.work_contents_class}"/>
                                     <input type="hidden" class ="ThemeNo" name="ThemeNo" value="${data.theme_no}"/>
                                     <input type="hidden" class ="ThemeName" name="ThemeName" value="${data.theme_name1}"/> 
-                                    <input type="hidden" class ="soldFlag" name="soldFlag" value="${data.sold_flg}"/> 
                                     <td>${data.theme_no}</td>
                                     <td width="200px">${data.theme_name1}</td>`
-                    tbody += data.sold_flg == true ? `<td class="soldFlag">売上済</td></tr >` : `<td class="soldFlag">未売上</td></tr >`;
+                    tbody += data.sold_flg == true ? `<td>売上済</td></tr >` : `<td>未売上</td></tr >`;
                 });
                 //render to table body
                 $('#slThemeBody').html(tbody);
             }
         });
     });
+//make checkbox like radio
+$(document).on('click', 'input[type="checkbox"]', function () {
+    $('input[type="checkbox"]').not(this).prop('checked', false);
+});
 
 //get information when onclick add theme form checked row
 let themeNo = null;
 let themeName = null;
 let workContentClass = null;
 let soldFlag = null;
-$("#choiceTheme").on("click", function addTheme() {
-        $("#slThemeBody tr").each(function () {
-            if ($(this).closest('tr').find("input[type=checkbox]").prop('checked')) {
-                themeNo = $(this).find(".ThemeNo").val();
-                workContentClass = $(this).find(".WorkContentClass").val();
-                themeName = $(this).find(".ThemeName").val();               
-                soldFlag = $(this).find(".soldFlag").val();
-                $('#modal1').modal('hide');
-            }
-        });
-        var theme = themeName + ", " + themeName + ", " + workContentClass + ", " + soldFlag;
-        $('#modal1').modal('hide');
-        $('#themeSelected2').val(theme);
-        $("#theme").val(theme);
-});
+//get information when onclick add theme form checked row
+function choiceTheme() {
 
+    $("#slThemeBody tr").each(function () {
+
+        if ($(this).closest('tr').find("input[type=checkbox]").prop('checked')) {
+            themeNo = $(this).find(".ThemeNo").val();
+            workContentClass = $(this).find(".WorkContentClass").val();
+            themeName = $(this).find(".ThemeName").val();
+
+            //load select list by class code
+            $(`#workContentCode1`).html('<option>内容選択...</option>');
+            $(`#workContentCode2`).html('<option>内容選択...</option>');
+            $.ajax({
+                url: "/ManhourInput/GetWorkContentByClass",
+                data: { classCode: workContentClass },
+                type: "GET",
+                contentType: "application/json",
+                dataType: "json",
+                success: function (result) {
+
+                    result.forEach(item => {
+                        var option = new Option(`${item.work_contents_code} [${item.work_contents_code_name}]`, `${item.work_contents_code}`);
+
+                        $(`#workContentCode2`).append(option);
+                        var option = new Option(`${item.work_contents_code} [${item.work_contents_code_name}]`, `${item.work_contents_code}`);
+                        $(`#workContentCode1`).append(option);
+                    })
+                }
+
+            });
+
+            $('#modal1').modal('hide');
+            $('#theme').val(themeNo + '[' + themeName + ']');
+            $('#themeSelected2').val(themeNo + '[' + themeName + ']');
+        }
+
+    });
+}
 /* Handle select theme evet*/
 $('#workContentDetail').on("change", function () {
     var workDetail = $('#workContentDetail').val();
@@ -302,10 +334,14 @@ $('#workContentDetail').on("change", function () {
         }, 1000);
     }
 });
+
 $("#addTheme").on("click",
     function () {
-        let workContentCode = $('#wordContents').val();
+        let workContentCode = $('#workContentCode1').val();
         let workContentDetail = $('#workContentDetail').val();
+        if (!checkTheme(themeNo)) {
+            return alertGeneral("warning", WAR_010);
+        }
         if (!themeNo || !themeName || !workContentClass) {
             $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
                                             <strong> アラート</strong > - please choice theme! </div >`);
@@ -339,7 +375,7 @@ $("#addTheme").on("click",
                             <div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
                         <td>${themeNo}</td>
                         <td>${themeName}</td>
-                        <td>${workContentCode}</td>
+                        <td class="WContent">${workContentCode}</td>
                         <td class="sum${'row' + row} day0">0.0</td>
                         <input type="hidden" class="Year"   name="Year" value="${year}" />
                         <input type="hidden" class="Month"  name="Month" value="${month}" />
@@ -567,87 +603,32 @@ function checkHour(el) {
     }
 }
 function changeTheme(el) { 
+   
     $("#modalThemeNo").val($(el).closest("tr").find(".ThemeNo").text());
     $("#modalThemeName").val($(el).closest("tr").find(".ThemeName").text());
     $("#modalWC").val($(el).closest("tr").find(".WorkContentCode").val());
     $("#modalDetail").val($(el).closest("tr").find(".WorkContentDetail").val());
     $("#modal3").modal('show');
 
-    $('#btnChange').on('click', function () {
+    $('#btnChange').on('click', function (e) {
 
+        if (!checkTheme(themeNo)) {
+            return alert(WAR_010);
+        }
         let workContentCode = $(`#workContentCode2 :selected`).val();
-        let workContentDetail = $(`#detailCode2`).val();
-        let year = parseInt($(el).closest('tr').find(".Year").val());
-        let month = parseInt($(el).closest("tr").find(".Month").val());
-        let userNo = $(el).closest("tr").find(".User_No").val();
-        if (!themeNo || !themeName || !workContentClass) {
-            alert("Please choice theme!");
+        let workContentDetail = $(`#detailCode2`).val();        
+        if (!themeNo || !themeName || !workContentClass || !workContentDetail
+            || !workContentCode || workContentCode == '内容選択...') {
+            alert(WAR_010)
             return;
-        }
-        if (!workContentDetail) {
-            alert("Please choice work contents!");
-            return;
-        }
-        if (!workContentCode) {
-            alert("Please choice work content code!");
-            return;
-        }
-        let obj = {};
-        obj.Theme_no = themeNo;
-        obj.Year = year;
-        obj.Month = month;
-        obj.Work_contents_class = workContentClass;
-        obj.Work_contents_code = workContentCode;
-        obj.Work_contents_detail = workContentDetail;
-
-        $.ajax({
-            url: `/ManhourInput/CheckExistTheme`,
-            method: "POST",
-            data: obj,
-            success: function (result) {
-                console.log(result);
-                if (result == false) {
-                    let obj = {};
-                    obj.Year = year;
-                    obj.Month = month;
-                    obj.User_no = userNo;
-                    obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
-                    obj.Work_contents_class = $(el).closest("tr").find(".WorkContentClass").val();
-                    obj.Work_contents_code = $(el).closest("tr").find(".WorkContentCode").val();
-                    obj.Work_contents_detail = $(el).closest("tr").find(".WorkContentDetail").val();
-
-                    listNeedUpdate.push(obj);
-                    console.log(listNeedUpdate);
-
-                    obj = {};
-                    obj.Theme_no = themeNo;
-                    obj.Work_contents_class = workContentClass;
-                    obj.Work_contents_code = workContentCode;
-                    obj.Work_contents_detail = workContentDetail;
-
-                    listForUpdate.push(obj);
-                    console.log(listForUpdate);
-                    $('#modal3').modal('hide');
-                    //Change information row changed
-                    $(el).closest("tr").find(".ThemeName").text(themeName);
-                    $(el).closest("tr").find(".ThemeNo").text(themeNo);
-                    $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).text());
-                    $(el).closest("tr").find(".Detail").text(workContentDetail);                      
-                    //set default data 
-                    $(`#themeSelected1`).val('');
-                    $(`#themeSelected2`).val('');
-                    $(`#workContentCode1`).html('');
-                    $(`#detailCode1`).val('');
-                    $(`#workContentCode1`).html('<option value=" "></option>');
-                    $(`#workContentCode2`).html('<option value=" "></option>');
-                    themeNo = null; themeName = null; workContentClass = null;
-
-                } else {
-                    alert('Theme is existed!');
-                }
-            }
-        });
+        }       
+        $(el).closest("tr").find(".ThemeName").text(themeName);
+        $(el).closest("tr").find(".ThemeNo").text(themeNo);
+        $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).val());
+        $(el).closest("tr").find(".Detail").text(workContentDetail);
+        e.stopPropagation();
     });
+
 }
 // alert <8h 
 function checkTotalHours() {
@@ -671,7 +652,7 @@ function checkTotalHours() {
 function setSumAndTooltip(sum,day) { 
     var sumAndtooltip = "";
     if (day == 0) {
-        sumAndtooltip = ` ${sum.toFixed(1)} <i class="error" data-toggle="tooltip" title=""></i>`
+        sumAndtooltip = `${sum.toFixed(1)} <i class="error" data-toggle="tooltip" title=""></i>`
     }
     else if (sum > 24) {
         sumAndtooltip = ` ${sum.toFixed(1)} ${tooltipDanger}`
@@ -686,4 +667,21 @@ function setSumAndTooltip(sum,day) {
         sumAndtooltip = `${sum.toFixed(1)}${tooltipWarning} `
     }
     return sumAndtooltip;
+}
+function alertGeneral(color, notify) {
+    $('#warningSave').append(`<div class="alert alert-${color} mb-2"  role="alert">
+                                            <strong> アラート </strong > ${notify}！</div >`);
+    setTimeout(function () {
+        $('#warningSave').empty();
+    }, 1000);
+}
+function checkTheme(theme) {
+   
+    var themes = $('.ThemeNo')
+    for (var i = 0; i < themes.length; i++) {
+        if (themes[i].innerText == theme) {
+            return false;
+        }
+    }
+    return true;   
 }

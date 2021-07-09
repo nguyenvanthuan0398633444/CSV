@@ -106,7 +106,7 @@ namespace ProjectTeamNET.Controllers
             var result = await manhourReportService.Delete(surrogate);
             if(result > 0)
             {
-                return Ok(Resources.Messages.INF_001);
+                return Ok(string.Format(Resources.Messages.INF_001, "Save Name"));
             }
             return Ok("Error");
         }

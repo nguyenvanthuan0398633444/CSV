@@ -9,6 +9,7 @@
 		SELECT
 				t1.*
 				,t2.theme_name1
+				,t2.theme_name2
 				,t3.work_contents_class_name
 				,t4.work_contents_code_name
 		FROM	t_manhour AS t1
@@ -37,9 +38,6 @@
 		,t1.month
 		,t1.user_no
 		,t1.theme_no
-		,t1.work_contents_code
-		,t1.work_contents_class
-		,t1.work_contents_detail
 		FROM	t_manhour AS t1
 		WHERE
 			1=1
@@ -50,13 +48,6 @@
 			AND t1.user_no = :User_no
 
 			AND t1.theme_no = :Theme_no
-
-			AND t1.work_contents_class = :Work_contents_class
-
-			AND t1.work_contents_code = :Work_contents_code
-
-			AND t1.work_contents_detail = :Work_contents_detail
-
 	</query>
 	
 	<query id="SelectScreenItem">
@@ -235,6 +226,20 @@
 				work_contents_code = :Work_contents_code
 			AND
 				work_contents_detail = :Work_contents_detail
+	</query>
+	
+	<query id="DeleteScreenItem">
+		
+		DELETE FROM m_user_screen_item
+		WHERE 
+			user_no = :UserNo
+			AND
+			screen_url = :ScreenUrl	
+	</query>
+	<query id="InsertScreenItem">
+		
+		INSERT INTO m_user_screen_item
+		VALUE(:Surrogate_key,:User_no,:Screen_url,:Screen_item,:ScreenInput,Save_name)
 	</query>
 
 	<query id="UpdateUserScreenItem">

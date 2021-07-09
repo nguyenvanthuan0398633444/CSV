@@ -19,7 +19,7 @@ namespace ProjectTeamNET.Repository.Interface
         int Create(T obj);
         int Create(List<T> objs);
         Task<List<T1>> Select<T1>(string sql);
-        Task<int> Update(string sql, object param);
+        int Update(string sql, object param);
         Task<List<T1>> Select<T1>(string sql, object param);
         Task<List<M>> Search<M>(string sql, object param);
         Task<M> MenuSearch<M>(string sql, object param);
