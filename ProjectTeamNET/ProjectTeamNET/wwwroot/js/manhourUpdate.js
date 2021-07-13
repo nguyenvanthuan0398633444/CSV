@@ -5,9 +5,12 @@ let row = 1;
 let listForUpdate = new Array();
 let listNeedUpdate = new Array();
 const HEADER = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
-let tooltipWarning = '<i class="fas fa-exclamation-circle text-warning error" data-toggle="tooltip" title="合計工数が8h未満です"></i>';
-let tooltipDanger = '<i class="fas fa-exclamation-circle text-danger hour-max" data-toggle="tooltip" title="労働時間の合計が24hを超えることはできません。"></i> ';
+const TOOLTIPWARNING = '<i class="fas fa-exclamation-circle text-warning error" data-toggle="tooltip" title="合計工数が8h未満です"></i>';
+const TOOLTIPDANGER = '<i class="fas fa-exclamation-circle text-danger hour-max" data-toggle="tooltip" title="労働時間の合計が24hを超えることはできません。"></i> ';
+const TOOLTIP = '<i class="error" data-toggle="tooltip" title=""></i>';
 const ERR_018 = "１日の工数合計が２４ｈを超えることはできません";
+const WAR_008 = "テーマが存在します";
+const WAR_009 = "総労働時間は> 0時間です";
 const WAR_010 = "必須フィールドは空ではありません!";// Required fields are not empty!
 //format date return string date 2021/06/18
 formatDate = function (date) {
@@ -24,12 +27,12 @@ $("#groups").change(function users() {
             let user = "";
             $.each(result.data, function (i, v) {
                 v.forEach(data => {
-                    user += `<option value="${data.value}">${data.text}</option>`;  
-                })                         
+                    user += `<option value="${data.value}">${data.text}</option>`;
+                })
             })
             $('#users').html(user);
         }
-        });
+    });
 })
 
 // search
@@ -38,16 +41,23 @@ async function search() {
     $('#thead').empty();
     $('#tfoot').empty();
     var obj = {};
-    var date = $("#month").val();   
+    var date = $("#month").val();
     obj.Year = date.split('/')[0].toString();
     obj.Month = date.split('/')[1].toString();
     obj.Group = $("#groups").val();
-    obj.User = $("#users").val();  
+    obj.User = $("#users").val();
     await $.ajax({
         url: "/ManhourUpdate/Search",
         method: 'Post',
         data: obj,
         success: function (result) {
+            if (result.url != undefined) {
+                var origin = window.location.origin;
+                if (origin != undefined && origin != null) {
+                    window.location = origin + result.url; //return login view
+                    return;
+                }
+            }
             let tbody = "";
             let tfoot = "";
             holiday = result.data.holiday;
@@ -84,33 +94,33 @@ async function search() {
                                 <input type="hidden" class="WorkContentDetail" name="WorkContentDetail" value="${data.work_contents_detail}" />
                                 <input type="hidden" class="pin_flg" name="Pin_flg" value="${data.pin_flg}" />
                                 <input type="hidden" class="Total Total${'row' + row}" name="Total" value="${data.total}" />  `
-                                for (var i of HEADER) {
-                                    tbody += `<td class = "${i}"><input type="text" value="${data['day' + i].toFixed(1)}" class="form-control table-input ${'day' + i} ${'row' + row}"></td>`
+                for (var i of HEADER) {
+                    tbody += `<td class = "${i}"><input type="text" value="${data['day' + i].toFixed(1)}" class="form-control table-input ${'day' + i} ${'row' + row}"></td>`
                 }
                 row++;
-                tbody +=`<td><div class="text-center"><i class="fas fa-exchange-alt" onclick="checkHour(this)" ></i></div></td><td >
+                tbody += `<td><div class="text-center"><i class="fas fa-exchange-alt" onclick="checkHour(this)" ></i></div></td><td >
                              <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
-                        </tr >`;             
+                        </tr >`;
                 tmp[0] += data.total;
                 for (var i = 1; i < tmp.length; i++) {
                     tmp[i] += data['day' + i];
-                }              
+                }
             });
             $('#tbody').append(tbody);
-             // daily total calculation                      
+            // daily total calculation                      
             tfoot = `<tr>
                         <td></td>
                         <td></td>
                         <td>合計</td>
-                        <td></td>`        
-            let day = 0;   
+                        <td></td>`
+            let day = 0;
             // sum day
             for (var item in tmp) {
-                var sum = setSumAndTooltip(tmp[item],day);
+                var sum = setSumAndTooltip(tmp[item], day);
                 tfoot += `<td class=" ${day} ${'sumday' + day}">${sum}</td>`;
-                day++;addTheme
+                day++;
             }
-            tfoot +=` </tr> 
+            tfoot += ` </tr> 
                       <tr>
                         <td></td>
                         <td></td>
@@ -119,19 +129,19 @@ async function search() {
                         <td></td>`
             // time difference
             for (var i = 1; i < tmp.length; i++) {
-                if (8 - (tmp[i]) <= 0 || i > today.getDate() || holiday.find(element => element == i) != undefined) {
+                if (8 - (tmp[i]) < 0 || 8 - (tmp[i]) == 8 || i >= today.getDate() || holiday.find(element => element == i) != undefined) {
                     tfoot += `<td class="${i} ${'missingday' + i}"></td>`
                 } else {
                     tfoot += `<td class="${i} ${'missingday' + i}">${(8 - tmp[i]).toFixed(1)}</td> `
-                }           
+                }
             }
             // color holiday                                  
             $('#tfoot').append(tfoot);
             result.data.holiday.forEach(data => {
-                $(`.${data}`).css("background-color", "#f5c6cb");           
-            })            
+                $(`.${data}`).css("background-color", "#f5c6cb");
+            })
             // color today
-            $(`.${today.getDate()}`).css("background-color", "#bee5eb");       
+            $(`.${today.getDate()}`).css("background-color", "#bee5eb");
             $('#warningCSV').empty();
             // alert <8h 
             checkTotalHours();
@@ -157,30 +167,29 @@ $("#fileCSVimport").on('change', function () {
     jQuery.ajax({
         type: 'POST',
         url: url,
-        data: formData,     
+        data: formData,
         contentType: false,
         processData: false,
         success: async function (result) {
             $('#warningCSV').empty();
-            if (result.messages == "CSVアップロードが正常終了しました")
-            {                
+            if (result.messages == "CSVアップロードが正常終了しました") {
                 await search();
                 $('#warningCSV').append(`<div class="alert alert-primary mb-2"  role="alert">
                                              CSVアップロードが正常終了しました</div >`);
             }
             else {
                 $('#warningCSV').append(`<div class="alert alert-warning mb-2"  role="alert">
-                                            <strong> アラート</strong > ${result.messages} `);               
-            }                
+                                            <strong> アラート</strong > ${result.messages} `);
+            }
         },
         error: function () {
             alert("Error occurs");
         }
     });
-}); 
+});
 
 //save information into DB
-$("#btSave").on("click",function () {
+$("#btSave").on("click", function () {
     let dayGet = 'day' + new Date().getDate();
     let listData = new Array();
     for (var i = 1; i <= 31; i++) {
@@ -222,6 +231,7 @@ $("#btSave").on("click",function () {
         contentType: "application/json",
         dataType: "json",
         success: function (result) {
+            //results after saving
             alertGeneral('primary', '- セーブに成功！');
         }
     });
@@ -252,7 +262,14 @@ $("#searchTheme").on("click",
             method: "POST",
             data: obj,
             success: function (result) {
-                let tbody = '';            
+                if (result.url != undefined) {
+                    var origin = window.location.origin;
+                    if (origin != undefined && origin != null) {
+                        window.location = origin + result.url; //return login view
+                        return;
+                    }
+                }
+                let tbody = '';
                 result.themes.forEach(data => {
                     tbody +=
                         `<tr>
@@ -273,16 +290,17 @@ $("#searchTheme").on("click",
             }
         });
     });
+
 //make checkbox like radio
 $(document).on('click', 'input[type="checkbox"]', function () {
     $('input[type="checkbox"]').not(this).prop('checked', false);
 });
 
-//get information when onclick add theme form checked row
 let themeNo = null;
 let themeName = null;
 let workContentClass = null;
 let soldFlag = null;
+
 //get information when onclick add theme form checked row
 function choiceTheme() {
 
@@ -322,6 +340,7 @@ function choiceTheme() {
 
     });
 }
+
 /* Handle select theme evet*/
 $('#workContentDetail').on("change", function () {
     var workDetail = $('#workContentDetail').val();
@@ -335,37 +354,17 @@ $('#workContentDetail').on("change", function () {
     }
 });
 
+// add Theme in table
 $("#addTheme").on("click",
     function () {
         let workContentCode = $('#workContentCode1').val();
         let workContentDetail = $('#workContentDetail').val();
-        if (!checkTheme(themeNo)) {
+        if (!themeNo || !themeName || !workContentClass || !workContentDetail || !workContentCode) {
             return alertGeneral("warning", WAR_010);
         }
-        if (!themeNo || !themeName || !workContentClass) {
-            $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
-                                            <strong> アラート</strong > - please choice theme! </div >`);
-            return setTimeout(function () {
-                $('#warningSave').empty();
-            }, 1000);
+        if (!checkTheme(themeNo)) {
+            return alert(WAR_008);
         }
-        if (!workContentDetail) {
-          
-            $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
-                                            <strong> アラート</strong > - please choice work contents! </div >`);
-            return setTimeout(function () {
-                $('#warningSave').empty();
-            }, 1000);
-        }
-        if (!workContentCode) {
-           
-            $('#warningSave').append(`<div class="alert alert-warning mb-2"  role="alert">
-                                            <strong> アラート</strong > - please choice work content code!！</div >`);
-            return setTimeout(function () {
-                $('#warningSave').empty();
-            }, 1000);
-        }
-
         var rowAdd = '';
         let dateTitle = new Date();
         let year = dateTitle.getFullYear();
@@ -373,8 +372,8 @@ $("#addTheme").on("click",
         rowAdd += `<tr>
                         <td>
                             <div class="text-center"><i class="fas fa-thumbtack" style="color: #D3D3D3;"></div></td>
-                        <td>${themeNo}</td>
-                        <td>${themeName}</td>
+                        <td class="ThemeNo">${themeNo}</td>
+                        <td class="ThemName">${themeName}</td>
                         <td class="WContent">${workContentCode}</td>
                         <td class="sum${'row' + row} day0">0.0</td>
                         <input type="hidden" class="Year"   name="Year" value="${year}" />
@@ -388,29 +387,30 @@ $("#addTheme").on("click",
                         <input type="hidden" class="WorkContentDetail" name="WorkContentDetail" value="${workContentDetail}" />
                         <input type="hidden" class="pin_flg" name="Pin_flg" value="" />
                         <input type="hidden" class="Total" name="Total" value="0.0" /> `
-                        for (var i of HEADER) {
-                            rowAdd += `<td class = "${i}">
+        for (var i of HEADER) {
+            rowAdd += `<td class = "${i}">
                                         <input type="text" value="0.0" class="form-control table-input ${'day' + i} ${'row' + row}">
                                     </td>`
-                                     
-                        }  
-                        row++;
-                        rowAdd +=`<td>
+
+        }
+        row++;
+        rowAdd += `<td>
                                     <div class="text-center"><i class="fas fa-exchange-alt" onclick="checkHour(this)" ></i></div></td>
                                 <td >
                                     <div class="text-center delete-Theme"><i class="far fa-trash-alt"></i></div></td>
                                 </tr>`;
         $('#tbody').append(rowAdd);
-       holiday.forEach(data => {
+        holiday.forEach(data => {
             $(`.${data}`).css("background-color", "#f5c6cb");
         })
         var start = new Date();
         // colo today
-        $(`.${start.getDate()}`).css("background-color", "#bee5eb");       
+        $(`.${start.getDate()}`).css("background-color", "#bee5eb");
         //set theme information to null
         themeNo = null; themeName = null; workContentClass = null;
         $('#theme').val("");
     });
+
 // delete 1 row
 $("#tbody").on("click", ".delete-Theme", function () {
     var obj = {};
@@ -424,22 +424,22 @@ $("#tbody").on("click", ".delete-Theme", function () {
         obj.Work_contents_detail = $(this).closest('tr').find('.WorkContentDetail').val();
         deletedThemeArr.push(obj);
         $(this).closest('tr').remove();
-        var sum = 0;      
+        var sum = 0;
         for (var i = 1; i <= 31; i++) {
             var addressRow = 'day' + i;
             var sumValueRow = 0;
-            $('.' + addressRow ).each(function () {
+            $('.' + addressRow).each(function () {
                 sumValueRow += parseFloat($(this).val());
             });
             sum += sumValueRow;
-            var sumAndtooltip = setSumAndTooltip(sumValueRow,i);
+            var sumAndtooltip = setSumAndTooltip(sumValueRow, i);
             $('.sum' + addressRow).html(sumAndtooltip);
 
-            if (8 - sumValueRow <= 0 || i > today.getDate() || holiday.find(element => element == i) != undefined) {
+            if (8 - sumValueRow <= 0 || 8 - sumValueRow == 8 || i > today.getDate() || holiday.find(element => element == i) != undefined) {
                 $('.missing' + addressRow).html('');
             } else {
                 $('.missing' + addressRow).html((8 - sumValueRow).toFixed(1));
-                
+
             }
         }
         $('.sumday0').html(sum.toFixed(1));
@@ -475,6 +475,7 @@ function loadSelectTheme() {
     $('#modal1').modal('show');
 
 }
+
 //Update manhour when change hour on client
 $("#tbody").on("click", "input", function () {
     $(this).select();
@@ -486,15 +487,15 @@ $(".table-responsive").on("change", ".table-input", function (e) {
     if (isNaN(valueChange)) {
         valueChange = 0.0;
     }
-    if (valueChange > 24 ) {
+    if (valueChange > 24) {
         valueChange = 0;
         $(this).val(valueChange.toFixed(1));
-        return alert('Input hour must less than 24h!');
+        return alertGeneral("warning", ERR_018);
     }
     if (valueChange < 0) {
         valueChange = 0;
         $(this).val(valueChange.toFixed(1));
-        return alert('Input time must be greater than 0 hours!');
+        return alertGeneral("warning", WAR_009);
     }
     $(this).val(valueChange.toFixed(1));
     var addressRow;
@@ -502,7 +503,7 @@ $(".table-responsive").on("change", ".table-input", function (e) {
     var sumValueRow = 0;
     var sumValueCol = 0;
     var sumValueMonth = 0;
-    var classAll = $(this).attr('class').split(' ');    
+    var classAll = $(this).attr('class').split(' ');
     // find address column and row.
     $.each(classAll, function (i, className) {
         if (className.indexOf('row') != -1) {
@@ -523,6 +524,7 @@ $(".table-responsive").on("change", ".table-input", function (e) {
     changeValueByColumn(addressCol, sumValueCol, sumValueMonth);
     checkTotalHours();
 });
+
 //funtion change manhour one colum
 function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
     $('.' + addressCol).each(function () {
@@ -534,56 +536,23 @@ function changeValueByColumn(addressCol, sumValueCol, sumValueMonth) {
         sumValueMonth += parseFloat($('.sumday' + i).html());
     }
     $('.sumday0').html(sumValueMonth.toFixed(1));
-    let dayInt = addressCol.charAt(addressCol.length - 1);
-    let checkHoliday = holiday.find(element => element == dayInt);
-    //missing manhour 1 date check manhour > 0 && manhour < 8
-    if ($(".sum" + addressCol).closest("td").hasClass("table-danger") == false && checkHoliday == undefined && sumValueCol <= 24) {
-        if (sumValueCol > 0 && sumValueCol < 8 ) {
-            $(".missing" + addressCol).html((8 - sumValueCol).toFixed(1));
-            var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i.hour-min");
-            if (checkTagIRange0To8.html() == undefined) {
-                var i = '<i class="fas fa-exclamation-circle text-warning hour-min" data-toggle="tooltip" title="合計工数が8h未満です"></i> ';
-               $(".sum" + addressCol).append(i);
-            } else {
-                checkTagIRange0To8.show();
-            }
 
-        }
-        else if (sumValueCol == 8 ) {
-            $(".missing" + addressCol).html('');
-            $(".sum" + addressCol).closest("td").find("i").hide();
-        }
-        else if (sumValueCol == 0 ) {
-            var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i");
-            $(".missing" + addressCol).html('');
-            if (checkTagIRange0To8.html() == undefined) {
-                var i = '<i class="fas fa-exclamation-circle text-danger error" data-toggle="tooltip" title="合計工数が8h未満です"></i>';
-                $(".sum" + addressCol).append(i);
-            }
-        }
-        else {
-            var checkTagIRange0To8 = $(".sum" + addressCol).closest("td").find("i");
-            $(".missing" + addressCol).html('');
-            if (checkTagIRange0To8.html() == undefined ) {
-                var i = '<i class="fas fa-exclamation-circle text-warning hour-min" data-toggle="tooltip" title="合計工数が8h未満です"></i> ';
-                $(".sum" + addressCol).append(i);
-            }
-        }
+    let day = addressCol.match(/[+-]?\d+(.\d+)?/g);
+    let dayInt = parseInt(day);
+    let checkHoliday = holiday.find(element => element == day);
+    // add tooltip
+    if ($(".sum" + addressCol).closest("td").hasClass("table-danger") == false) {
+        var tooltip = setSumAndTooltip(sumValueCol, dayInt);
+        $(".sum" + addressCol).html(tooltip);
     }
-    //check manhour > 24
-    if (sumValueCol > 24) {
-        var checkTagIGreater24 = $(".sum" + addressCol).closest("td").find("i.hour-max");
-        if (checkTagIGreater24.html() == undefined) {
-            var i = '<i class="fas fa-exclamation-circle text-danger hour-max" data-toggle="tooltip" title="労働時間の合計が24hを超えることはできません。"></i> ';
-            $(".sum" + addressCol).append(i);
-        } else {
-            checkTagIGreater24.show();
-        }
+    //missing manhour 1 date check manhour > 0 && manhour < 8
+    if (8 - sumValueCol <= 0 || 8 - sumValueCol == 8 || dayInt >= today.getDate() || checkHoliday != undefined) {
+        $(".missing" + addressCol).html("");
     } else {
-        $(".sum" + addressCol).closest("td").find("i.hour-max").hide();
+        $(".missing" + addressCol).html((8 - sumValueCol).toFixed(1));
     }
 }
-                                                                                                                                                                                                                                    
+
 $(document).on('show.bs.modal', '.modal', function () {
     var zIndex = 1040 + (10 * $('.modal:visible').length);
     $(this).css('z-index', zIndex);
@@ -591,45 +560,61 @@ $(document).on('show.bs.modal', '.modal', function () {
         $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
     }, 0);
 });
+
 function checkHour(el) {
-    var a = $(el).closest("tr").find(".day0").text();
-    if (a == '0.0') {
-        changeTheme(el);
+    var sum31Day = $(el).closest("tr").find(".day0").text();
+    if (sum31Day == '0.0') {
+        handleDialogOK(el);
     }
     else {
-        if (confirm("Do you want to change this theme?") == true) {
-            changeTheme(el);
+        if (confirm("選択中行のテーマを変更します。よろしいですか？") == true) {
+            handleDialogOK(el);
         }
     }
 }
-function changeTheme(el) { 
-   
-    $("#modalThemeNo").val($(el).closest("tr").find(".ThemeNo").text());
-    $("#modalThemeName").val($(el).closest("tr").find(".ThemeName").text());
-    $("#modalWC").val($(el).closest("tr").find(".WorkContentCode").val());
-    $("#modalDetail").val($(el).closest("tr").find(".WorkContentDetail").val());
+function handleDialogOK(el) {
+    let obj = {};
+    obj.Theme_no = $(el).closest("tr").find(".Theme_No").val();
+    obj.Work_contents_class = $(el).closest("tr").find(".WorkContentClass").val();
+    obj.Work_contents_code = $(el).closest("tr").find(".WorkContentCode").val();
+    obj.Work_contents_detail = $(el).closest("tr").find(".WorkContentDetail").val();
+    obj.Year = parseInt($(el).closest('tr').find(".Year").val());
+    obj.Month = parseInt($(el).closest("tr").find(".Month").val());
+    obj.Theme_name = $(el).closest("tr").find(".ThemeName").text();
+
+    $("#modalThemeNo").val(obj.Theme_no);
+    $("#modalThemeName").val(obj.Theme_name);
+    $("#modalWC").val(obj.Work_contents_code);
+    $("#modalDetail").val(obj.Work_contents_detail);
+    let paramIn = {
+        1: obj,
+        2: el
+    };
+    $("#modal3").val(paramIn);
     $("#modal3").modal('show');
-
-    $('#btnChange').on('click', function (e) {
-
-        if (!checkTheme(themeNo)) {
-            return alert(WAR_010);
-        }
-        let workContentCode = $(`#workContentCode2 :selected`).val();
-        let workContentDetail = $(`#detailCode2`).val();        
-        if (!themeNo || !themeName || !workContentClass || !workContentDetail
-            || !workContentCode || workContentCode == '内容選択...') {
-            alert(WAR_010)
-            return;
-        }       
-        $(el).closest("tr").find(".ThemeName").text(themeName);
-        $(el).closest("tr").find(".ThemeNo").text(themeNo);
-        $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).val());
-        $(el).closest("tr").find(".Detail").text(workContentDetail);
-        e.stopPropagation();
-    });
-
 }
+$('#btnChange').on('click', function () {
+    var arr = Object.values($("#modal3").val());
+    let el = arr[1];
+    let workContentCode = $(`#workContentCode2 :selected`).val();
+    let workContentDetail = $(`#detailCode2`).val();
+    //check null value
+    if (!themeNo || !themeName || !workContentClass || !workContentDetail || !workContentCode) {
+        alert(WAR_010);
+        return;
+    }
+    if (!checkTheme(themeNo)) {
+        return alert(WAR_008);
+    }
+    $(el).closest("tr").find(".ThemeName").text(themeName);
+    $(el).closest("tr").find(".ThemeNo").text(themeNo);
+    $(el).closest("tr").find(".Theme_No").val(themeNo);
+    $(el).closest("tr").find(".WContent").text($(`#workContentCode2 :selected`).val());
+    $(el).closest("tr").find(".Detail").text(workContentDetail);
+    $("#modal3").modal('hide');
+})
+
+
 // alert <8h 
 function checkTotalHours() {
     $('#warningDay').empty();
@@ -645,29 +630,32 @@ function checkTotalHours() {
         else {
             break;
         }
-       
+
     }
 }
 
-function setSumAndTooltip(sum,day) { 
+// add tooltip
+function setSumAndTooltip(sum, day) {
     var sumAndtooltip = "";
     if (day == 0) {
-        sumAndtooltip = `${sum.toFixed(1)} <i class="error" data-toggle="tooltip" title=""></i>`
+        sumAndtooltip = `${sum.toFixed(1)}${TOOLTIP}`
     }
     else if (sum > 24) {
-        sumAndtooltip = ` ${sum.toFixed(1)} ${tooltipDanger}`
+        sumAndtooltip = ` ${sum.toFixed(1)} ${TOOLTIPDANGER}`
     }
-    else if (sum == 8 || holiday.find(element => element == day) != undefined || day > today.getDate()) {
-        sumAndtooltip = ` ${sum.toFixed(1)} <i class="error" data-toggle="tooltip" title=""></i>`
+    else if (sum == 8 || holiday.find(element => element == day) != undefined || day >= today.getDate() || (sum > 8 && sum <= 24)) {
+        sumAndtooltip = ` ${sum.toFixed(1)} ${TOOLTIP}`
     }
     else if (sum == 0) {
-        sumAndtooltip = ` ${sum.toFixed(1)} ${tooltipDanger} `
+        sumAndtooltip = ` ${sum.toFixed(1)} ${TOOLTIPDANGER} `
     }
     else {
-        sumAndtooltip = `${sum.toFixed(1)}${tooltipWarning} `
+        sumAndtooltip = `${sum.toFixed(1)}${TOOLTIPWARNING} `
     }
     return sumAndtooltip;
 }
+
+// show error
 function alertGeneral(color, notify) {
     $('#warningSave').append(`<div class="alert alert-${color} mb-2"  role="alert">
                                             <strong> アラート </strong > ${notify}！</div >`);
@@ -675,13 +663,14 @@ function alertGeneral(color, notify) {
         $('#warningSave').empty();
     }, 1000);
 }
+// check if the theme exists
 function checkTheme(theme) {
-   
+
     var themes = $('.ThemeNo')
     for (var i = 0; i < themes.length; i++) {
         if (themes[i].innerText == theme) {
             return false;
         }
     }
-    return true;   
+    return true;
 }

@@ -1,5 +1,4 @@
-﻿using ProjectTeamNET.Models;
-using ProjectTeamNET.Models.Entity;
+﻿using ProjectTeamNET.Models.Entity;
 using ProjectTeamNET.Models.Request;
 using ProjectTeamNET.Models.Response;
 using ProjectTeamNET.Repository.Interface;
@@ -11,16 +10,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
 namespace ProjectTeamNET.Service.Implement
 {
-    
     /// <summary>
     /// Handle events ManhourInput
     /// </summary>
     public class ManhourInputService : IManhourInputService
     {
-
         const string FORMATDATE = "yyyy/MM/dd";
         const string HEADER = "年,月,ユーザNo,所属コード,サイトコード,テーマNO,作業内容区分,作業内容コード,作業内容詳細,ピン止めフラグ,合計," +
                               "1日,2日,3日,4日,5日,6日,7日,8日,9日,10日,11日,12日,13日,14日,15日,16日,17日,18日,19日," +
@@ -28,7 +24,6 @@ namespace ProjectTeamNET.Service.Implement
         private readonly IBaseRepository<Manhour> manhourRepository;
         private readonly IBaseRepository<SalesObject> saleRepository;
         private readonly IBaseRepository<UserScreenItem> screenRepository;
-
         public ManhourInputService(IBaseRepository<Manhour> manhourRepository, 
                                    IBaseRepository<SalesObject> saleRepository, 
                                    IBaseRepository<UserScreenItem> screenRepository)
@@ -617,7 +612,7 @@ namespace ProjectTeamNET.Service.Implement
             foreach (var item in result)
             {
                 buider.AppendLine($"{item.Year}, {item.Month}, {item.User_no},{item.Group_code},{item.Site_code}, {item.Theme_no}," +
-                                   $"{item.Work_contents_code},{item.Work_contents_code_name},{item.Work_contents_detail},{item.Pin_flg}, " +
+                                   $"{item.Work_contents_class},{item.Work_contents_code},{item.Work_contents_detail},{item.Pin_flg}, " +
                                    $"{item.Total:0.0},{item.Day1:0.0}, {item.Day2:0.0}, " +
                                    $"{item.Day3:0.0},{item.Day4:0.0}, " +
                                    $"{item.Day5:0.0}, {item.Day6:0.0}, {item.Day7:0.0}, " +
@@ -635,6 +630,12 @@ namespace ProjectTeamNET.Service.Implement
             exportModel.nameFile = name;
             return exportModel;
         }
+        /// <summary>
+        /// Export CSV file
+        /// </summary>
+        /// <param name="userNo"></param>
+        /// <param name="date"></param>
+        /// <returns></returns>
         public async Task<List<ManhourUpdateViewModel>> GetDataExport(string userNo, DateTime date)
         {
             List<string> addlist = new List<string>{"Year","Month","User"};
@@ -648,7 +649,11 @@ namespace ProjectTeamNET.Service.Implement
             List<ManhourUpdateViewModel> result = await manhourRepository.Search<ManhourUpdateViewModel>(query, param);
             return result;
         }
-
+        /// <summary>
+        /// Check them exist
+        /// </summary>
+        /// <param name="keys"></param>
+        /// <returns></returns>
         public async Task<bool> CheckThemeExist(ManhourKeys keys)
         {
             var query = QueryLoader.GetQuery("ManhourInput", "SelectManhour");
@@ -662,7 +667,13 @@ namespace ProjectTeamNET.Service.Implement
             List<Manhour> result = await manhourRepository.Select<Manhour>(query, param);
             return result.Count > 0;
         }
-
+        /// <summary>
+        /// Change theme in manhour
+        /// </summary>
+        /// <param name="oldData"></param>
+        /// <param name="newData"></param>
+        /// <param name="user_no"></param>
+        /// <returns></returns>
         public int ChangeManhour(List<Manhour> oldData, List<Manhour> newData,string user_no)
         {
             var result = 0;

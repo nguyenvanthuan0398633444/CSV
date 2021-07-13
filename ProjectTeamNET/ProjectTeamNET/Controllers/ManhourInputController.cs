@@ -1,14 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ProjectTeamNET.Service.Interface;
-using ProjectTeamNET.Models.Entity;
-using System.Threading.Tasks;
-using ProjectTeamNET.Models.Response;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using ProjectTeamNET.Models.Request;
+using ProjectTeamNET.Models.Response;
+using ProjectTeamNET.Service.Interface;
 using System;
 using System.Text;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
 
 namespace ProjectTeamNET.Controllers
 {
@@ -23,7 +20,6 @@ namespace ProjectTeamNET.Controllers
         {
             _service = service;
         }
-
         [HttpGet]
         public async Task<IActionResult> Index(string dateSt)
         {
@@ -183,7 +179,6 @@ namespace ProjectTeamNET.Controllers
             var result = _service.SavePageHistory(pModel);
             return Ok(result);
         }
-
         /// <summary>
         /// Get selected theme history from user screen item
         /// </summary>
@@ -200,7 +195,6 @@ namespace ProjectTeamNET.Controllers
             SearchThemeParam data = await _service.GetHistoryThemes(userNo);
             return Json(data);
         }
-
         /// <summary>
         /// Search theme by param 
         /// </summary>
@@ -279,7 +273,11 @@ namespace ProjectTeamNET.Controllers
             ExportModel exportModel = await _service.ExportCSV(userNo, dateStr);
             return File(Encoding.UTF8.GetBytes(exportModel.builder.ToString()), "text/csv", exportModel.nameFile);
         }
-
+        /// <summary>
+        /// check theme is existed in db
+        /// </summary>
+        /// <param name="keys"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> CheckExistTheme(ManhourKeys keys)
         {

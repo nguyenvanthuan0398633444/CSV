@@ -33,6 +33,7 @@ namespace ProjectTeamNET.Service.Implement
         private const string MANHOURREPORT = "工数集計";
         private const string FILE = ".csv";
         private const string SCREEN_URL = "ManhourReport";
+        private const string ERROR = "Something wrong! Please try later";
         public ManhourReportService(IBaseRepository<UserScreenItem> userscreenRepository, ProjectDbContext dbContext)
         {
             dbUserScreenItems = dbContext.Set<UserScreenItem>();
@@ -58,10 +59,10 @@ namespace ProjectTeamNET.Service.Implement
         }
 
         //get GroupName by GroupCode
-        public async Task<string> GetsGroupName(string GroupCode)
+        public async Task<string> GetsGroupName(string groupCode)
         {
             var result = await (from gr in dbGroups
-                                where gr.Group_code == GroupCode
+                                where gr.Group_code == groupCode
                        select (gr.Group_code +"["+ gr.Group_name+"]")
                        ).FirstOrDefaultAsync();
             return result;
@@ -82,7 +83,9 @@ namespace ProjectTeamNET.Service.Implement
         public ManhourReportViewModel Init(string userName)
         {
             var model = new ManhourReportViewModel();
-            var Users = dbUserScreenItems.Where(e => e.Screen_url == SCREEN_URL && e.Save_name != "" && e.User_no == userName.ToUpper()).Select(s => new SelectListItem { Value = s.Surrogate_key.Remove(s.Surrogate_key.Length -3), Text = s.Save_name });
+            var Users = dbUserScreenItems.Where(e => e.Screen_url == SCREEN_URL && e.Save_name != "" && 
+                e.User_no == userName.ToUpper()).Select(s => new SelectListItem { 
+                Value = s.Surrogate_key.Remove(s.Surrogate_key.Length -3), Text = s.Save_name });
             model.Users = Users.AsEnumerable().GroupBy(x => x.Value).Select(x => x.First()).ToList();
             model.GroupName = (from gr in dbGroups where gr.Del_flg == false
                                select (new GroupNames()
@@ -134,7 +137,7 @@ namespace ProjectTeamNET.Service.Implement
                 }
                 for(var user = 1; user < users.Length; user++)
                 {
-                    for(var workContentD = 0; workContentD < workContentCodes.Length; workContentD++)
+                    for(var i = 0; i < workContentCodes.Length; i++)
                     {
                         if (!string.IsNullOrEmpty(users[user]))
                         {
@@ -159,8 +162,9 @@ namespace ProjectTeamNET.Service.Implement
                             fromMonth = fromDate.Month,
                             user = users[user],
                             groupCode = groups[countGroup],
-                            workThemeContent = workContentDetails.Length > 0 ? string.Concat(themes[workContentD].Split("[")[0], workContentCodes[workContentD], workContentDetails[workContentD]) :
-                                                        string.Concat(themes[workContentD].Split("[")[0], workContentCodes[workContentD])
+                            workThemeContent = workContentDetails.Length > 0 ? 
+                            string.Concat(themes[i].Split("[")[0], workContentCodes[i], workContentDetails[i]) :
+                                        string.Concat(themes[i].Split("[")[0], workContentCodes[i])
                         };
                         List<ManhourReport> manhouReport = await userscreenRepository.Select<ManhourReport>(query, param);
                         if(manhouReport.Count >0)
@@ -176,11 +180,14 @@ namespace ProjectTeamNET.Service.Implement
             {
                 manhourScr.FromDate = fromDate;
                 manhourScr.ToDate = toDate;
-                manhourScr.Overalltotal = ManhourReportMonth(manhourScr.GroupCode, manhourScr.UserCode, manhourScr.ThemeCode, toDate, fromDate, manhourScr.WorkContentCode, manhourScr.WorkContentDetail);
-                manhourScr.Monthly = ManhourReportMonthly(manhourScr.GroupCode, manhourScr.UserCode, manhourScr.ThemeCode, toDate, fromDate, manhourScr.WorkContentCode, manhourScr.WorkContentDetail);
+                manhourScr.Overalltotal = ManhourReportMonth(manhourScr.GroupCode, manhourScr.UserCode, 
+                    manhourScr.ThemeCode, toDate, fromDate, manhourScr.WorkContentCode, manhourScr.WorkContentDetail);
+                manhourScr.Monthly = ManhourReportMonthly(manhourScr.GroupCode, manhourScr.UserCode, 
+                    manhourScr.ThemeCode, toDate, fromDate, manhourScr.WorkContentCode, manhourScr.WorkContentDetail);
                 if((toDate - fromDate).TotalDays +1 <= 31)
                 {
-                    manhourScr.Daily = ManhourReportDaily(manhourScr.GroupCode, manhourScr.UserCode, manhourScr.ThemeCode, toDate, fromDate, manhourScr.WorkContentCode, manhourScr.WorkContentDetail);
+                    manhourScr.Daily = ManhourReportDaily(manhourScr.GroupCode, manhourScr.UserCode, 
+                        manhourScr.ThemeCode, toDate, fromDate, manhourScr.WorkContentCode, manhourScr.WorkContentDetail);
                 }
             }
             return result;
@@ -211,6 +218,8 @@ namespace ProjectTeamNET.Service.Implement
                 {
                     messagers["headerItems"] = Messages.ERR_014;
                 }
+                //check selected Header Items has contains 'user, theme, workcontent, detailworkcontent, affiliation'
+                //or "monthlytotal, dailytotal, overalltotal"
                 else if (!string.IsNullOrEmpty(data.selectedHeaderItems))
                 {
                     var itemUp = "user, theme, workcontent, detailworkcontent, affiliation";
@@ -222,6 +231,7 @@ namespace ProjectTeamNET.Service.Implement
                         if (itemUp.Contains(item))
                         {
                             check = 2;
+                            break;
                         }
                     }
                     if (check == 1)
@@ -233,6 +243,7 @@ namespace ProjectTeamNET.Service.Implement
                         if (itemDown.Contains(item))
                         {
                             check = 3;
+                            break;
                         }
                     }
                     if (check != 3)
@@ -296,7 +307,7 @@ namespace ProjectTeamNET.Service.Implement
             }
             catch (Exception)
             {
-                messagers["Error"] = "Something wrong! Please try later";
+                messagers["Error"] = ERROR;
                 return messagers;
             }
         }
@@ -321,6 +332,8 @@ namespace ProjectTeamNET.Service.Implement
                 {
                     messagers["headerItems"] = Messages.ERR_014;
                 }
+                //check selected Header Items has contains 'user, theme, workcontent, detailworkcontent, affiliation'
+                //or "monthlytotal, dailytotal, overalltotal"
                 else if (!string.IsNullOrEmpty(data.selectedHeaderItems))
                 {
                     var itemUp = "user, theme, workcontent, detailworkcontent, affiliation";
@@ -404,14 +417,9 @@ namespace ProjectTeamNET.Service.Implement
             }
             catch (Exception)
             {
-                messagers["Error"] = "Something wrong! Please try later";
+                messagers["Error"] = ERROR;
                 return messagers;
             }
-        }
-
-        public Task<int> SaveManHourReport(List<Manhour> manhours)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<List<ThemeName>> GetsThemeName()
@@ -438,9 +446,9 @@ namespace ProjectTeamNET.Service.Implement
             return await result.ToListAsync();
         }
 
-        public async Task<List<WorkContent>> GetsWorkContent(string ThemeNo)
+        public async Task<List<WorkContent>> GetsWorkContent(string themeNo)
         {
-            var result = (from t in dbThemes where t.Theme_no == ThemeNo
+            var result = (from t in dbThemes where t.Theme_no == themeNo
                           join wc in dbWorkContents on t.Work_contents_class equals wc.Work_contents_class where wc.Del_flg == false
                           select (new WorkContent()
                             {
@@ -455,18 +463,21 @@ namespace ProjectTeamNET.Service.Implement
         {
             var manhourtoDate = dbManhours.Where(e => e.Year == toDate.Year
                             && e.Month == toDate.Month && e.Group_code == group && e.User_no == user && e.Theme_no == theme
-                            && e.Work_contents_code == workContentCodes && e.Work_contents_detail == workContentDetails).FirstOrDefault(); 
-            var manhourtoDate1 = dbManhours.Where(e => e.Year == toDate.Year
+                            && e.Work_contents_code == workContentCodes && e.Work_contents_detail == workContentDetails).FirstOrDefault();
+            // gets all days February
+            var manhourFebruary = dbManhours.Where(e => e.Year == toDate.Year
                              && e.Month == 2 && e.Group_code == group && e.User_no == user && e.Theme_no == theme
                              && e.Work_contents_code == workContentCodes && e.Work_contents_detail == workContentDetails).FirstOrDefault();
             var manhourfromDate = dbManhours.Where(e => e.Year == toDate.Year
                             && e.Month == toDate.Month && e.Group_code == group && e.User_no == user && e.Theme_no == theme
                             && e.Work_contents_code == workContentCodes && e.Work_contents_detail == workContentDetails).FirstOrDefault();
             var result = new List<Double>();
-            var manHour = new Double[] { manhourfromDate.Day1,manhourfromDate.Day2, manhourfromDate.Day3, manhourfromDate.Day4, manhourfromDate.Day5, manhourfromDate.Day6, manhourfromDate.Day7, manhourfromDate.Day8, manhourfromDate.Day9, manhourfromDate.Day10,
-                                manhourfromDate.Day11,manhourfromDate.Day12, manhourfromDate.Day13, manhourfromDate.Day14, manhourfromDate.Day15, manhourfromDate.Day16, manhourfromDate.Day17, manhourfromDate.Day18, manhourfromDate.Day19, manhourfromDate.Day20,
-                                manhourfromDate.Day21,manhourfromDate.Day22, manhourfromDate.Day23, manhourfromDate.Day24, manhourfromDate.Day25, manhourfromDate.Day26, manhourfromDate.Day27, manhourfromDate.Day28, manhourfromDate.Day29, manhourfromDate.Day30, manhourfromDate.Day31};
-            if(toDate.Month == fromDate.Month)
+            var manHour = new List<Double>();
+            for (int i = 1; i <= 31; i++)
+            {
+                manHour.Add(Double.Parse(manhourtoDate.GetType().GetProperty("Day" + i).GetValue(manhourtoDate).ToString()));
+            }
+            if (toDate.Month == fromDate.Month)
             {
                 for (var i = fromDate.Day - 1; i < toDate.Day; i++)
                 {
@@ -479,17 +490,19 @@ namespace ProjectTeamNET.Service.Implement
                 {
                     result.Add(manHour[i]);
                 }
-                if(manhourtoDate1 != null && toDate.Month - fromDate.Month > 1)
+                //total day <= 31 and total month = 3 (Jan, Feb, Mar)
+                if(manhourFebruary != null && toDate.Month - fromDate.Month > 1)
                 {
-                    manHour = new Double[] { manhourtoDate1.Day1,manhourtoDate1.Day2, manhourtoDate1.Day3, manhourtoDate1.Day4, manhourtoDate1.Day5, manhourtoDate1.Day6, manhourtoDate1.Day7, manhourtoDate1.Day8, manhourtoDate1.Day9, manhourtoDate1.Day10,
-                            manhourtoDate1.Day11,manhourtoDate1.Day12, manhourtoDate1.Day13, manhourtoDate1.Day14, manhourtoDate1.Day15, manhourtoDate1.Day16, manhourtoDate1.Day17, manhourtoDate1.Day18, manhourtoDate1.Day19, manhourtoDate1.Day20,
-                            manhourtoDate1.Day21,manhourtoDate1.Day22, manhourtoDate1.Day23, manhourtoDate1.Day24, manhourtoDate1.Day25, manhourtoDate1.Day26, manhourtoDate1.Day27, manhourtoDate1.Day28, manhourtoDate1.Day29, manhourtoDate1.Day30, manhourtoDate1.Day31};
+                    for (int i = 1; i <= 31; i++)
+                    {
+                        manHour.Add(Double.Parse(manhourFebruary.GetType().GetProperty("Day" + i).GetValue(manhourFebruary).ToString()));
+                    }
                     for (var i = 0; i < DateTime.DaysInMonth(toDate.Year, toDate.Month - 1); i++)
                     {
                         result.Add(manHour[i]);
                     }
                 }
-                else if(manhourtoDate1 == null && toDate.Month - fromDate.Month > 1)
+                else if(manhourFebruary == null && toDate.Month - fromDate.Month > 1)
                 {
                     for (var i = 0; i < DateTime.DaysInMonth(toDate.Year, toDate.Month); i++)
                     {
@@ -498,9 +511,10 @@ namespace ProjectTeamNET.Service.Implement
                 }
                 if (toDate.Month != fromDate.Month)
                 {
-                    manHour = new Double[] { manhourtoDate.Day1,manhourtoDate.Day2, manhourtoDate.Day3, manhourtoDate.Day4, manhourtoDate.Day5, manhourtoDate.Day6, manhourtoDate.Day7, manhourtoDate.Day8, manhourtoDate.Day9, manhourtoDate.Day10,
-                            manhourtoDate.Day11,manhourtoDate.Day12, manhourtoDate.Day13, manhourtoDate.Day14, manhourtoDate.Day15, manhourtoDate.Day16, manhourtoDate.Day17, manhourtoDate.Day18, manhourtoDate.Day19, manhourtoDate.Day20,
-                            manhourtoDate.Day21,manhourtoDate.Day22, manhourtoDate.Day23, manhourtoDate.Day24, manhourtoDate.Day25, manhourtoDate.Day26, manhourtoDate.Day27, manhourtoDate.Day28, manhourtoDate.Day29, manhourtoDate.Day30, manhourtoDate.Day31};
+                    for (int i = 1; i <= 31; i++)
+                    {
+                        manHour.Add(Double.Parse(manhourtoDate.GetType().GetProperty("Day" + i).GetValue(manhourtoDate).ToString()));
+                    }
                     for (var i = 0; i < toDate.Day; i++)
                     {
                         result.Add(manHour[i]);
@@ -688,7 +702,7 @@ namespace ProjectTeamNET.Service.Implement
                     }
                     else if (select == "user")
                     {
-                        paramList.Add("ユーザNo	");
+                        paramList.Add("ユーザNo");
                         paramList.Add("ユーザ名");
                     }
                     else if (select == "affiliation")
@@ -999,25 +1013,10 @@ namespace ProjectTeamNET.Service.Implement
 
         }
 
-        public Task<List<UserScreenItem>> Gets()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<UserScreenItem> Get(int id)
-        {
-            throw new NotImplementedException();
-        }
-
         public int Create(UserScreenItem model)
         {
             var result = userscreenRepository.Create(model);
             return result;
-        }
-
-        public Task<int> Edit(UserScreenItem model)
-        {
-            throw new NotImplementedException();
         }
         /// <summary>
         /// insert into list saveScreen has condition
@@ -1057,7 +1056,7 @@ namespace ProjectTeamNET.Service.Implement
                 {
                     workContentDetails = data.workContentDetails.Split(",");
                 }
-
+                // insert into List theme
                 for (var i = 0; i < Int32.Parse(data.numberTheme); i++)
                 {
                     CreateReport(userName, data.Save, themes[i], string.Concat("themeNo_", i), date, ref count);
@@ -1075,6 +1074,7 @@ namespace ProjectTeamNET.Service.Implement
                 }
                 var numberUsers = data.numberUser.Split(",");
                 int countUser = 1;
+                // insert into List Group and user
                 for (var i = 1; i <= Int32.Parse(data.numberGroup); i++)
                 {
                     CreateReport(userName, data.Save, groups[i], string.Concat("group_", i), date, ref count);
@@ -1089,7 +1089,7 @@ namespace ProjectTeamNET.Service.Implement
             }
             catch (Exception)
             {
-                return "error";
+                return ERROR;
             }
             
         }
@@ -1118,7 +1118,9 @@ namespace ProjectTeamNET.Service.Implement
 
         public List<SelectListItem> GetsScreen(string userName)
         {
-            return dbUserScreenItems.Where(e => e.Screen_url == "ManhourReport" && e.Save_name != "" && e.User_no == userName.ToUpper()).Select(s => new SelectListItem { Value = s.Surrogate_key.Substring(0,18), Text = s.Save_name }).Distinct().ToList();
+            return dbUserScreenItems.Where(e => e.Screen_url == "ManhourReport" && e.Save_name != "" && 
+            e.User_no == userName.ToUpper()).Select(s => new SelectListItem { 
+                Value = s.Surrogate_key.Substring(0,18), Text = s.Save_name }).Distinct().ToList();
         }
     }
 }

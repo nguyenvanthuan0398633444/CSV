@@ -17,6 +17,7 @@ namespace ProjectTeamNET.Controllers
     {
         private readonly IManhourReportService manhourReportService;
 
+        private const string ERROR = "Something wrong! Please try later";
         private string user = "";
         public ManhourReportController(IManhourReportService manhourReportService)
         {
@@ -27,9 +28,13 @@ namespace ProjectTeamNET.Controllers
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
+                var model = manhourReportService.Init(user);
+                return View(model);
             }
-            var model = manhourReportService.Init(user);
-            return View(model);
+            else
+            {
+                return RedirectToAction("Index", "Login");
+            }
         }
         [HttpGet("/ManhourReport/AddTheme/{count}")]
         public IActionResult AddTheme(int count)
@@ -57,13 +62,17 @@ namespace ProjectTeamNET.Controllers
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
+                var exportModel = await manhourReportService.GetDataReportCSV(data);
+                if (exportModel.nameFile == "")
+                {
+                    return Ok(new { messenge = Resources.Messages.ERR_005 });
+                }
+                return Ok(new { data = exportModel.builder.ToString(), fileName = exportModel.nameFile, messenge = ""});
             }
-            var exportModel = await manhourReportService.GetDataReportCSV(data);
-            if (exportModel.nameFile == "")
+            else
             {
-                return Ok(new { messenge = Resources.Messages.ERR_005 });
+                return RedirectToAction("Index", "Login");
             }
-            return Ok(new { data = exportModel.builder.ToString(), fileName = exportModel.nameFile, messenge = ""});
         }
         [HttpPost("/ManhourReport/SaveScreen")]
         public IActionResult SaveScreen(ManHourReportSearch data)
@@ -71,9 +80,13 @@ namespace ProjectTeamNET.Controllers
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
+                var result = manhourReportService.SaveScreen(data, user);
+                return Ok(result);
             }
-            var result = manhourReportService.SaveScreen(data, user);
-            return Ok(result);
+            else
+            {
+                return RedirectToAction("Index", "Login");
+            }
         }
         [HttpGet("/ManhourReport/GetsScreen")]
         public IActionResult GetsScreen()
@@ -81,9 +94,13 @@ namespace ProjectTeamNET.Controllers
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
             {
                 user = HttpContext.Session.GetString("userNo").ToUpper();
+                var result = manhourReportService.GetsScreen(user);
+                return Ok(result);
             }
-            var result = manhourReportService.GetsScreen(user);
-            return Ok(result);
+            else
+            {
+                return RedirectToAction("Index", "Login");
+            }
         }
 
         [HttpPost("/ManhourReport/CreateData")]
@@ -108,20 +125,20 @@ namespace ProjectTeamNET.Controllers
             {
                 return Ok(string.Format(Resources.Messages.INF_001, "Save Name"));
             }
-            return Ok("Error");
+            return Ok(ERROR);
         }
 
         [HttpGet("/ManhourReport/GetsUserName/{GroupCode}")]
-        public async Task<OkObjectResult> GetsUserName(string GroupCode)
+        public async Task<OkObjectResult> GetsUserName(string groupCode)
         {
-            var result = await manhourReportService.GetsUserName(GroupCode);
+            var result = await manhourReportService.GetsUserName(groupCode);
             return Ok(result);
         }
 
         [HttpGet("/ManhourReport/GetsGroupName/{GroupCode}")]
-        public async Task<OkObjectResult> GetsGroupName(string GroupCode)
+        public async Task<OkObjectResult> GetsGroupName(string groupCode)
         {
-            var result = await manhourReportService.GetsGroupName(GroupCode);
+            var result = await manhourReportService.GetsGroupName(groupCode);
             return Ok(result);
         }
 

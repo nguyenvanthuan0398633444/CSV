@@ -17,8 +17,7 @@ namespace ProjectTeamNET.Service.Interface
         Task<string> GetsGroupName(string groupCode);
         Task<List<ThemeName>> GetsThemeName();
         Task<List<GroupNames>> GetsGroupName();
-        Task<List<WorkContent>> GetsWorkContent(string ThemeNo);
-        Task<int> SaveManHourReport(List<Manhour> manhours);
+        Task<List<WorkContent>> GetsWorkContent(string themeNo);
         Task<List<UserScreenItem>> GetsManHourReportSaved(string userScreenName);
         IDictionary<string, string> ValidateReport(ManHourReportSearch data);
         IDictionary<string, string> ValidateSaveName(ManHourReportSearch data);
@@ -27,6 +26,6 @@ namespace ProjectTeamNET.Service.Interface
         List<double> ManhourReportDaily(string group, string user, string theme, DateTime toDate, DateTime fromDate, string workContentCodes, string workContentDetails);
         Task<ExportModel> GetDataReportCSV(ManHourReportSearch data);
         string SaveScreen(ManHourReportSearch data,string userName);
-        List<SelectListItem> GetsScreen(string User);
+        List<SelectListItem> GetsScreen(string user);
     }
 }

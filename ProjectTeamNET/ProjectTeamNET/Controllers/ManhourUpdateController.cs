@@ -11,7 +11,6 @@ namespace ProjectTeamNET.Controllers
     public class ManhourUpdateController : Controller
     {
         private readonly IManhourUpdateService manhourUpdateService;
-        string user = "";
         public ManhourUpdateController(IManhourUpdateService manhourUpdateService)
         {
             this.manhourUpdateService = manhourUpdateService;           
@@ -19,12 +18,13 @@ namespace ProjectTeamNET.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Index()
-        {           
-            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+        {
+            string userNo = HttpContext.Session.GetString("userNo");
+            if (userNo == null)
             {
-                user = HttpContext.Session.GetString("userNo").ToUpper();
+                return RedirectToAction("Index", "Login");
             }
-            ManhourUpdate model = await manhourUpdateService.GetGroupAndUser(user);
+            ManhourUpdate model = await manhourUpdateService.GetGroupAndUser(userNo);
             if (model != null)
             {
                 return View(model);
@@ -36,13 +36,14 @@ namespace ProjectTeamNET.Controllers
         public async Task<JsonResult> Search(ManhourUpdateSearch keySearch)
         {
             string siteCode = "";
-            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            string userNo = HttpContext.Session.GetString("userNo").ToUpper();
+            siteCode = HttpContext.Session.GetString("siteCode").ToUpper();
+            if (userNo == null)
             {
-                user = HttpContext.Session.GetString("userNo").ToUpper();
-                siteCode = HttpContext.Session.GetString("siteCode").ToUpper();
+                return Json(new { Url = "/Login" }); 
             }
             ManHourUpdateSearchModel result = new ManHourUpdateSearchModel();
-            result = await manhourUpdateService.Search(keySearch,user,siteCode);
+            result = await manhourUpdateService.Search(keySearch, userNo, siteCode);
             return Json(new { data = result });
         }
 
@@ -77,11 +78,12 @@ namespace ProjectTeamNET.Controllers
         [HttpPost]
         public async Task<JsonResult> SearchThemes(SearchThemeParam param)
         {
-            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("userNo")))
+            string userNo = HttpContext.Session.GetString("userNo");
+            if (userNo == null)
             {
-                user = HttpContext.Session.GetString("userNo").ToUpper();
+                return Json(new { Url = "/Login" }); 
             }
-            SelectThemeModel data = await manhourUpdateService.SearchThemes(param, user);
+            SelectThemeModel data = await manhourUpdateService.SearchThemes(param, userNo);
             if (data.Themes.Count >= 1000)
             {
                 return Json(Resources.Messages.ERR_001);

@@ -15,7 +15,6 @@ namespace ProjectTeamNET.Models.Response
         public List<SelectListItem> groups { get; set; }
         public List<SelectListItem> users { get; set; }
         public List<SelectListItem> salesObject { get; set; }
-        public List<SelectListItem> groupThemes { get; set; }
-        public List<SelectListItem> wordContents { get; set; }
+        public List<SelectListItem> groupThemes { get; set; }      
     }
 }

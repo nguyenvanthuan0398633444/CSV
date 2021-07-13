@@ -61,14 +61,12 @@ namespace ProjectTeamNET.Service.Implement
                 // get History
                 List<UserScreenItem> historySearch = await GetHistorySearchByUserNo(userId);
                 List<Group> groups = await groupRepository.Gets();
-                List<SalesObject> salesObjects = await saleRepository.Gets();
-                List<WorkContents> workContents = await GetWorkContents();
+                List<SalesObject> salesObjects = await saleRepository.Gets();               
                 // SelectListItem
                 List<SelectListItem> groupSelectList = new List<SelectListItem>();
                 List<SelectListItem> userSelectList = new List<SelectListItem>();
                 List<SelectListItem> saleObjSelectlist = new List<SelectListItem>();
-                List<SelectListItem> groupSelectListTheme = new List<SelectListItem>();
-                List<SelectListItem> wordContentSelectList = new List<SelectListItem>();
+                List<SelectListItem> groupSelectListTheme = new List<SelectListItem>();               
                 if(functionClass == "2")
                 {
                     foreach (var item in groups)
@@ -105,15 +103,7 @@ namespace ProjectTeamNET.Service.Implement
                         });
                     }
 
-                }
-                foreach (var item in workContents)
-                {
-                    wordContentSelectList.Add(new SelectListItem()
-                    {
-                        Value = item.Work_contents_code,
-                        Text = item.Work_contents_code + "[" + item.Work_contents_code_name + "]"
-                    });
-                }
+                }              
                 foreach (var item in salesObjects)
                 {
                     saleObjSelectlist.Add(new SelectListItem()
@@ -124,7 +114,6 @@ namespace ProjectTeamNET.Service.Implement
 
                 }
                
-                model.wordContents = wordContentSelectList;
                 model.groupThemes = groupSelectListTheme;
                 model.salesObject = saleObjSelectlist;
                 model.groups = groupSelectList;

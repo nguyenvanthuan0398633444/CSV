@@ -1,10 +1,8 @@
-﻿using ProjectTeamNET.Models;
-using ProjectTeamNET.Models.Entity;
+﻿using ProjectTeamNET.Models.Entity;
 using ProjectTeamNET.Models.Request;
 using ProjectTeamNET.Models.Response;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ProjectTeamNET.Service.Interface
@@ -28,14 +26,12 @@ namespace ProjectTeamNET.Service.Interface
         Task<InitDataModel> Init(InputParamModel pModel);
         Task<List<Group>> GetGroups();
         Task<List<WorkContents>> GetWorkContents();
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
         Task<List<ManhourInput>> GetManhours(InputParamModel pModel);
-
         /// <summary>
         /// Get Screen item input history
         /// </summary>
@@ -43,7 +39,6 @@ namespace ProjectTeamNET.Service.Interface
         /// <param name="screen_url">String of screen url need get history</param>
         /// <returns></returns>
         Task<List<UserScreenItem>> GetsScreenItemHistory(string user_no,string screen_url);
-
         /// <summary>
         /// Get pined theme in last month to check to insert for now month
         /// </summary>
@@ -62,7 +57,6 @@ namespace ProjectTeamNET.Service.Interface
         /// <param name="param"></param>
         /// <returns></returns>
         Task<SelectThemeModel> SearchThemes(SearchThemeParam param, string user_no);
-
         /// <summary>
         /// Handle save data from client 
         /// </summary>
@@ -94,6 +88,12 @@ namespace ProjectTeamNET.Service.Interface
         /// <param name="manhours"></param>
         /// <returns></returns>
         int DeleteManhours(List<Manhour> manhours, string user_no);
+        /// <summary>
+        /// create manhour form list manhour
+        /// </summary>
+        /// <param name="manhours"></param>
+        /// <param name="user"></param>
+        /// <returns></returns>
         int Create(List<Manhour> manhours, UserInfo user);
         /// <summary>
         /// Save page cliked history
@@ -124,6 +124,11 @@ namespace ProjectTeamNET.Service.Interface
         /// <param name="pmodel"></param>
         /// <returns></returns>
         Task<List<ManhourUpdateViewModel>> GetDataExport(string userNo, DateTime date);
+        /// <summary>
+        /// check theme existed
+        /// </summary>
+        /// <param name="keys"></param>
+        /// <returns></returns>
         Task<bool> CheckThemeExist(ManhourKeys keys);
 
     }

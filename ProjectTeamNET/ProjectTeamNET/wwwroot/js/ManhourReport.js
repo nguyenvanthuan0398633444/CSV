@@ -5,6 +5,7 @@ var up = ['user', 'theme', 'workcontent', 'detailworkcontent', 'affiliation'];
 var down = ['monthlytotal', 'dailytotal', 'overalltotal'];
 var countGroup = 1;
 var count = 1;
+const ERROR = "Something wrong! Please try later";
 $.ajax({
     url: `/ManhourReport/GetsGroupName`,
     method: 'Get',
@@ -38,7 +39,7 @@ function deleteUserScreenName() {
                 url: `/ManhourReport/DeleteScreenUser/` + saveName,
                 method: 'Delete',
                 success: function (response) {
-                    if (response != "error") {
+                    if (response != ERROR) {
                         reset();
                         $('#error').empty();
                         $("#error").append(success(response));
@@ -833,7 +834,7 @@ function saveUserScreenName() {
                     method: 'POST',
                     data: Obj,
                     success: function (response) {
-                        if (response != "error") {
+                        if (response != ERROR) {
                             $("#error").append(success(response));
                             GetScreen();
                         }
@@ -882,7 +883,7 @@ function GetScreen() {
             $('#userScreenName').empty();
             var options = "<option>保存名...</option>";
             $.each(response, function (i, v) {
-                options += `<option value="${v.value}">${v.text}</option>`
+                options += `<option value="${v.value}">${v.text}</option>`;
             });
             $('#userScreenName').append(options);
         }

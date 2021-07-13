@@ -1,5 +1,4 @@
 ﻿@model ProjectTeamNET.Models.Response.InitDataModel
-
 <!-- Modal -->
 <div class="modal fade" id="modal1" tabindex="-1" role="dialog" aria-labelledby="label1" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -41,7 +40,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label>売上科目</label>  
+                                <label>売上科目</label>
                                 <select class="form-control form-control-sm" id="comboxObject">
                                     <option value="">売上科目...</option>
                                     @foreach (var item in Model.Objects)
@@ -56,15 +55,15 @@
                                 <label>売上状況</label>
                                 <div id="checkboxes">
                                     <div class="form-check form-check-inline">
-                                        <input data-value="未売上" name="rd1" class="form-check-input" type="radio"  id="cb1" value="option2" checked>
+                                        <input data-value="未売上" name="rd1" class="form-check-input" type="radio" id="unsold" value="option2" checked>
                                         <label class="form-check-label">未売上</label>
                                     </div>
                                     <div class="form-check form-check-inline">
-                                        <input data-value="売上済" name="rd1" class="form-check-input" type="radio" id="cb2" value="option3">
+                                        <input data-value="売上済" name="rd1" class="form-check-input" type="radio" id="sold" value="option3">
                                         <label class="form-check-label">売上済</label>
                                     </div>
                                     <div class="form-check form-check-inline">
-                                        <input data-value="全て" name="rd1" class="form-check-input"  type="radio" id="cb3" value="option1"  >
+                                        <input data-value="全て" name="rd1" class="form-check-input" type="radio" id="all" value="option1">
                                         <label class="form-check-label">全て</label>
                                     </div>
                                 </div>
@@ -86,7 +85,7 @@
                                     </tr>
                                 </thead>
 
-                                <tbody id="slThemeBody">      
+                                <tbody id="slThemeBody">
                                 </tbody>
 
                             </table>
@@ -145,7 +144,23 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">キャンセル</button>
-                <button type="button" class="btn btn-primary" id="btnChange" >変更</button>
+                <button type="button" class="btn btn-primary" id="btnChange">変更</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="custom-modal" tabindex="-1" role="dialog" aria-labelledby="label1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-head"  style="padding:0.5rem 0.5rem !important">
+                <h5 class="modal-title" ></h5>
+            </div>
+            <div class="modal-body" id="modal-body" style="padding:0.5rem 0.5rem !important">
+                <p id="modalContent"></p>
+            </div>
+            <div class="modal-footer"  id="modal-footer" style="padding:0.5rem 0.5rem !important">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
